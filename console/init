@@ -1,0 +1,26 @@
+//import TestHelpers._
+import models._
+import play.api.test.Helpers._
+import play.api._
+import play.api.test.FakeApplication
+import java.io.File
+
+// "real" application
+def realApp = FakeApplication(
+  path = new File("."),
+  additionalConfiguration = Map("logger.application" -> "DEBUG")
+)
+
+// Fake application, for testing.
+def fakeApp = FakeApplication()
+
+// Run the block of code inside the scope of an application.
+def runWith[T](app: FakeApplication)(code: => T): T = {
+  running(app) {code}
+}
+       
+// Run a block of code within the scope of the "real" application.
+def run[T](code: => T): T = runWith(realApp)(code)
+
+implicit val app = realApp
+
