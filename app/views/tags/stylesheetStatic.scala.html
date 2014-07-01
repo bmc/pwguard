@@ -1,0 +1,10 @@
+@*
+  Simplifies loading of a static stylesheet (i.e., one that is not in the
+  asset pipeline).
+*@
+
+@(file: String, media: String = "screen")
+
+@defining(s"/static/stylesheets/$file") { src =>
+  @stylesheet(src, media)
+}

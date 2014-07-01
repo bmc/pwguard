@@ -76,11 +76,11 @@ object Global extends GlobalSettings {
   }
 }
 
-/** Application globals.
+/** MainController globals.
   */
 object Globals {
   val mainLogger = Logger("pwguard.application")
 
-  lazy val DAL = Global._dal
-  lazy val DB = Global._db
+  lazy val DAL = Global._dal.get
+  lazy val DB = Global._db.get
 }

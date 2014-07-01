@@ -3,7 +3,18 @@
 # ~~~~
 
 # Home page
-GET     /                           controllers.Application.index
+GET        /                              controllers.MainController.index
+
+GET        /logged-in-user                controllers.SessionController.getLoggedInUser
+GET        /login                         controllers.SessionController.login
+GET        /logout                        controllers.SessionController.logout
+
+
+GET        /angular/template/*path        controllers.MainController.getAngularTemplate(path: String)
 
 # Map static resources from the /public folder to the /assets URL path
-GET     /assets/*file               controllers.Assets.at(path="/public", file)
+GET        /assets/*file                  controllers.Assets.at(path="/public", file)
+
+# Static handler, for development. Should be handled by front-end web server
+# in production.
+GET        /static/*path                  controllers.MainController.static(path: String)

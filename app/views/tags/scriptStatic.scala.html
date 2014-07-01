@@ -1,0 +1,10 @@
+@*
+  Simplifies loading of a static script (i.e, one that isn't in the
+  asset pipeline).
+*@
+
+@(file: String, mimeType: String = "text/javascript")
+
+@defining(s"static/javascripts/$file") { src =>
+  @script(src, mimeType)
+}

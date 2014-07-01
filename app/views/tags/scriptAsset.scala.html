@@ -1,0 +1,10 @@
+@*
+  Script tag taking an asset path.
+
+  Automatically adds "javascripts" to the beginning of the passed asset
+  path. If you want to point to a non-asset script, use the @script tag.
+*@
+
+@(assetPath: String, mimeType: String = "text/javascript")
+
+@script(routes.Assets.at(s"javascripts/$assetPath").toString, mimeType)

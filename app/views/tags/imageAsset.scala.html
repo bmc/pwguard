@@ -1,0 +1,17 @@
+@*
+  Image tag taking an asset path.
+
+  Automatically adds "images" to the beginning of the passed asset
+  path. If you want to point to a non-asset script, use a regular <img> tag.
+*@
+
+@(assetPath: String, height: Option[Int] = None, width: Option[Int] = None)
+
+<img src="@routes.Assets.at(s"images/$assetPath")"
+@height.map { h =>
+   height="@h"
+}
+@width.map { w =>
+   width="@w"
+}
+/>

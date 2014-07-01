@@ -1,7 +1,63 @@
-@(message: String)
+@()
 
-@main("Welcome to Play") {
+<!DOCTYPE html>
 
-    @play20.welcome(message)
+@import tags._
 
-}
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <title>PWGuard</title>
+    <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
+
+    @* jQuery *@
+
+    @script("https://code.jquery.com/jquery-1.11.1.min.js")
+
+    @* Angular *@
+
+    @script("https://ajax.googleapis.com/ajax/libs/angularjs/1.2.18/angular.min.js")
+    @script("https://ajax.googleapis.com/ajax/libs/angularjs/1.2.4/angular-route.js")
+    @script("https://ajax.googleapis.com/ajax/libs/angularjs/1.2.4/angular-cookies.js")
+
+    @* Angular.js add-ons *@
+
+    @scriptStatic("angular-flash.js")
+    @scriptStatic("ui-bootstrap-tpls-0.7.0.min.js")
+    @scriptStatic("ui-utils.min.js")
+    @scriptStatic("http-auth-interceptor.min.js")
+
+    @* Third-party stuff *@
+
+    @stylesheetStatic("gridism.css")
+    @scriptStatic("moment.min.js")
+    @scriptStatic("http-auth-interceptor.js")
+    @scriptStatic("spin.min.js")
+    @scriptStatic("angular-spinner.min.js")
+    @scriptStatic("chosen.jquery.min.js")
+    @stylesheetStatic("chosen.min.css")
+    @scriptStatic("angular-chosen.js")
+    @scriptStatic("angular-route-segment.js")
+    @scriptStatic("angular-tablesort.js")
+
+    @* Local *@
+
+    @stylesheetAsset("main.css")
+    @scriptAsset("angular-routes.js")
+    @scriptAsset("angular-util.js")
+    @scriptAsset("main.js")
+
+    <script type="text/javascript">
+      window.ANGULAR_TEMPLATE_URL = "@routes.MainController.getAngularTemplate("TOKEN")";
+    </script>
+
+  </head>
+
+  <body ng-app="PWGuardApp">
+    <p>Foo</p>
+
+    <div ng-hide="true" id="config"
+         data-logged-in-user-url="@routes.SessionController.getLoggedInUser"/>
+  </body>
+</html>

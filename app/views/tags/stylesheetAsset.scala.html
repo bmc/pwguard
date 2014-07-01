@@ -1,0 +1,12 @@
+@*
+  Stylesheet tag taking an asset path.
+
+  Automatically adds "stylesheets" to the beginning of the passed asset
+  path. If you want to point to a non-asset script, use the @stylesheet tag.
+*@
+
+@(assetPath: String, media: String = "screen")
+
+@* Stylesheet asset *@
+
+@stylesheet(routes.Assets.at(s"stylesheets/$assetPath").toString, media)

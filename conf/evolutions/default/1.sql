@@ -3,12 +3,19 @@
 CREATE TABLE IF NOT EXISTS users(
   id                       INTEGER PRIMARY KEY AUTOINCREMENT,
   email                    VARCHAR(255) NOT NULL,
-  encrypted_password       TEXT,
-  pw_entry_encryption_key  TEXT,
+  encrypted_password       TEXT NOT NULL,
+  pw_entry_encryption_key  TEXT NOT NULL,
   first_name               VARCHAR(64),
   last_name                VARCHAR(64),
-  active                   BOOLEAN DEFAULT 'true'
+  active                   BOOLEAN DEFAULT 'true',
+  admin                    BOOLEAN DEFAULT 'false'
 );
+
+-- Default admin user (admin@example.com), with password "admin".
+INSERT INTO users(email, encrypted_password, pw_entry_encryption_key)
+VALUES ('admin@example.com',
+        '$2a$10$dod.88izAFGzSxwgMT9/Ou6xqqjX5shU9wlfKEtuc4P3DinTA2R9q',
+        '');
 
 CREATE UNIQUE INDEX IF NOT EXISTS users_ix_email ON users(email);
 CREATE INDEX IF NOT EXISTS users_ix_last_name ON users(last_name);
