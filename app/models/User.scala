@@ -54,6 +54,8 @@ case class User(id:                   Option[Int],
   override def hashCode = email.hashCode
 }
 
+/** Some helper routes for users.
+  */
 object UserHelper {
   private val random = new SecureRandom
 
