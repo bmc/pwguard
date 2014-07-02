@@ -1,3 +1,11 @@
+###############################################################################
+# Some non-Angular jQuery things.
+###############################################################################
+
+###############################################################################
+# Angular JS stuff
+###############################################################################
+
 requiredModules = ['angular-flash.service',
                    'angular-flash.flash-alert-directive',
                    'ngRoute',
@@ -21,11 +29,7 @@ configApp = ($routeSegmentProvider, $routeProvider, $locationProvider) ->
 
   #$locationProvider.html5Mode(true).hashPrefix('!')
 
-  console.log "foo"
-  console.log $routeProvider
-  console.log $routeSegmentProvider
   window.setRoutes $routeSegmentProvider, $routeProvider
-  console.log "bar"
 
 # Initialize the application by storing some data and functions into the
 # root scope. Invoked when the app is defined, below.
@@ -60,6 +64,9 @@ initApp = ($rootScope, $http, flash, $routeSegment, $location, $timeout) ->
       $location.path(url)
     else
       console.log "(BUG) No URL for segment #{segment}"
+
+  $rootScope.segmentIsActive = (segment) ->
+    ($routeSegment.name is segment) or ($routeSegment.startsWith("#{segment}."))
 
   $rootScope.pathForSegment = window.pathForSegment
   $rootScope.hrefForSegment = window.hrefForSegment
@@ -140,6 +147,14 @@ pwguardApp.run initApp
 # Controllers
 # ---------------------------------------------------------------------------
 
-pwguardApp.controller 'NavbarCtrl', ($scope, $rootScope) ->
+pwguardApp.controller 'MainCtrl', ($scope, $rootScope) ->
+  return
 
+pwguardApp.controller 'NavbarCtrl', ($scope, $rootScope) ->
+  return
+
+pwguardApp.controller 'LoginCtrl', ($scope, $rootScope) ->
+  return
+
+pwguardApp.controller 'HomeCtrl', ($scope, $rootScope) ->
   return

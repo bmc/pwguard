@@ -1,0 +1,39 @@
+
+#login-screen {
+  width: 90%;
+  margin: 0;
+
+  header {
+    text-align: center;
+  }
+
+  #login-panel {
+    border: 1px solid @borderColor;
+    border-radius: 10px 10px 10px 10px;
+    background-color: @panelBackground;
+    margin: 0 auto;
+    padding: 20px;
+
+    @media @phone {
+      width: 100%;
+    }
+
+    @media @tablet {
+      width: 75%;
+    }
+
+    @media @desktop {
+      width: 40%;
+    }
+
+    @media @wide-desktop {
+      width: 30%;
+    }
+
+    #login-form {
+      label {
+        color: @headerColor !important;
+      }
+    }
+  }
+}

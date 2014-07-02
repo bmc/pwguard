@@ -1,11 +1,24 @@
-@wide-desktop: ~"only screen and (min-width: 1200px)";
-@desktop:      ~"only screen and (min-width: 960px) and (max-width: 1199px)";
-@tablet:       ~"only screen and (min-width: 720px) and (max-width: 959px)";
-@phone:        ~"only screen and (min-width: 241px) and (max-width: 719px)";
-
+@import "_defs.less";
+@import "_mixins.less";
 
 body {
   font-family: Arial, Verdana;
+
+  @media @phone {
+    font-size: @baseFontSize + 2px;
+  }
+
+  @media @tablet {
+    font-size: @baseFontSize + 2px;
+  }
+
+  @media @desktop {
+    font-size: @baseFontSize;
+  }
+
+  @media @wide-desktop {
+    font-size: @baseFontSize;
+  }
 }
 
 html, body {
@@ -13,61 +26,46 @@ html, body {
   padding: 0;
 }
 
-#navbar {
-  height: 100px;
-  background-color: #f7f3ed;
-  width: 100%;
-  margin: 0;
-  padding: 0;
+header {
+  color: @headerColor;
+  font-weight: bold;
+  font-size: larger;
+  font-family: "Source Sans Pro", Verdana, Helvetica, Arial, sans-serif;
+  margin-bottom: 20px;
 }
 
-.logo {
-  font-family: 'Asset', cursive;
-  color: #fab85c;
+#content {
+  margin-top: 10px;
 }
 
-#loading-spinner {
-  color: #ccc;
-}
+@import "_form.less";
+@import "_navbar.less";
+@import "_login.less";
+@import "_home.less";
 
-@media @phone {
-  .logo {
-    font-size: 18px;
+.btn {
+  border-radius: 5px 5px 5px 5px;
+  padding: 10px;
+  border: 1px solid @buttonBorderColor;
+  min-width: @normalMinButtonWidth;
+  min-height: @normalMinButtonHeight;
+  background: #cccccc;
+
+  &.btn-primary {
+    .gradientTopBottom(#4189c7, #236da4);
+    border: 1px solid #0f92a3;
+    color: white;
   }
 
-  #loading-spinner {
-    font-size: 20px;
-  }
-}
-
-@media @tablet {
-  .logo {
-    font-size: 24px;
+  &.btn-large {
+    min-width: @largeMinButtonWidth;
+    min-height: @largeMinButtonHeight;
+    font-size: @baseFontSize + 3px;
   }
 
-  #loading-spinner {
-    font-size: 28px;
-  }
-}
-
-@media @desktop {
-  .logo {
-    font-size: 32px;
-  }
-
-  #loading-spinner {
-    font-size: 36px;
+  &.btn-xlarge {
+    min-width: @xlargeMinButtonWidth;
+    min-height: @xlargeMinButtonHeight;
+    font-size: @baseFontSize + 5px;
   }
 }
-
-@media @wide-desktop {
-  .logo {
-    font-size: 40px;
-  }
-
-  #loading-spinner {
-    font-size: 44px;
-  }
-}
-
-

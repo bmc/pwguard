@@ -17,3 +17,7 @@ libraryDependencies ++= Seq(
   "org.clapper" %% "grizzled-scala" % "1.2",
   "org.mindrot" % "jbcrypt" % "0.3m"
 )
+
+includeFilter in (Assets, LessKeys.less) := "*.less"
+
+excludeFilter in (Assets, LessKeys.less) := "_*.less"

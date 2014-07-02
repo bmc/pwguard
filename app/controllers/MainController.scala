@@ -60,6 +60,7 @@ object MainController extends BaseController {
         findAngularPlayTemplate(name)
       }
 
+logger.debug(result.toString)
       result.recover {
         case e: ClassNotFoundException =>
           NotFound

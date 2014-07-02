@@ -12,20 +12,20 @@ segments =
   "home":             "/home"
 
 # The routes themselves.
-window.setRoutes = (routeSegmentProvider, routeProvider) ->
-  routeSegmentProvider.options.autoLoadTemplates = true
+window.setRoutes = ($routeSegmentProvider, $routeProvider) ->
+  $routeSegmentProvider.options.autoLoadTemplates = true
 
   # Map URLs to segment names. This is the actual routing table.
 
   for segment of segments
-    routeSegmentProvider.when(segments[segment], segment)
+    $routeSegmentProvider.when(segments[segment], segment)
 
   # Define each segment's behavior and nesting.
-  routeSegmentProvider.segment "login",
+  $routeSegmentProvider.segment "login",
     templateUrl: templateURL("login.html")
     controller:  'LoginCtrl'
 
-  routeSegmentProvider.segment "home",
+  $routeSegmentProvider.segment "home",
     templateUrl: templateURL("home.html")
     controller:  'HomeCtrl'
 

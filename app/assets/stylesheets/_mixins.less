@@ -1,0 +1,12 @@
+/* Simple gradient from one color (at the top) to another color (at the bottom). */
+.gradientTopBottom(@fromColor, @toColor, @fromPercent: 0%, @toPercent: 100%) {
+  background: @fromColor; /* Old browsers */
+  /*
+    background: -moz-linear-gradient(top, @fromColor 0%, @toColor 100%); /* FF3.6+ */
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,@fromColor), color-stop(100%,@toColor)); /* Chrome,Safari4+ */
+  background: -webkit-linear-gradient(top, @fromColor 0%, @toColor 100%); /* Chrome10+,Safari5.1+ */
+  background: -o-linear-gradient(top, @fromColor 0%, @toColor 100%); /* Opera 11.10+ */
+  background: -ms-linear-gradient(top, @fromColor 0%, @toColor 100%); /* IE10+ */
+  background: linear-gradient(to bottom, @fromColor 0%, @toColor 100%); /* W3C */
+}
+
