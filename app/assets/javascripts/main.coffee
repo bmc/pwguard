@@ -13,8 +13,7 @@ requiredModules = ['angular-flash.service',
 
 # Angular.js configuration function. Passed into the actual application, below,
 # when it is created.
-configApp = (flashProvider, $routeSegmentProvider, $routeProvider, $locationProvider) ->
-  flashProvider.errorClassnames.put("alert-danger")
+configApp = ($routeSegmentProvider, $routeProvider, $locationProvider) ->
 
   # For now, don't use this. Allow Angular to use its "#" URLs. This approach
   # simplifies things on the backend, since it doesn't result in backend
@@ -22,11 +21,15 @@ configApp = (flashProvider, $routeSegmentProvider, $routeProvider, $locationProv
 
   #$locationProvider.html5Mode(true).hashPrefix('!')
 
+  console.log "foo"
+  console.log $routeProvider
+  console.log $routeSegmentProvider
   window.setRoutes $routeSegmentProvider, $routeProvider
+  console.log "bar"
 
 # Initialize the application by storing some data and functions into the
 # root scope. Invoked when the app is defined, below.
-initApp = ($rootScope, $http, flash, $routeSegment, $location) ->
+initApp = ($rootScope, $http, flash, $routeSegment, $location, $timeout) ->
   $rootScope.loggedInUser  = null
   $rootScope.loading       = true
   $rootScope.$routeSegment = $routeSegment
@@ -42,11 +45,13 @@ initApp = ($rootScope, $http, flash, $routeSegment, $location) ->
           segment = "dashboard"
       else
         segment = "dashboard"
-      $rootScope.showPage segment
+      $rootScope.redirectToSegment segment
     else
-      $rootScope.showPage("login")
+      $rootScope.redirectToSegment "login"
 
   # Page-handling.
+
+  # Convenient way to show a page/segment
 
   $rootScope.redirectToSegment = (segment) ->
     url = $rootScope.pathForSegment segment
@@ -106,7 +111,7 @@ initApp = ($rootScope, $http, flash, $routeSegment, $location) ->
 
   redirectIfLoggedOut = ->
     unless $rootScope.loggedIn()
-      $rootScope.showPage("login")
+      $rootScope.redirectToSegment("login")
 
   onSuccess = (response) ->
     if response.data.loggedIn
@@ -124,8 +129,17 @@ initApp = ($rootScope, $http, flash, $routeSegment, $location) ->
 
 # The app itself.
 pwguardApp = angular.module('PWGuardApp', requiredModules)
-
+pwguardApp.config configApp
+pwguardApp.run initApp
 
 # ---------------------------------------------------------------------------
 # Local Angular.js services
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Controllers
+# ---------------------------------------------------------------------------
+
+pwguardApp.controller 'NavbarCtrl', ($scope, $rootScope) ->
+
+  return

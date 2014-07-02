@@ -15,6 +15,9 @@
 
     @script("https://code.jquery.com/jquery-1.11.1.min.js")
 
+    @* Fonts *@
+    @stylesheet("https://fonts.googleapis.com/css?family=Asset")
+
     @* Angular *@
 
     @script("https://ajax.googleapis.com/ajax/libs/angularjs/1.2.18/angular.min.js")
@@ -41,6 +44,10 @@
     @scriptStatic("angular-route-segment.js")
     @scriptStatic("angular-tablesort.js")
 
+    @* Font Awesome *@
+
+    @stylesheet("//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css")
+
     @* Local *@
 
     @stylesheetAsset("main.css")
@@ -55,7 +62,27 @@
   </head>
 
   <body ng-app="PWGuardApp">
-    <p>Foo</p>
+
+    <div id="navbar" class="grid" ng-controller="NavbarCtrl">
+      <div class="logo unit half">
+        <i class="fa fa-lock"></i> PWGuard
+      </div>
+      <div class="unit half" ng-show="loading">
+        <div class="spinner">
+          <i class="fa fa-spinner fa-spin"></i>
+        </div>
+      </div>
+      <pre>{{loading}}</pre>
+    </div>
+
+    <div class="grid">
+      <div class="unit half">
+        Foo
+      </div>
+      <div class="unit half">
+        Bar
+      </div>
+    </div>
 
     <div ng-hide="true" id="config"
          data-logged-in-user-url="@routes.SessionController.getLoggedInUser"/>

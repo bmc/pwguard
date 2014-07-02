@@ -5,7 +5,7 @@
 # Home page
 GET        /                              controllers.MainController.index
 
-GET        /logged-in-user                controllers.SessionController.getLoggedInUser
+POST       /logged-in-user                controllers.SessionController.getLoggedInUser
 GET        /login                         controllers.SessionController.login
 GET        /logout                        controllers.SessionController.logout
 
