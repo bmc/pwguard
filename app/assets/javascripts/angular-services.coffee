@@ -34,7 +34,6 @@ pwgServices.factory 'pwgAjax', ($http,
       #flash.error = data.error.message if response.data.error.message?
       onFailure(response) if onFailure?
     else
-      pwgFlash.info "Booyah"
       onSuccess(response)
 
   http = (config, onSuccess, onFailure)->
@@ -167,7 +166,6 @@ pwgServices.factory 'pwgFlash', ($rootScope) ->
       clearAll: ->
         for type in ['info', 'warning', 'error']
           message type, null
-    console.log $rootScope.flash
 
   warn: (msg) ->
     $rootScope.flash.warn msg

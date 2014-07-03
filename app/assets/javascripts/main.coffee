@@ -41,13 +41,11 @@ initApp = ($rootScope,
            pwgAjax,
            pwgFlash) ->
 
-  console.log pwgFlash
   $rootScope.loggedInUser  = null
   $rootScope.$routeSegment = $routeSegment
   $rootScope.segmentOnLoad = window.segmentForURL($location.path())
 
-  pwgFlash.init()
-  pwgFlash.error("Test")
+  pwgFlash.init() # initialize the flash service
 
   $rootScope.$watch "loggedInUser", (user, prevUser) ->
     if user?
