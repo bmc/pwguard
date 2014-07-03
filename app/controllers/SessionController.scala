@@ -27,15 +27,8 @@ object SessionController extends BaseController {
     implicit request: Request[JsValue] =>
 
     Future {
-      val res = handleLogin(request) { user =>
+      handleLogin(request) { user =>
         Ok(user.toJSON).withSession(sessionParameters(user): _*)
-      }
-
-      // For some reason, Angular.js doesn't dispatch 401 responses
-      // properly, so we handle them specially.
-      res match {
-        case Unauthorized => Ok(jsonError(Some("login failed"), Some(401)))
-        case _            => res
       }
     }
   }
@@ -82,7 +75,7 @@ object SessionController extends BaseController {
           logger.info { s"User $email logged out."}
           Ok("").withNewSession
         }
-      resultOpt.getOrElse(BadRequest.withNewSession)
+      resultOpt.getOrElse(BadRequest)
     }
   }
   // --------------------------------------------------------------------------
@@ -102,7 +95,7 @@ object SessionController extends BaseController {
 
             userOpt.map { user: User =>
               if (user.active &&
-                  UserHelper.passwordMatches(password, user.encryptedPassword)) {
+                UserHelper.passwordMatches(password, user.encryptedPassword)) {
                 Right(user)
               }
               else {
@@ -114,7 +107,7 @@ object SessionController extends BaseController {
         )
       }
 
-    // If any o fthe JSON parameters are missing, resultOpt will be None.
+    // If any of the JSON parameters are missing, resultOpt will be None.
     // Otherwise, it'll contain the result of the lookup (which might be
     // a failure).
     resultOpt match {
@@ -125,7 +118,9 @@ object SessionController extends BaseController {
 
       case Some(Left(error)) => {
         logger.error(s"Login failure: $json: $error")
-        Unauthorized
+        // For some reason, Angular.js doesn't dispatch 401 responses
+        // properly, so we handle them specially.
+        Ok(jsonError(Some("Login failed."), Some(401)))
       }
 
       case Some(Right(user)) => {

@@ -22,9 +22,10 @@
 
     @* Angular *@
 
-    @script("https://ajax.googleapis.com/ajax/libs/angularjs/1.2.18/angular.min.js")
-    @script("https://ajax.googleapis.com/ajax/libs/angularjs/1.2.4/angular-route.js")
-    @script("https://ajax.googleapis.com/ajax/libs/angularjs/1.2.4/angular-cookies.js")
+    @script("https://ajax.googleapis.com/ajax/libs/angularjs/1.2.19/angular.min.js")
+    @script("https://ajax.googleapis.com/ajax/libs/angularjs/1.2.19/angular-route.js")
+    @script("https://ajax.googleapis.com/ajax/libs/angularjs/1.2.19/angular-cookies.js")
+    @script("https://ajax.googleapis.com/ajax/libs/angularjs/1.2.19/angular-animate.js")
 
     @* Angular.js add-ons *@
 
@@ -71,6 +72,9 @@
           <div id="logo">
             <i class="fa fa-lock"></i> PWGuard
           </div>
+          <div id="login-status" ng-show="loggedIn()">
+            <a href="javascript:void(0)" ng-click="logout()">Logout</a>
+          </div>
           <div id="loading-spinner" ng-show="showSpinner">
             <i class="fa fa-spinner fa-spin"></i>
           </div>
@@ -94,7 +98,6 @@
             <span class="flash-message">{{flash.message.error}}</span>
           </div>
         </div>
-      </div>
 
         <div app-view-segment="0"
              ng-show="segmentIsActive('login')">
@@ -107,6 +110,8 @@
     </div>
 
     <div ng-hide="true" id="config"
-         data-logged-in-user-url="@routes.SessionController.getLoggedInUser"/>
+         data-logged-in-user-url="@routes.SessionController.getLoggedInUser"
+         data-login-url="@routes.SessionController.login"
+         data-logout-url="@routes.SessionController.logout"/>
   </body>
 </html>

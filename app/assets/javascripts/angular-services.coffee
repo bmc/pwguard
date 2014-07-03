@@ -15,7 +15,8 @@ pwgServices.factory 'pwgAjax', ($http,
   # Local
   handleFailure = (data, status, onFailure) ->
     # invoke flash service here
-    alert "Server request failed with status #{status}"
+    message = data.error?.message or "Server request failed. We're looking into it."
+    pwgFlash.error "(#{status}) #{message}", status
     console.log data
     onFailure(data) if onFailure?
 
@@ -31,7 +32,7 @@ pwgServices.factory 'pwgAjax', ($http,
       if data.status == 401
         response.status = 401
 
-      #flash.error = data.error.message if response.data.error.message?
+      pwgFlash.error data.error.message if response.data.error.message?
       onFailure(response) if onFailure?
     else
       onSuccess(response)
@@ -130,9 +131,9 @@ pwgServices.factory 'pwgSpinner', ($rootScope) ->
 # clearAll()     - convenience
 # ----------------------------------------------------------------------------
 
-pwgServices.factory 'pwgFlash', ($rootScope) ->
+pwgServices.factory 'pwgFlash', ($rootScope, $timeout) ->
 
-  message = (type, msg) ->
+  handleMessage = (type, msg) ->
     m = $rootScope.flash.message
     switch type
       when 'info'    then m.info    = msg
@@ -142,6 +143,12 @@ pwgServices.factory 'pwgFlash', ($rootScope) ->
         m.info    = msg
         m.warning = msg
         m.error   = msg
+
+  message = (type, msg) ->
+    handleMessage type, msg
+    if msg?
+      cb = -> handleMessage type, null
+      $timeout cb, 5000
 
   init: ->
     $rootScope.flash =
@@ -188,3 +195,14 @@ pwgServices.factory 'pwgFlash', ($rootScope) ->
   clearWarning: ->
     $rootScope.flash.clearWarning()
 
+# ----------------------------------------------------------------------------
+# Confirmation dialog, and related models
+# ----------------------------------------------------------------------------
+
+# RUDIMENTARY! FIX!
+
+pwgServices.factory 'pwgConfirm', ($rootScope) ->
+
+  confirm: (message, callback) ->
+    if confirm(message)
+      callback(true)

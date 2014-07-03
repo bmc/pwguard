@@ -12,7 +12,8 @@ case class User(id:                   Option[Int],
                 pwEntryEncryptionKey: String, // base64 encoding
                 firstName:            Option[String],
                 lastName:             Option[String],
-                active:               Boolean)
+                active:               Boolean,
+                admin:                Boolean)
   extends BaseModel {
 
   lazy val toJSON = Json.obj(
@@ -21,7 +22,8 @@ case class User(id:                   Option[Int],
     "firstName"   -> firstName,
     "lastName"    -> lastName,
     "displayName" -> displayName,
-    "active"      -> active
+    "active"      -> active,
+    "admin"       -> admin
   )
 
   /** What to display for the user's name.

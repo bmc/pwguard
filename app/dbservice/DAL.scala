@@ -32,9 +32,10 @@ trait UsersComponent {
     def firstName            = column[Option[String]]("first_name")
     def lastName             = column[Option[String]]("last_name")
     def active               = column[Boolean]("active", O.Default(true))
+    def admin                = column[Boolean]("admin", O.Default(false))
 
     def * = (id.?, email, encryptedPassword, pwEntryEncryptionKey,
-             firstName, lastName, active) <> (User.tupled, User.unapply)
+             firstName, lastName, active, admin) <> (User.tupled, User.unapply)
 
     def emailIndex = index("users_ix_email", email, unique=true)
     def lnIndex    = index("users_ix_last_name", lastName)

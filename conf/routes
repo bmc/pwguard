@@ -6,8 +6,8 @@
 GET        /                              controllers.MainController.index
 
 POST       /logged-in-user                controllers.SessionController.getLoggedInUser
-GET        /login                         controllers.SessionController.login
-GET        /logout                        controllers.SessionController.logout
+POST       /login                         controllers.SessionController.login
+POST       /logout                        controllers.SessionController.logout
 
 
 GET        /angular/template/*path        controllers.MainController.getAngularTemplate(path: String)

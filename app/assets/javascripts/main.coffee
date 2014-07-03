@@ -7,6 +7,7 @@
 ###############################################################################
 
 requiredModules = ['ngRoute',
+                   'ngAnimate',
                    'route-segment',
                    'view-segment',
                    'ngCookies',
@@ -39,7 +40,8 @@ initApp = ($rootScope,
            $location,
            $timeout,
            pwgAjax,
-           pwgFlash) ->
+           pwgFlash,
+           pwgConfirm) ->
 
   $rootScope.loggedInUser  = null
   $rootScope.$routeSegment = $routeSegment
@@ -53,10 +55,10 @@ initApp = ($rootScope,
       if segment?
         # We've logged in. Only honor the browser-specified URL if it's not
         # one of the pre-login ones.
-        unless segment[0..8] is "dashboard"
-          segment = "dashboard"
+        unless segment[0..8] is "home"
+          segment = "home"
       else
-        segment = "dashboard"
+        segment = "home"
       $rootScope.redirectToSegment segment
     else
       $rootScope.redirectToSegment "login"
@@ -97,7 +99,7 @@ initApp = ($rootScope,
     # function.
 
     if $rootScope.loggedIn()
-      confirm.simple "Really log out?", (confirmed) ->
+      pwgConfirm.confirm "Really log out?", (confirmed) ->
         if confirmed
           always = () ->
             $rootScope.loggedInUser = null
@@ -151,10 +153,19 @@ pwguardApp.run initApp
 pwguardApp.controller 'MainCtrl', ($scope, $rootScope) ->
   return
 
-pwguardApp.controller 'NavbarCtrl', ($scope, $rootScope) ->
-  return
+pwguardApp.controller 'NavbarCtrl', ($scope, $rootScope, pwgAjax) ->
+  $scope.XXXlogout = ->
+    handleSuccess = (data) ->
+      console.log "Logout successful"
+      $rootScope.redirectToSegment("login")
 
-pwguardApp.controller 'LoginCtrl', ($scope, $rootScope) ->
+    url = $("#config").data('logout-url')
+    data =
+      email: $rootScope.loggedInUser.email
+    pwgAjax.post url, data, handleSuccess
+
+
+pwguardApp.controller 'LoginCtrl', ($scope, $rootScope, pwgAjax, pwgFlash) ->
   $scope.email     = null
   $scope.password  = null
   $scope.canSubmit = false
@@ -165,8 +176,26 @@ pwguardApp.controller 'LoginCtrl', ($scope, $rootScope) ->
   $scope.$watch 'password', (newValue, oldValue) ->
     checkSubmit()
 
+  $scope.login = ->
+    if $scope.canSubmit
+      handleLogin = (data) ->
+        console.log "Login successful"
+        $rootScope.redirectToSegment('home')
+
+      handleFailure = (data) ->
+        # Nothing to do.
+        return
+
+      url = $("#config").data("login-url")
+      data =
+        email: $scope.email
+        password: $scope.password
+
+      pwgAjax.post url, data, handleLogin, handleFailure
+
   checkSubmit = ->
     $scope.canSubmit = nonEmpty($scope.email) and nonEmpty($scope.password)
+
 
   nonEmpty = (s) ->
     s? and s.trim().length > 0
