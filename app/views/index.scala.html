@@ -55,6 +55,7 @@
 
     @scriptAsset("angular-util.js")
     @scriptAsset("angular-routes.js")
+    @scriptAsset("angular-directives.js")
     @scriptAsset("angular-services.js")
     @scriptAsset("main.js")
 
@@ -67,37 +68,14 @@
   <body ng-app="PWGuardApp">
     <div ng-controller="MainCtrl">
 
-      <div id="navbar" class="grid" ng-controller="NavbarCtrl">
-        <div class="unit whole">
-          <div id="logo">
-            <i class="fa fa-lock"></i> PWGuard
-          </div>
-          <div id="login-status" ng-show="loggedIn()">
-            <a href="javascript:void(0)" ng-click="logout()">Logout</a>
-          </div>
-          <div id="loading-spinner" ng-show="showSpinner">
-            <i class="fa fa-spinner fa-spin"></i>
-          </div>
-        </div>
+      @navbar()
+
+      <div ng-show="initializing" class="initializing">
+        Initializing. Please wait...
       </div>
 
-      <div id="content">
-          @* Flash block *@
-        <div class="unit whole" id="flash-block">
-          <div ng-show="flash.message.info" class="flash flash-info">
-            <button class="btn btn-tiny close" ng-click="flash.clearInfo()">
-              &times;
-            </button>
-            <div class="flash-message">{{flash.message.info}}</div>
-          </div>
-
-          <div ng-show="flash.message.error" class="flash flash-error">
-            <button class="btn btn-tiny close" ng-click="flash.clearError()">
-              &times;
-            </button>
-            <span class="flash-message">{{flash.message.error}}</span>
-          </div>
-        </div>
+      <div id="content" ng-hide="initializing">
+        @flash()
 
         <div app-view-segment="0"
              ng-show="segmentIsActive('login')">

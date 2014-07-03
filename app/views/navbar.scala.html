@@ -1,0 +1,15 @@
+@()
+
+<div id="navbar" class="grid" ng-controller="NavbarCtrl">
+  <div class="unit whole">
+    <div id="logo">
+      <i class="fa fa-lock"></i> PWGuard
+    </div>
+    <div id="login-status" ng-show="loggedIn()">
+      <a href="javascript:void(0)" ng-click="logout()">Logout</a>
+    </div>
+    <div id="loading-spinner" ng-show="showSpinner">
+      <i class="fa fa-spinner fa-spin"></i>
+    </div>
+  </div>
+</div>

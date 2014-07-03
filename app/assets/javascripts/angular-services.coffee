@@ -105,10 +105,7 @@ pwgServices.factory 'pwgSpinner', ($rootScope) ->
     $rootScope.showSpinner = false
 
 # ----------------------------------------------------------------------------
-# Simple flash service. Assumes the existence of an element configured like
-# this:
-#
-#   <div ng-show="flash.info"> {{flash.info}} </div>
+# Simple flash service. Use in conjunction with the pwg-flash directive.
 #
 # This service sets or clears the following variables in the root scope:
 #
@@ -119,16 +116,18 @@ pwgServices.factory 'pwgSpinner', ($rootScope) ->
 # The service provides the following functions. These functions are also
 # available on the $rootScope.flash object, for use in HTML.
 #
-# init()         - CALL THIS FIRST at application startup.
-# warn(msg)      - issue a warning message (by setting $rootScope.alertWarning)
-# info(msg)      - issue an info message
-# error(msg)     - issue an error message
-# clear(type)    - clear message(s) of the specified type. The types can be:
-#                    'warn', 'info', 'error', 'all'
-# clearInfo()    - convenience
-# clearWarning() - convenience
-# clearError()   - convenience
-# clearAll()     - convenience
+# init()             - CALL THIS FIRST at application startup.
+# warn(msg)          - issue a warning message
+# info(msg)          - issue an info message
+# error(msg)         - issue an error message
+# message(type, msg) - issue a message of the specified type. The types can
+#                      be 'warn', 'info', 'error', 'all'
+# clear(type)        - clear message(s) of the specified type. The types can
+#                      be 'warn', 'info', 'error', 'all'
+# clearInfo()        - convenience
+# clearWarning()     - convenience
+# clearError()       - convenience
+# clearAll()         - convenience
 # ----------------------------------------------------------------------------
 
 pwgServices.factory 'pwgFlash', ($rootScope, $timeout) ->
@@ -144,11 +143,11 @@ pwgServices.factory 'pwgFlash', ($rootScope, $timeout) ->
         m.warning = msg
         m.error   = msg
 
-  message = (type, msg) ->
+  showMessage = (type, msg) ->
     handleMessage type, msg
-    if msg?
-      cb = -> handleMessage type, null
-      $timeout cb, 5000
+    #if msg?
+    #  cb = -> handleMessage type, null
+    #  $timeout cb, 5000
 
   init: ->
     $rootScope.flash =
@@ -157,22 +156,27 @@ pwgServices.factory 'pwgFlash', ($rootScope, $timeout) ->
         error:   null
         warning: null
       warn:    (msg) ->
-        message 'warning', msg
+        showMessage 'warning', msg
       info:    (msg) ->
-        message 'info', msg
+        showMessage 'info', msg
       error:   (msg) ->
-        message 'error', msg
+        showMessage 'error', msg
+      message: (type, msg) ->
+        showMessage type, msg
       clear:   (type) ->
-        message type, null
+        showMessage type, null
       clearError: ->
-        message 'error', null
+        showMessage 'error', null
       clearWarning: ->
-        message 'warning', null
+        showMessage 'warning', null
       clearInfo: ->
-        message 'info', null
+        showMessage 'info', null
       clearAll: ->
         for type in ['info', 'warning', 'error']
-          message type, null
+          showMessage type, null
+
+  message: (type, msg) ->
+    showMessage type, msg
 
   warn: (msg) ->
     $rootScope.flash.warn msg

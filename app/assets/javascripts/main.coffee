@@ -16,7 +16,8 @@ requiredModules = ['ngRoute',
                    'tableSort',
                    'localytics.directives',
                    'http-auth-interceptor',
-                   'pwguard-services']
+                   'pwguard-services',
+                   'pwguard-directives']
 
 # Angular.js configuration function. Passed into the actual application, below,
 # when it is created.
@@ -46,6 +47,7 @@ initApp = ($rootScope,
   $rootScope.loggedInUser  = null
   $rootScope.$routeSegment = $routeSegment
   $rootScope.segmentOnLoad = window.segmentForURL($location.path())
+  $rootScope.initializing  = true
 
   pwgFlash.init() # initialize the flash service
 
@@ -74,6 +76,7 @@ initApp = ($rootScope,
       $location.path(url)
     else
       console.log "(BUG) No URL for segment #{segment}"
+    $rootScope.initializing = false
 
   $rootScope.segmentIsActive = (segment) ->
     ($routeSegment.name is segment) or ($routeSegment.startsWith("#{segment}."))
@@ -114,7 +117,8 @@ initApp = ($rootScope,
           url = $("#config").data("logout-url")
           data =
             "username": $rootScope.loggedInUser.username
-          $http.post(url, data).then onSuccess, onFailure
+
+          pwgAjax.post(url, data, onSuccess, onFailure)
 
     return
 
@@ -136,6 +140,8 @@ initApp = ($rootScope,
   url = $("#config").data("logged-in-user-url")
   pwgAjax.post(url, {}, onSuccess, onFailure)
 
+  pwgFlash.info 'test'
+  pwgFlash.error 'test'
 
 # The app itself.
 pwguardApp = angular.module('PWGuardApp', requiredModules)
