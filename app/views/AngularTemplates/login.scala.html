@@ -1,4 +1,4 @@
-<div id="login-screen">
+<div id="login-screen" ng-controller="LoginCtrl">
   <div class="grid">
     <div class="unit whole">
       <div id="login-panel">
@@ -11,7 +11,7 @@
               <label for="email">Email:</label>
             </div>
             <div class="input">
-              <input type="email" name="email"/>
+              <input type="email" name="email" ng-model="email"/>
             </div>
           </div>
 
@@ -20,13 +20,17 @@
               <label for="password">Password:</label>
             </div>
             <div class="input">
-              <input type="password" name="password"/>
+              <input type="password" name="password" ng-model="password"/>
             </div>
           </div>
 
           <div class="button-bar">
             <div class="buttons">
-              <button class="btn btn-primary btn-large">Sign In</button>
+              <button class="btn btn-primary btn-large"
+                      ng-disabled="!canSubmit"
+                      ng-click="login()">
+                Sign In
+              </button>
               <button class="btn btn-large">Clear</button>
             </div>
           </div>

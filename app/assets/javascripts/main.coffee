@@ -6,22 +6,22 @@
 # Angular JS stuff
 ###############################################################################
 
-requiredModules = ['angular-flash.service',
-                   'angular-flash.flash-alert-directive',
-                   'ngRoute',
+requiredModules = ['ngRoute',
                    'route-segment',
                    'view-segment',
                    'ngCookies',
-                   'angularSpinner',
                    'ui.bootstrap',
                    'ui.utils',
                    'tableSort',
                    'localytics.directives',
-                   'http-auth-interceptor']
+                   'http-auth-interceptor',
+                   'pwguard-services']
 
 # Angular.js configuration function. Passed into the actual application, below,
 # when it is created.
-configApp = ($routeSegmentProvider, $routeProvider, $locationProvider) ->
+configApp = ($routeSegmentProvider,
+             $routeProvider,
+             $locationProvider) ->
 
   # For now, don't use this. Allow Angular to use its "#" URLs. This approach
   # simplifies things on the backend, since it doesn't result in backend
@@ -33,11 +33,21 @@ configApp = ($routeSegmentProvider, $routeProvider, $locationProvider) ->
 
 # Initialize the application by storing some data and functions into the
 # root scope. Invoked when the app is defined, below.
-initApp = ($rootScope, $http, flash, $routeSegment, $location, $timeout) ->
+initApp = ($rootScope,
+           $http,
+           $routeSegment,
+           $location,
+           $timeout,
+           pwgAjax,
+           pwgFlash) ->
+
+  console.log pwgFlash
   $rootScope.loggedInUser  = null
-  $rootScope.loading       = true
   $rootScope.$routeSegment = $routeSegment
   $rootScope.segmentOnLoad = window.segmentForURL($location.path())
+
+  pwgFlash.init()
+  pwgFlash.error("Test")
 
   $rootScope.$watch "loggedInUser", (user, prevUser) ->
     if user?
@@ -111,11 +121,6 @@ initApp = ($rootScope, $http, flash, $routeSegment, $location, $timeout) ->
   # On initial load or reload, we need to determine whether the user is
   # still logged in, since a reload clears everything in the browser.
 
-  stopLoading = ->
-    stop = ->
-      $rootScope.loading = false
-    $timeout stop, 1000
-
   redirectIfLoggedOut = ->
     unless $rootScope.loggedIn()
       $rootScope.redirectToSegment("login")
@@ -123,15 +128,13 @@ initApp = ($rootScope, $http, flash, $routeSegment, $location, $timeout) ->
   onSuccess = (response) ->
     if response.data.loggedIn
       $rootScope.loggedInUser = response.data.user
-    stopLoading()
     redirectIfLoggedOut()
 
   onFailure = (response) ->
-    stopLoading()
     redirectIfLoggedOut()
 
   url = $("#config").data("logged-in-user-url")
-  $http.post(url, {}).then(onSuccess, onFailure)
+  pwgAjax.post(url, {}, onSuccess, onFailure)
 
 
 # The app itself.
@@ -154,7 +157,21 @@ pwguardApp.controller 'NavbarCtrl', ($scope, $rootScope) ->
   return
 
 pwguardApp.controller 'LoginCtrl', ($scope, $rootScope) ->
-  return
+  $scope.email     = null
+  $scope.password  = null
+  $scope.canSubmit = false
+
+  $scope.$watch 'email', (newValue, oldValue) ->
+    checkSubmit()
+
+  $scope.$watch 'password', (newValue, oldValue) ->
+    checkSubmit()
+
+  checkSubmit = ->
+    $scope.canSubmit = nonEmpty($scope.email) and nonEmpty($scope.password)
+
+  nonEmpty = (s) ->
+    s? and s.trim().length > 0
 
 pwguardApp.controller 'HomeCtrl', ($scope, $rootScope) ->
   return

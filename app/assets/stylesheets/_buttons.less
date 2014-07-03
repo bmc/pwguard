@@ -1,0 +1,45 @@
+.btn {
+  border-radius: 5px 5px 5px 5px;
+  padding:       10px;
+  border:        1px solid @buttonBorderColor;
+  min-width:     @normalMinButtonWidth;
+  min-height:    @normalMinButtonHeight;
+  background:    #dddddd;
+
+  &.btn-primary {
+    .gradientTopBottom(#4189c7, #236da4);
+
+    border: 1px solid #0f92a3;
+    color:  white;
+
+    &:disabled {
+      .gradientTopBottom(#90a8ab, #8b9aa6);
+    }
+  }
+  &.btn-tiny {
+    min-width:     @tinyMinButtonWidth;
+    min-height:    @tinyMinButtonHeight;
+    font-size:     @baseFontSize - 5px;
+    padding:       1px;
+    border-radius: 2px 2px 2px 2px;
+  }
+
+  &.btn-small {
+    min-width:     @smallMinButtonWidth;
+    min-height:    @smallMinButtonHeight;
+    font-size:     @baseFontSize - 3px;
+    padding:       5px;
+  }
+
+  &.btn-large {
+    min-width:     @largeMinButtonWidth;
+    min-height:    @largeMinButtonHeight;
+    font-size:     @baseFontSize + 3px;
+  }
+
+  &.btn-xlarge {
+    min-width:     @xlargeMinButtonWidth;
+    min-height:    @xlargeMinButtonHeight;
+    font-size:     @baseFontSize + 5px;
+  }
+}

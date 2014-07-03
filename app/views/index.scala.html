@@ -28,7 +28,6 @@
 
     @* Angular.js add-ons *@
 
-    @scriptStatic("angular-flash.js")
     @scriptStatic("ui-bootstrap-tpls-0.7.0.min.js")
     @scriptStatic("ui-utils.min.js")
     @scriptStatic("http-auth-interceptor.min.js")
@@ -38,8 +37,6 @@
     @stylesheetStatic("gridism.css")
     @scriptStatic("moment.min.js")
     @scriptStatic("http-auth-interceptor.js")
-    @scriptStatic("spin.min.js")
-    @scriptStatic("angular-spinner.min.js")
     @scriptStatic("chosen.jquery.min.js")
     @stylesheetStatic("chosen.min.css")
     @scriptStatic("angular-chosen.js")
@@ -57,6 +54,7 @@
 
     @scriptAsset("angular-util.js")
     @scriptAsset("angular-routes.js")
+    @scriptAsset("angular-services.js")
     @scriptAsset("main.js")
 
     <script type="text/javascript">
@@ -73,21 +71,37 @@
           <div id="logo">
             <i class="fa fa-lock"></i> PWGuard
           </div>
-          <div id="loading-spinner" ng-show="loading">
+          <div id="loading-spinner" ng-show="showSpinner">
             <i class="fa fa-spinner fa-spin"></i>
           </div>
         </div>
       </div>
+
       <div id="content">
+          @* Flash block *@
+        <div class="unit whole" id="flash-block">
+          <div ng-show="flash.message.info" class="flash flash-info">
+            <button class="btn btn-tiny close" ng-click="flash.clearInfo()">
+              &times;
+            </button>
+            <div class="flash-message">{{flash.message.info}}</div>
+          </div>
+
+          <div ng-show="flash.message.error" class="flash flash-error">
+            <button class="btn btn-tiny close" ng-click="flash.clearError()">
+              &times;
+            </button>
+            <span class="flash-message">{{flash.message.error}}</span>
+          </div>
+        </div>
+      </div>
 
         <div app-view-segment="0"
-             ng-show="segmentIsActive('login')"
-             ng-controller="LoginCtrl">
+             ng-show="segmentIsActive('login')">
         </div>
 
         <div app-view-segment="1"
-             ng-show="segmentIsActive('home')"
-             ng-controller="HomeCtrl">
+             ng-show="segmentIsActive('home')">
         </div>
       </div>
     </div>
