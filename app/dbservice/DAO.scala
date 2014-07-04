@@ -7,7 +7,7 @@ import play.api.Logger
   */
 object DAO {
   private val dal    = pwguard.global.Globals.DAL
-  private val logger = Logger("dbservice.DAO")
+  private val logger = Logger("pwguard.dbservice.DAO")
 
 
   val userDAO          = new UserDAO(dal, logger)

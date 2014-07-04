@@ -13,7 +13,7 @@ import scala.util.{Success, Try}
   */
 object MainController extends BaseController {
 
-  override protected val logger = Logger("controllers.MainController")
+  override protected val logger = Logger("pwguard.controllers.MainController")
 
   // -------------------------------------------------------------------------
   // Public methods

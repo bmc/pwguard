@@ -13,7 +13,7 @@
   }
 
   @media @tablet {
-    font-size: @baseFontSize - 2px;
+    font-size: @baseFontSize;
   }
 
   @media @desktop {
@@ -99,6 +99,11 @@
       &:hover {
         color:  @menuTextColor;
         cursor: pointer;
+      }
+
+      a {
+        text-decoration: none;
+        color:           @menuTextColor;
       }
 
     }

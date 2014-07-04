@@ -4,17 +4,20 @@
 -->
 <configuration>
 
-  <conversionRule conversionWord="coloredLevel" converterClass="play.api.Logger$ColoredLevel" />
+  <conversionRule conversionWord="coloredLevel"
+                  converterClass="play.api.Logger$ColoredLevel"/>
 
   <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>${application.home}/logs/application.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-      <fileNamePattern>${application.home}/logs/${HOSTNAME}.log.%i.log</fileNamePattern>
+      <fileNamePattern>${application.home}/logs/${HOSTNAME}.log.%i.log
+      </fileNamePattern>
       <minIndex>1</minIndex>
       <maxIndex>10</maxIndex>
     </rollingPolicy>
 
-    <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+    <triggeringPolicy
+        class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
       <maxFileSize>100MB</maxFileSize>
     </triggeringPolicy>
 
@@ -29,28 +32,29 @@
       <level>DEBUG</level>
     </filter>
 
-   </appender>
+  </appender>
 
-   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-     <encoder>
-       <pattern>[%boldYellow(%date)] %highlight(%level) %boldWhite(%logger{15}) %message%n%xException</pattern>
-     </encoder>
-     <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-       <level>DEBUG</level>
-     </filter>
-   </appender>
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>[%boldYellow(%date)] %highlight(%level) %boldWhite(%logger{15}) %message%n%xException</pattern>
+    </encoder>
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>DEBUG</level>
+    </filter>
+  </appender>
 
-   <logger name="play" level="INFO" />
-   <logger name="application" level="DEBUG" />
-   <logger name="controllers" level="DEBUG" />
-   <logger name="com.jolbox.bonecp" level="INFO"/>
-   <logger name="com.ning.http.client" level="WARN"/>
-   <logger name="ch.qos.logback.core" level="WARN"/>
-   <logger name="scala.slick.jdbc" level="DEBUG"/>
+  <logger name="play" level="INFO"/>
+  <logger name="application" level="DEBUG"/>
+  <logger name="controllers" level="DEBUG"/>
+  <logger name="com.jolbox.bonecp" level="INFO"/>
+  <logger name="com.ning.http.client" level="WARN"/>
+  <logger name="ch.qos.logback.core" level="WARN"/>
+  <logger name="scala.slick.jdbc" level="DEBUG"/>
+  <logger name="pwguard" level="DEBUG"/>
 
-   <root level="INFO">
-     <appender-ref ref="STDOUT" />
-     <appender-ref ref="FILE" />
-   </root>
+  <root level="INFO">
+    <appender-ref ref="STDOUT"/>
+    <appender-ref ref="FILE"/>
+  </root>
 
 </configuration>
