@@ -178,8 +178,8 @@ pwguardApp.controller 'NavbarCtrl', ($scope, $rootScope, pwgAjax) ->
 
 
 pwguardApp.controller 'LoginCtrl', ($scope, $rootScope, pwgAjax, pwgFlash) ->
-  $scope.email     = "admin@example.com" #null
-  $scope.password  = "admin" # null
+  $scope.email     = null
+  $scope.password  = null
   $scope.canSubmit = false
 
   $scope.$watch 'email', (newValue, oldValue) ->
@@ -208,6 +208,10 @@ pwguardApp.controller 'LoginCtrl', ($scope, $rootScope, pwgAjax, pwgFlash) ->
         password: $scope.password
 
       pwgAjax.post url, data, handleLogin, handleFailure
+
+  $scope.clear = ->
+    $scope.email    = null
+    $scope.password = null
 
   checkSubmit = ->
     $scope.canSubmit = nonEmpty($scope.email) and nonEmpty($scope.password)
