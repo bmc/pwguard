@@ -35,8 +35,9 @@ object SessionController extends BaseController {
           InternalServerError
         }
         case Right(sessionData) => {
-          val payload = Json.obj("user"   -> user.toJSON,
-                                 "mobile" -> userAgent.isMobile)
+          val userJson = user.toJSON ++ Json.obj("isMobile" -> userAgent.isMobile)
+          val payload = Json.obj("user" -> userJson)
+
           val sessionPairs = Seq(
             SessionOps.SessionKey  -> sessionData.sessionID
           )

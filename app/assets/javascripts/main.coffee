@@ -95,6 +95,7 @@ initApp = ($rootScope,
       displayName: user.displayName
       firstName:   user.firstName
       lastName:    user.lastName
+      isMobile:    user.isMobile
 
   $rootScope.logout = () ->
     # NOTE: See https://groups.google.com/forum/#!msg/angular/bsTbZ86WAY4/gdpKwc4f7ToJ
