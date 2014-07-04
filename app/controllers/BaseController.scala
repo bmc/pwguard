@@ -1,5 +1,6 @@
 package controllers
 
+import dbservice.DAO
 import models.User
 import play.api._
 import play.api.mvc._
@@ -20,18 +21,12 @@ trait BaseController {
   // Protected methods
   // ------------------------------------------------------------------------
 
-  /** Get the name of the currently logged-in user.
-    */
-  protected def currentUsername(request: RequestHeader): Option[String] = {
-    request.session.get(Security.username)
-  }
-
   /** `Action` wrapper for actions that do not require a logged-in user.
     * Play infers the body parser to use from the incoming HTTP headers.
     *
     * @param f  the caller's block of action code
     */
-  def UnsecuredAction(f: Request[AnyContent] => Future[Result]) = {
+  protected def UnsecuredAction(f: Request[AnyContent] => Future[Result]) = {
     Action.async { implicit request =>
       logAndHandleRequest(f, request)
     }
@@ -45,8 +40,8 @@ trait BaseController {
     * @tparam T         body parser type
     * @return           the Action
     */
-  def UnsecuredAction[T](bodyParser: BodyParser[T])
-                        (f: Request[T] => Future[Result]) = {
+  protected def UnsecuredAction[T](bodyParser: BodyParser[T])
+                                  (f: Request[T] => Future[Result]) = {
     Action.async(bodyParser) { implicit request =>
       logAndHandleRequest(f, request)
     }
@@ -92,25 +87,26 @@ trait BaseController {
     *               must return a `Future[SimpleResult]`
     * @return the actual action
     */
-  def ActionWithUser[T](bodyParser: BodyParser[T])
-                       (whenLoggedIn: (User, Request[T]) => Future[Result],
-                        noUser:       Request[T] => Future[Result]): Action[T] = {
+  protected def ActionWithUser[T](bodyParser: BodyParser[T])
+                                 (whenLoggedIn: (User, Request[T]) => Future[Result],
+                                  noUser:       Request[T] => Future[Result]): Action[T] = {
 
     Action.async(bodyParser) { implicit request =>
-/*
-      currentUsername(request).map { username =>
-        DAO.userDAO.findByName(username) match {
-          case Left(_)     => logAndHandleRequest(noUser, request)
-          case Right(None) => logAndHandleRequest(noUser, request)
-          case Right(Some(user)) => {
-            val f = { r: Request[T] => whenLoggedIn(user, r) }
-            logAndHandleRequest(f, request)
+      Future {
+        SessionOps.loggedInEmail(request).map { email =>
+          DAO.userDAO.findByEmail(email) match {
+            case Left(_)           => logAndHandleRequest(noUser, request)
+            case Right(None)       => logAndHandleRequest(noUser, request)
+            case Right(Some(user)) => {
+              val f = { r: Request[T] => whenLoggedIn(user, r) }
+              logAndHandleRequest(f, request)
+            }
           }
-        }
-      }.
+        }.
         getOrElse(logAndHandleRequest(noUser, request))
-*/
-      Future(Ok(""))
+
+        Ok("")
+      }
     }
 
   }

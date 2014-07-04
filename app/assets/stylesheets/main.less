@@ -5,19 +5,19 @@ body {
   font-family: Arial, Verdana;
 
   @media @phone {
-    font-size: @baseFontSize + 2px;
+    font-size: @phoneFontSize;
   }
 
   @media @tablet {
-    font-size: @baseFontSize + 2px;
+    font-size: @tabletFontSize;
   }
 
   @media @desktop {
-    font-size: @baseFontSize;
+    font-size: @desktopFontSize;
   }
 
-  @media @wide-desktop {
-    font-size: @baseFontSize;
+  @media @wideDesktop {
+    font-size: @desktopFontSize;
   }
 }
 
@@ -27,7 +27,7 @@ html, body {
 }
 
 header {
-  color: @headerColor;
+  color:         @headerColor;
   font-weight:   bold;
   font-size:     larger;
   font-family:   "Source Sans Pro", Verdana, Helvetica, Arial, sans-serif;
@@ -36,6 +36,37 @@ header {
 
 #content {
   margin-top: 10px;
+}
+
+.desktop-init-message-styles {
+  border:        1px solid @borderColor;
+  border-radius: 15px 15px 15px 15px;
+  padding:       30px;
+  background:    @panelBackground;
+}
+
+#initializing {
+  margin-top:  20px;
+  font-family: Verdana, Helvetica, Arial, sans-serif;
+  font-weight: bold;
+  color:       black;
+  font-size:   110%;
+  text-align:  center;
+
+  .message {
+    margin:        0 auto;
+    width:         30%;
+
+    @media @desktop {
+      .desktop-init-message-styles;
+    }
+
+    @media @wideDesktop {
+      .desktop-init-message-styles;
+    }
+
+  }
+
 }
 
 @import "_buttons.less";

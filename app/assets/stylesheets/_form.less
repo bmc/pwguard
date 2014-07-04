@@ -44,6 +44,16 @@ form {
       input[type="password"],
       input[type="text"] {
         .text-input-common;
+
+        @media @phone {
+          font-size: @phoneFontSize;
+        }
+        @media @tablet {
+          font-size: @tabletFontSize;
+        }
+        @media (@desktop) or (@wideDesktop) {
+          font-size: @desktopFontSize;
+        }
       }
     }
   }

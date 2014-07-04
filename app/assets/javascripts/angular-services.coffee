@@ -21,21 +21,16 @@ pwgServices.factory 'pwgAjax', ($http,
     onFailure(data) if onFailure?
 
   handleSuccess = (data, status, onSuccess, onFailure) ->
-    response =
-      data:   data
-      status: status
 
     # Angular doesn't seem to handle 401 responses properly, so we're
     # mimicking them with JSON.
 
     if data.error?
-      if data.status == 401
-        response.status = 401
 
       pwgFlash.error data.error.message if response.data.error.message?
-      onFailure(response) if onFailure?
+      onFailure(data) if onFailure?
     else
-      onSuccess(response)
+      onSuccess(data)
 
   http = (config, onSuccess, onFailure)->
     failed = (data, status, headers, config) ->

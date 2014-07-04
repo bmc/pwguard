@@ -52,12 +52,14 @@ initApp = ($rootScope,
   pwgFlash.init() # initialize the flash service
 
   $rootScope.$watch "loggedInUser", (user, prevUser) ->
+    return if user is prevUser
+
     if user?
       segment = $rootScope.segmentOnLoad
       if segment?
         # We've logged in. Only honor the browser-specified URL if it's not
         # one of the pre-login ones.
-        unless segment[0..8] is "home"
+        unless segment[0..4] is "home"
           segment = "home"
       else
         segment = "home"
@@ -76,16 +78,27 @@ initApp = ($rootScope,
       $location.path(url)
     else
       console.log "(BUG) No URL for segment #{segment}"
-    $rootScope.initializing = false
 
   $rootScope.segmentIsActive = (segment) ->
-    ($routeSegment.name is segment) or ($routeSegment.startsWith("#{segment}."))
+
+    active = ($routeSegment.name is segment) or ($routeSegment.startsWith("#{segment}."))
+    console.log "segmentIsActive('#{segment}'): Current Segment=#{$routeSegment.name}, active=#{active}"
+    active
 
   $rootScope.pathForSegment = window.pathForSegment
   $rootScope.hrefForSegment = window.hrefForSegment
 
   $rootScope.loggedIn = ->
     $rootScope.loggedInUser?
+
+  $rootScope.saveLoggedInUser = (user) ->
+    console.log user
+    $rootScope.loggedInUser =
+      email:       user.email
+      admin:       user.admin
+      displayName: user.displayName
+      firstName:   user.firstName
+      lastName:    user.lastName
 
   $rootScope.logout = () ->
     # NOTE: See https://groups.google.com/forum/#!msg/angular/bsTbZ86WAY4/gdpKwc4f7ToJ
@@ -115,33 +128,34 @@ initApp = ($rootScope,
             always()
 
           url = $("#config").data("logout-url")
-          data =
-            "username": $rootScope.loggedInUser.username
 
-          pwgAjax.post(url, data, onSuccess, onFailure)
+          pwgAjax.post(url, {}, onSuccess, onFailure)
 
     return
 
   # On initial load or reload, we need to determine whether the user is
   # still logged in, since a reload clears everything in the browser.
 
-  redirectIfLoggedOut = ->
-    unless $rootScope.loggedIn()
+  onSuccess = (response) ->
+    console.log response
+    $rootScope.initializing = false
+    if response.loggedIn
+      $rootScope.loggedInUser = response.user
+      $rootScope.redirectToSegment("home")
+    else
+      $rootScope.loggedInUser = null
       $rootScope.redirectToSegment("login")
 
-  onSuccess = (response) ->
-    if response.data.loggedIn
-      $rootScope.loggedInUser = response.data.user
-    redirectIfLoggedOut()
-
   onFailure = (response) ->
-    redirectIfLoggedOut()
+    $rootScope.initializing = false
+    $rootScope.loggedInUser = null
+    $rootScope.redirectToSegment("login")
 
-  url = $("#config").data("logged-in-user-url")
-  pwgAjax.post(url, {}, onSuccess, onFailure)
+  checkUser = ->
+    url = $("#config").data("logged-in-user-url")
+    pwgAjax.post(url, {}, onSuccess, onFailure)
 
-  pwgFlash.info 'test'
-  pwgFlash.error 'test'
+  $timeout checkUser, 1000
 
 # The app itself.
 pwguardApp = angular.module('PWGuardApp', requiredModules)
@@ -160,20 +174,12 @@ pwguardApp.controller 'MainCtrl', ($scope, $rootScope) ->
   return
 
 pwguardApp.controller 'NavbarCtrl', ($scope, $rootScope, pwgAjax) ->
-  $scope.XXXlogout = ->
-    handleSuccess = (data) ->
-      console.log "Logout successful"
-      $rootScope.redirectToSegment("login")
-
-    url = $("#config").data('logout-url')
-    data =
-      email: $rootScope.loggedInUser.email
-    pwgAjax.post url, data, handleSuccess
+  return
 
 
 pwguardApp.controller 'LoginCtrl', ($scope, $rootScope, pwgAjax, pwgFlash) ->
-  $scope.email     = null
-  $scope.password  = null
+  $scope.email     = "admin@example.com" #null
+  $scope.password  = "admin" # null
   $scope.canSubmit = false
 
   $scope.$watch 'email', (newValue, oldValue) ->
@@ -186,6 +192,10 @@ pwguardApp.controller 'LoginCtrl', ($scope, $rootScope, pwgAjax, pwgFlash) ->
     if $scope.canSubmit
       handleLogin = (data) ->
         console.log "Login successful"
+        console.log data
+        for k of data
+          console.log ">>> #{k}"
+        $rootScope.saveLoggedInUser(data.user)
         $rootScope.redirectToSegment('home')
 
       handleFailure = (data) ->

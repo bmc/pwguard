@@ -11,13 +11,13 @@ import play.api.Play.current
 
 import scala.concurrent.Future
 
-/** Session controller.
+/** Session controller. We implement our own simple session-based security.
   */
 object SessionController extends BaseController {
 
   // --------------------------------------------------------------------------
   // Public methods
-  // ------------------------------------------------------------------------
+  // --------------------------------------------------------------------------
 
   /** Handle JSON login from the web UI.
     *
@@ -28,7 +28,16 @@ object SessionController extends BaseController {
 
     Future {
       handleLogin(request) { user =>
-        Ok(user.toJSON).withSession(sessionParameters(user): _*)
+        SessionOps.newSessionDataFor(request, user) match {
+          case Left(error) => {
+            logger.error(s"Can't store session data for ${user.email}: $error")
+            InternalServerError
+          }
+          case Right(sessionData) => {
+            val payload = Json.obj("user" -> user.toJSON)
+            Ok(payload) withSession (SessionOps.SessionKey -> sessionData.sessionID)
+          }
+        }
       }
     }
   }
@@ -41,7 +50,8 @@ object SessionController extends BaseController {
     Future {
       val NotLoggedIn = Json.obj("loggedIn" -> false)
 
-      val json = currentUsername(request).map { email =>
+      val json = SessionOps.loggedInEmail(request).map { email =>
+        logger.error(s"*** $email")
         DAO.userDAO.findByEmail(email) match {
           case Left(error) => {
             logger.error(s"Error loading presumably logged-in user $email")
@@ -59,28 +69,27 @@ object SessionController extends BaseController {
         }
       }.
       getOrElse(NotLoggedIn)
-
+logger.error(s">>> $json")
       Ok(json)
     }
   }
 
   /** Log the current user out of the system.
     */
-  def logout = SecuredJSONAction { (user: User, request: Request[JsValue]) =>
+  def logout = SecuredAction { (user: User, request: Request[Any]) =>
     Future {
       val json = request.body
-      val resultOpt: Option[Result] =
-        for { email <- (json \ "email").asOpt[String] }
-        yield {
-          logger.info { s"User $email logged out."}
-          Ok("").withNewSession
-        }
-      resultOpt.getOrElse(BadRequest)
+      SessionOps.currentSessionData(request) map { data =>
+        SessionOps.clearSessionData(data.sessionID)
+      }
+
+      Ok("").withNewSession
     }
   }
+
   // --------------------------------------------------------------------------
   // Private methods
-  // ------------------------------------------------------------------------
+  // --------------------------------------------------------------------------
 
   private def handleLogin(request: Request[JsValue])
                          (onSuccess: User => Result): Result = {

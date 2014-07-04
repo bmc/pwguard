@@ -21,6 +21,7 @@ window.setRoutes = ($routeSegmentProvider, $routeProvider) ->
     $routeSegmentProvider.when(segments[segment], segment)
 
   # Define each segment's behavior and nesting.
+
   $routeSegmentProvider.segment "login",
     templateUrl: templateURL("login.html")
     controller:  'LoginCtrl'
