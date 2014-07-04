@@ -51,7 +51,6 @@ object SessionController extends BaseController {
       val NotLoggedIn = Json.obj("loggedIn" -> false)
 
       val json = SessionOps.loggedInEmail(request).map { email =>
-        logger.error(s"*** $email")
         DAO.userDAO.findByEmail(email) match {
           case Left(error) => {
             logger.error(s"Error loading presumably logged-in user $email")
@@ -69,7 +68,6 @@ object SessionController extends BaseController {
         }
       }.
       getOrElse(NotLoggedIn)
-logger.error(s">>> $json")
       Ok(json)
     }
   }

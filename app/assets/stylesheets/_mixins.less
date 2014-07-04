@@ -1,5 +1,5 @@
 /* Simple gradient from one color (at the top) to another color (at the bottom). */
-.gradientTopBottom(@fromColor, @toColor, @fromPercent: 0%, @toPercent: 100%) {
+.gradient-top-bottom(@fromColor, @toColor, @fromPercent: 0%, @toPercent: 100%) {
   background: @fromColor; /* Old browsers */
   /*
     background: -moz-linear-gradient(top, @fromColor 0%, @toColor 100%); /* FF3.6+ */
@@ -8,5 +8,17 @@
   background: -o-linear-gradient(top, @fromColor 0%, @toColor 100%); /* Opera 11.10+ */
   background: -ms-linear-gradient(top, @fromColor 0%, @toColor 100%); /* IE10+ */
   background: linear-gradient(to bottom, @fromColor 0%, @toColor 100%); /* W3C */
+}
+
+.border-gradient-vertical(@topColor, @bottomColor, @widthLeft: 1px, @widthRight: 1px, @style: solid) {
+  border-left-width:         @widthLeft;
+  border-right-width:        @widthRight;
+  border-left-style:         @style;
+  border-right-style:        @style;
+  -webkit-border-image: -webkit-gradient(linear, 0 0, 0 100%, from(@topColor), to(@bottomColor)) 1 100%;
+  -webkit-border-image:-webkit-linear-gradient(@topColor, @bottomColor) 1 100%;
+  -moz-border-image:    -moz-linear-gradient(@topColor, @bottomColor) 1 100%;
+  -o-border-image:      -o-linear-gradient(@topColor, @bottomColor) 1 100%;
+  border-image:         linear-gradient(to bottom, @topColor, @bottomColor) 1 100%;
 }
 

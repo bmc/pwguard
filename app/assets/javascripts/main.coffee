@@ -80,10 +80,7 @@ initApp = ($rootScope,
       console.log "(BUG) No URL for segment #{segment}"
 
   $rootScope.segmentIsActive = (segment) ->
-
-    active = ($routeSegment.name is segment) or ($routeSegment.startsWith("#{segment}."))
-    console.log "segmentIsActive('#{segment}'): Current Segment=#{$routeSegment.name}, active=#{active}"
-    active
+    ($routeSegment.name is segment) or ($routeSegment.startsWith("#{segment}."))
 
   $rootScope.pathForSegment = window.pathForSegment
   $rootScope.hrefForSegment = window.hrefForSegment
@@ -92,7 +89,6 @@ initApp = ($rootScope,
     $rootScope.loggedInUser?
 
   $rootScope.saveLoggedInUser = (user) ->
-    console.log user
     $rootScope.loggedInUser =
       email:       user.email
       admin:       user.admin
@@ -137,7 +133,6 @@ initApp = ($rootScope,
   # still logged in, since a reload clears everything in the browser.
 
   onSuccess = (response) ->
-    console.log response
     $rootScope.initializing = false
     if response.loggedIn
       $rootScope.loggedInUser = response.user
@@ -155,7 +150,7 @@ initApp = ($rootScope,
     url = $("#config").data("logged-in-user-url")
     pwgAjax.post(url, {}, onSuccess, onFailure)
 
-  $timeout checkUser, 1000
+  checkUser()
 
 # The app itself.
 pwguardApp = angular.module('PWGuardApp', requiredModules)
@@ -182,6 +177,10 @@ pwguardApp.controller 'LoginCtrl', ($scope, $rootScope, pwgAjax, pwgFlash) ->
   $scope.password  = null
   $scope.canSubmit = false
 
+  #### DEBUG
+  $scope.email = "admin@example.com"; $scope.password = "admin"
+  #### END DEBUG
+
   $scope.$watch 'email', (newValue, oldValue) ->
     checkSubmit()
 
@@ -191,10 +190,6 @@ pwguardApp.controller 'LoginCtrl', ($scope, $rootScope, pwgAjax, pwgFlash) ->
   $scope.login = ->
     if $scope.canSubmit
       handleLogin = (data) ->
-        console.log "Login successful"
-        console.log data
-        for k of data
-          console.log ">>> #{k}"
         $rootScope.saveLoggedInUser(data.user)
         $rootScope.redirectToSegment('home')
 

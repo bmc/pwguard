@@ -1,0 +1,106 @@
+
+@menuBorderColor:            lighten(@logoColor, 10%);
+@menuTextColor:              @logoColor;
+@menuEntryHorizontalPadding: 15px;
+@menuEntryVerticalPadding:   11px;
+@transitionEffect:           ease-out;
+@transitionDuration:         0.4s;
+
+.dropdown-menu-wrapper {
+
+  @media @phone {
+    font-size: @baseFontSize - 2px;
+  }
+
+  @media @tablet {
+    font-size: @baseFontSize - 2px;
+  }
+
+  @media @desktop {
+    font-size: @baseFontSize - 2px;
+  }
+
+  @media @wideDesktop {
+    font-size: @baseFontSize - 2px;
+  }
+
+  max-width: 200px;
+
+  &.active {
+    transition: all @transitionDuration @transitionEffect;
+
+    &:after {
+      border-width: 0 6px 6px 6px;
+    }
+
+    .dropdown-menu {
+      opacity:        1;
+      pointer-events: auto;
+    }
+  }
+
+  .dropdown-menu-label {
+    &:hover {
+      cursor: pointer;
+      color:  @logoColor;
+    }
+
+    /* Size and position */
+
+    position:       relative; // Enable absolute position for children.
+
+    width:          100%;
+    margin:         0 auto;
+    top:            0px;
+    padding-top:    @menuEntryVerticalPadding;
+    padding-bottom: 0;
+    padding-left:   @menuEntryHorizontalPadding;
+    padding-right:  @menuEntryHorizontalPadding;
+
+    /* Styling */
+    //background:  @menuBackground;
+    //border-left: 5px solid gray;
+  }
+
+  .dropdown-menu {
+    /* Size and position */
+
+    position:  absolute;
+    top:       @navbarHeight - 15px;
+    left:      25px;
+    right:     0px;
+    max-width: 150px;
+
+    /* Styling */
+
+    background:    @menuBackground;
+    transition:    all @transitionDuration @transitionEffect;
+    list-style:    none;
+    padding-left:  0;
+    padding-right: 0;
+
+    /* Hiding */
+
+    opacity:        0;
+    pointer-events: none;
+    z-index:        9999;
+    //.border-gradient-vertical(darken(@menuBorderColor, 20%), @menuBackground);
+
+    li {
+      padding-left:    @menuEntryHorizontalPadding;
+      padding-right:   0;
+      padding-top:     @menuEntryVerticalPadding;
+      padding-bottom:  @menuEntryVerticalPadding;
+      color:           black;
+      margin-left:     0;
+
+      .gradient-top-bottom(@menuBackground, darken(@menuBackground, 5%));
+
+      &:hover {
+        color:  @menuTextColor;
+        cursor: pointer;
+      }
+
+    }
+  }
+}

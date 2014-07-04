@@ -1,10 +1,10 @@
 
 #navbar {
-  height: 100px;
-  background-color: @panelBackground;
-  width: 100%;
-  margin: 0;
-  padding: 0;
+  height:           @navbarHeight;
+  background-color: @navbarBackground;
+  width:            100%;
+  margin:           0;
+  padding:          0;
 }
 
 #logo {
@@ -26,6 +26,42 @@
 
   @media @wideDesktop {
     font-size: 40px;
+  }
+}
+
+#navbar-menu-bar {
+  @media @phone {
+    font-size: @phoneFontSize - 2px;
+  }
+
+  @media @tablet {
+    font-size: @tabletFontSize - 2px;
+  }
+
+  @media @desktop {
+    font-size: @desktopFontSize - 2px;
+  }
+
+  @media @wideDesktop {
+    font-size: @desktopFontSize - 2px;
+  }
+
+  #user-menu-link {
+    text-decoration:  none;
+    color:            #444444;
+/*
+    background-color: @menuBackgroundColor;
+*/
+    padding-bottom:   10px;
+    padding-left:     0;
+    padding-right:    5px;
+    padding-top:      0;
+/*
+    border-top:       1px solid @menuBorderColor;
+    border-right:     1px solid @menuBorderColor;
+    border-left:      1px solid @menuBorderColor;
+    border-radius:    3px 3px 3px 3px;
+*/
   }
 }
 
