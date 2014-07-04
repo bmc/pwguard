@@ -7,6 +7,8 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 // scalaVersion := "2.11.1"
 scalaVersion := "2.10.2"
 
+scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked")
+
 libraryDependencies ++= Seq(
   jdbc,
   cache,
@@ -18,7 +20,8 @@ libraryDependencies ++= Seq(
   "org.mindrot"         % "jbcrypt"               % "0.3m",
   "joda-time"           % "joda-time"             % "2.3",
   "org.apache.commons"  % "commons-math3"         % "3.3",
-  "net.sf.uadetector"   % "uadetector-resources"  % "2014.04"
+  "net.sf.uadetector"   % "uadetector-resources"  % "2014.04",
+  "com.google.guava"    % "guava"                 % "17.0"
 )
 
 includeFilter in (Assets, LessKeys.less) := "*.less"

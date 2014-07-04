@@ -16,7 +16,8 @@ object SessionOps {
   private val SessionTimeout = Duration.standardHours(1)
   private val logger         = pwguard.global.Globals.mainLogger
 
-  val SessionKey = "PWGuard-Session-ID"
+  val SessionKey  = "PWGuard-Session-ID"
+  val IsMobileKey = "PWGuard-Is-Mobile"
 
   // --------------------------------------------------------------------------
   // Public methods

@@ -12,10 +12,12 @@ CREATE TABLE IF NOT EXISTS users(
 );
 
 -- Default admin user (admin@example.com), with password "admin".
-INSERT INTO users(email, encrypted_password, pw_entry_encryption_key, active, admin)
+INSERT INTO users(email, encrypted_password, pw_entry_encryption_key,
+                  first_name, active, admin)
 VALUES ('admin@example.com',
         '$2a$10$dod.88izAFGzSxwgMT9/Ou6xqqjX5shU9wlfKEtuc4P3DinTA2R9q',
         '',
+        'Administrator',
         1,
         1);
 

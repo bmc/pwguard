@@ -8,6 +8,8 @@ import play.api.mvc._
 import play.api.mvc.Results._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.Play.current
+import pwguard.global.Globals
+import util.UserAgent.UserAgent
 
 import scala.concurrent.Future
 
@@ -26,18 +28,34 @@ object SessionController extends BaseController {
   def login = UnsecuredAction(BodyParsers.parse.json) {
     implicit request: Request[JsValue] =>
 
-    Future {
-      handleLogin(request) { user =>
-        SessionOps.newSessionDataFor(request, user) match {
-          case Left(error) => {
-            logger.error(s"Can't store session data for ${user.email}: $error")
-            InternalServerError
-          }
-          case Right(sessionData) => {
-            val payload = Json.obj("user" -> user.toJSON)
-            Ok(payload) withSession (SessionOps.SessionKey -> sessionData.sessionID)
-          }
+    def resultWithSession(user: User, userAgent: UserAgent): Result = {
+      SessionOps.newSessionDataFor(request, user) match {
+        case Left(error) => {
+          logger.error(s"Can't store session data for ${user.email}: $error")
+          InternalServerError
         }
+        case Right(sessionData) => {
+          val payload = Json.obj("user"   -> user.toJSON,
+                                 "mobile" -> userAgent.isMobile)
+          val sessionPairs = Seq(
+            SessionOps.SessionKey  -> sessionData.sessionID
+          )
+          Ok(payload) withSession (sessionPairs: _*)
+        }
+      }
+    }
+
+    val uaService = Globals.UserAgentDecoderService
+    val userAgent = request.headers.get("User-Agent").getOrElse("")
+    val fLogin = handleLogin(request)
+    val fUserAgent = uaService.decodeUserAgent(userAgent)
+
+    for { userEither <- fLogin
+          userAgent  <- fUserAgent }
+    yield {
+      userEither match {
+        case Left(result) => result
+        case Right(user)  => resultWithSession(user, userAgent)
       }
     }
   }
@@ -89,49 +107,52 @@ object SessionController extends BaseController {
   // Private methods
   // --------------------------------------------------------------------------
 
-  private def handleLogin(request: Request[JsValue])
-                         (onSuccess: User => Result): Result = {
-    val json = request.body
-    val resultOpt: Option[Either[String, User]] =
-      for { email    <- (json \ "email").asOpt[String]
-            password <- (json \ "password").asOpt[String] }
-      yield {
-        DAO.userDAO.findByEmail(email).fold(
-          { error => Left(error) },
-          { userOpt =>
+  private def handleLogin(request: Request[JsValue]):
+    Future[Either[Result, User]] = {
 
-            userOpt.map { user: User =>
-              if (user.active &&
-                UserHelper.passwordMatches(password, user.encryptedPassword)) {
-                Right(user)
-              }
-              else {
-                Left("Bad login")
-              }
-            }.
-            getOrElse(Left("Bad login"))
-          }
-        )
-      }
+    Future {
+      val json = request.body
+      val resultOpt: Option[Either[String, User]] =
+        for { email    <- (json \ "email").asOpt[String]
+              password <- (json \ "password").asOpt[String] }
+        yield {
+          DAO.userDAO.findByEmail(email).fold(
+            { error => Left(error) },
+            { userOpt =>
 
-    // If any of the JSON parameters are missing, resultOpt will be None.
-    // Otherwise, it'll contain the result of the lookup (which might be
-    // a failure).
-    resultOpt match {
-      case None => {
-        logger.error(s"Missing parameter(s) in JSON login request: $json")
-        Forbidden
-      }
+              userOpt.map { user: User =>
+                if (user.active &&
+                  UserHelper.passwordMatches(password, user.encryptedPassword)) {
+                  Right(user)
+                }
+                else {
+                  Left("Bad login")
+                }
+              }.
+              getOrElse(Left("Bad login"))
+            }
+          )
+        }
 
-      case Some(Left(error)) => {
-        logger.error(s"Login failure: $json: $error")
-        // For some reason, Angular.js doesn't dispatch 401 responses
-        // properly, so we handle them specially.
-        Ok(jsonError(Some("Login failed."), Some(401)))
-      }
+      // If any of the JSON parameters are missing, resultOpt will be None.
+      // Otherwise, it'll contain the result of the lookup (which might be
+      // a failure).
+      resultOpt match {
+        case None => {
+          logger.error(s"Missing parameter(s) in JSON login request: $json")
+          Left(Forbidden)
+        }
 
-      case Some(Right(user)) => {
-        onSuccess(user)
+        case Some(Left(error)) => {
+          logger.error(s"Login failure: $json: $error")
+          // For some reason, Angular.js doesn't dispatch 401 responses
+          // properly, so we handle them specially.
+          Left(Ok(jsonError(Some("Login failed."), Some(401))))
+        }
+
+        case Some(Right(user)) => {
+          Right(user)
+        }
       }
     }
   }

@@ -1,7 +1,10 @@
 package pwguard.global
 
 import play.api.{Logger, GlobalSettings, Application}
+import play.api.libs.concurrent.Akka
 import play.api.Play.current
+import services.UserAgentDecoder
+import scala.language.postfixOps;
 import scala.slick.driver.{
   MySQLDriver,
   PostgresDriver,
@@ -9,17 +12,21 @@ import scala.slick.driver.{
   JdbcProfile
 }
 
+
 /** Global object, for startup. DON'T IMPORT THIS! Import Globals, instead.
   */
 object Global extends GlobalSettings {
     // No choice but to use vars here.
   private[global] var _dal: Option[dbservice.DAL] = None
   private[global] var _db: Option[scala.slick.jdbc.JdbcBackend#Database] = None
+  private[global] var _uaService: Option[UserAgentDecoder] = None
+
   private val logger = Logger("pwguard.global.init")
 
   override def onStart(app: Application) {
     super.onStart(app)
     initDB(app)
+    initServices(app)
   }
 
   private def initDB(app: Application) {
@@ -74,6 +81,11 @@ object Global extends GlobalSettings {
     _dal = Some(dal)
     _db = Some(db)
   }
+
+  def initServices(app: Application) {
+    val akkaSystem = Akka.system(app)
+    _uaService = Some(new UserAgentDecoder(akkaSystem))
+  }
 }
 
 /** MainController globals.
@@ -81,6 +93,7 @@ object Global extends GlobalSettings {
 object Globals {
   val mainLogger = Logger("pwguard.application")
 
-  lazy val DAL = Global._dal.get
-  lazy val DB = Global._db.get
+  lazy val DAL                     = Global._dal.get
+  lazy val DB                      = Global._db.get
+  lazy val UserAgentDecoderService = Global._uaService.get
 }
