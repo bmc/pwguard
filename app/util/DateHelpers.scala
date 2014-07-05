@@ -2,8 +2,9 @@ package util
 
 import java.sql.Timestamp
 import java.util.{ Calendar, Date }
-import org.joda.time.format.{ ISODateTimeFormat, DateTimeFormatter }
-import org.joda.time.DateTime
+import org.joda.time.format.ISODateTimeFormat
+import org.joda.time.{DateTime => JodaDateTime, Duration => JodaDuration}
+import scala.concurrent.duration.{Duration, MILLISECONDS}
 import scala.util.{ Try, Success, Failure }
 
 /** Helpers for Date and Timestamp classes.
@@ -20,7 +21,7 @@ object DateHelpers {
     * @return `Right(dt)` with a Joda `DateTime`, on success.
     *         `Left(error)` on failure.
     */
-  def parseISODateTime(date: String): Either[String, DateTime] = {
+  def parseISODateTime(date: String): Either[String, JodaDateTime] = {
     Try(isoDateParser.parseDateTime(date)) match {
       case Success(dt) => Right(dt)
       case Failure(e)  => Left(e.getMessage)
@@ -33,7 +34,7 @@ object DateHelpers {
     *
     * @return The ISO time string
     */
-  def formatISODate(d: DateTime): String = d.toDateTimeISO.toString
+  def formatISODate(d: JodaDateTime): String = d.toDateTimeISO.toString
 
   /** Format a Java date as an ISO date-time.
     *
@@ -41,7 +42,7 @@ object DateHelpers {
     *
     * @return The ISO time string
     */
-  def formatISODate(d: Date): String = formatISODate(new DateTime(d))
+  def formatISODate(d: Date): String = formatISODate(new JodaDateTime(d))
 
   /** Implicits. Import to get them.
     */
@@ -61,7 +62,7 @@ object DateHelpers {
         *
         * @return the datetime
         */
-      def toDateTime: DateTime = new DateTime(timestamp.getTime)
+      def toDateTime: JodaDateTime = new JodaDateTime(timestamp.getTime)
     }
 
     /** Enriched Date
@@ -106,12 +107,35 @@ object DateHelpers {
 
     /** Enriched Joda DateTime.
       */
-    implicit class RichDateTime(datetime: DateTime) {
+    implicit class RichJodaDateTime(datetime: JodaDateTime) {
+
       /** Convert this datetime to a SQL timestamp object.
         *
         * @return the timestamp
         */
       def toTimestamp: Timestamp = new Timestamp(datetime.getMillis)
+    }
+
+    /** Enriched Joda Duration
+      */
+    implicit class RichJodaDuration(duration: JodaDuration) {
+
+      /** Convert this object to a Scala concurrent duration.
+        *
+        * @return the Scala duration
+        */
+      def toScalaDuration: Duration = Duration(duration.getMillis, MILLISECONDS)
+    }
+
+    /** Enriched Scala duration.
+      */
+    implicit class RichScalaDuration(duration: Duration) {
+
+      /** Convert this object to a Joda duration.
+        *
+        * @return the Joda duration
+        */
+      def toJodaDuration: JodaDuration = JodaDuration.millis(duration.toMillis)
     }
   }
 }
