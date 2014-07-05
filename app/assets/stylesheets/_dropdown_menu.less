@@ -1,6 +1,4 @@
 
-@menuBorderColor:            lighten(@logoColor, 10%);
-@menuTextColor:              @logoColor;
 @menuEntryHorizontalPadding: 15px;
 @menuEntryVerticalPadding:   11px;
 @transitionEffect:           ease-out;
@@ -40,9 +38,11 @@
   }
 
   .dropdown-menu-label {
+    color: @menuTextColor;
+
     &:hover {
       cursor: pointer;
-      color:  @logoColor;
+      color:  @menuHoverTextColor;
     }
 
     /* Size and position */
@@ -91,19 +91,19 @@
       padding-right:   0;
       padding-top:     @menuEntryVerticalPadding;
       padding-bottom:  @menuEntryVerticalPadding;
-      color:           black;
+      color:           @menuTextColor;
       margin-left:     0;
 
       .gradient-top-bottom(@menuBackground, darken(@menuBackground, 5%));
 
       &:hover {
-        color:  @menuTextColor;
+        color:  @menuHoverTextColor;
         cursor: pointer;
       }
 
       a {
         text-decoration: none;
-        color:           @menuTextColor;
+        color:           inherit;
       }
 
     }
