@@ -25,7 +25,7 @@ pwgDirectives.directive 'pwgFlash', ($compile, pwgFlash, $rootScope) ->
       scope.message = null
 
 # -----------------------------------------------------------------------------
-# FlexNav
+# Drop down menu
 # -----------------------------------------------------------------------------
 
 menuNextID = 0

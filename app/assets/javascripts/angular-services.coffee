@@ -194,6 +194,3 @@ pwgServices.factory 'pwgFlash', ($rootScope, $timeout) ->
   clearWarning: ->
     $rootScope.flash.clearWarning()
 
-# ----------------------------------------------------------------------------
-# Confirmation dialog, and related models
-# ----------------------------------------------------------------------------
