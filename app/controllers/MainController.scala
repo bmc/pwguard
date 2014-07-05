@@ -28,7 +28,20 @@ object MainController extends BaseController {
     * development.
     */
   def static(path: String) = Action.async {
-    sendFile(s"static/$path")
+    // Search both "static" and "bower_components".
+    Future {
+      val files = Seq(s"static/bower/$path",
+                      s"static/$path",
+                      s"static/javascripts/$path")
+        .map { Play.getFile(_) }
+        .dropWhile { f => ! (f.exists) }
+        .take(1)
+
+      files match {
+        case Nil       => NotFound
+        case f :: tail => Ok.sendFile(content = f, inline = true)
+      }
+    }
   }
 
   /** Retrieve an Angular.js template. Most of the time, these templates

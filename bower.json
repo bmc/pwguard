@@ -1,0 +1,40 @@
+{
+  "name": "pwguard",
+  "version": "0.1.0",
+  "authors": [
+    "Brian Clapper <bmc@clapper.org>"
+  ],
+  "description": "A password vault",
+  "keywords": [
+    "password",
+    "vault",
+    "angularjs"
+  ],
+  "dependencies": {
+    "angular": "1.2.19",
+    "angular-route": "1.2.19",
+    "angular-cookies": "1.2.19",
+    "angular-animate": "1.2.19",
+    "angular-tablesort": "1.0.4",
+    "angular-route-segment": "1.3.0",
+    "modernizr": "2.8.3",
+    "momentjs": "2.7.0",
+    "chosen": "https://github.com/harvesthq/chosen/releases/download/v1.1.0/chosen_v1.1.0.zip",
+    "angular-chosen": "*",
+    "angular-ui-utils": "~0.1.1",
+    "jquery-ui": "1.11.0",
+    "gridism": "~0.2.1",
+    "font-awesome": "~4.1.0",
+    "jquery": "1.11.1"
+  },
+  "license": "New BSD",
+  "homepage": "http://software.clapper.org/pwguard",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

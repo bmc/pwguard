@@ -5,6 +5,6 @@
 
 @(file: String, media: String = "screen")
 
-@defining(s"/static/stylesheets/$file") { src =>
+@defining(s"/static/$file") { src =>
   @stylesheet(src, media)
 }
