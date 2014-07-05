@@ -5,8 +5,7 @@ package util.session
 
 import org.joda.time.{Duration, DateTime}
 import org.apache.commons.math3.random.RandomDataGenerator
-import java.security.SecureRandom
-import scala.util.Random
+import util.EitherOptionHelpers.Implicits._
 
 /** Session cookie information.
   *
@@ -16,11 +15,13 @@ import scala.util.Random
   * @param sessionID       user's session ID
   * @param ipAddress       user's IP address
   * @param validUntil      expiration date/time
+  * @param duration        stored session duration
   */
 case class SessionData(userIdentifier: String,
                        sessionID:      String,
                        ipAddress:      String,
-                       validUntil:     DateTime)
+                       validUntil:     DateTime,
+                       duration:       Duration)
 
 /** Utility methods.
   */
@@ -47,7 +48,8 @@ object SessionUtil {
     SessionData(userIdentifier = userIdentifier,
                 sessionID      = rdg.nextSecureHexString(32),
                 ipAddress      = ipAddress,
-                validUntil     = DateTime.now.plus(duration))
+                validUntil     = DateTime.now.plus(duration),
+                duration       = duration)
   }
 }
 
@@ -79,6 +81,32 @@ trait SessionStore {
     * @param sessionID
     */
   def clearSessionData(sessionID: String): Unit
+
+  /** Refresh a session, updating its timestamp.
+    *
+    * @param sessionID  the session ID
+    *
+    * @return `Right(SessionData)` on successful refresh, `Left(error)` on error.
+    */
+  def refresh(sessionID: String): Either[String, SessionData] = {
+    for {
+      dataOpt   <- getSessionData(sessionID).right
+      data      <- dataOpt.toEither("Can't refresh nonexistent session $sessionID").right
+      refreshed <- refresh(data).right
+    }
+    yield refreshed
+  }
+
+  /** Refresh a session, updating its timestamp.
+    *
+    * @param data  the session data to update and replace
+    *
+    * @return `Right(SessionData)` on successful refresh, `Left(error)` on error.
+    */
+  def refresh(data: SessionData): Either[String, SessionData] = {
+    val newData = data.copy(validUntil = DateTime.now.plus(data.duration))
+    storeSessionData(newData).right.map { _ => newData }
+  }
 }
 
 /** An in-memory, Map-driven session store. Note that this store cannot
