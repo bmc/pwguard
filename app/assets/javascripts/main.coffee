@@ -140,39 +140,48 @@ catch e
 # Controllers
 # ---------------------------------------------------------------------------
 
-mainCtrl = ($scope, $rootScope, macModal) ->
+mainCtrl = ($scope, $rootScope, macModal, $q) ->
 
   $scope.dialogConfirmTitle   = null
   $scope.dialogConfirmMessage = null
 
-  confirmCallback = null
-  cancelCallback  = null
-  macModal.show 'confirm-dialog'
+  deferred = null
 
   $scope.ok = ->
-    console.log "OK"
     macModal.hide ->
-      confirmCallback() if confirmCallback?
+      deferred.resolve()
+      deferred = null
 
   $scope.cancel = ->
-    console.log "Cancel"
     macModal.hide ->
-      cancelCallback() if cancelCallback?
+      deferred.reject()
+      deferred = null
 
-  $scope.confirm = (message, title..., callback) ->
+  # Shows an appropriate confirmation dialog, depending on whether the user
+  # is mobile or not. Returns a promise (via $q) that resolves on confirmation
+  # and rejects on cancel.
+  #
+  # Parameters:
+  #   message - the confirmation message
+  #   title   - optional title for the dialog, if supported
+  $scope.confirm = (message, title) ->
+    deferred = $q.defer()
+
     if $rootScope.loggedInUser.isMobile
       if confirm message
-        callback()
+        deferred.resolve()
+      else
+        deferred.reject()
 
     else
-      console.log "*** confirm"
-      confirmCallback             = callback
-      cancelCallback              = null
-      $scope.dialogConfirmTitle   = title[0] if title.length > 0
+      $scope.dialogConfirmTitle   = title
       $scope.dialogConfirmMessage = message
+
       macModal.show 'confirm-dialog'
 
-pwguardApp.controller 'MainCtrl', ['$scope', '$rootScope', 'modal', mainCtrl]
+    deferred.promise
+
+pwguardApp.controller 'MainCtrl', ['$scope', '$rootScope', 'modal', '$q', mainCtrl]
 
 
 pwguardApp.controller 'NavbarCtrl', ($scope, $rootScope, pwgAjax) ->
@@ -191,7 +200,7 @@ pwguardApp.controller 'NavbarCtrl', ($scope, $rootScope, pwgAjax) ->
     # function.
 
     if $rootScope.loggedIn()
-      $scope.confirm "Really log out?", "Confirm log out", ->
+      $scope.confirm("Really log out?", "Confirm log out").then (result) ->
         always = () ->
           $rootScope.loggedInUser = null
 
