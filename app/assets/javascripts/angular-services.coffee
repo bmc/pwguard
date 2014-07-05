@@ -197,11 +197,3 @@ pwgServices.factory 'pwgFlash', ($rootScope, $timeout) ->
 # ----------------------------------------------------------------------------
 # Confirmation dialog, and related models
 # ----------------------------------------------------------------------------
-
-# RUDIMENTARY! FIX!
-
-pwgServices.factory 'pwgConfirm', ($rootScope) ->
-
-  confirm: (message, callback) ->
-    if confirm(message)
-      callback(true)

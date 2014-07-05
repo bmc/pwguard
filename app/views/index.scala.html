@@ -52,6 +52,9 @@
 
     @stylesheetStatic("font-awesome/css/font-awesome.min.css")
 
+    @stylesheetStatic("angular-macgyver/lib/macgyver.css")
+    @scriptStatic("angular-macgyver/lib/macgyver.js")
+
     @* ----------------------------------------------------------------------
         Local
        ---------------------------------------------------------------------- *@
@@ -75,6 +78,15 @@
     <div ng-controller="MainCtrl">
 
       @navbar()
+
+      <mac-modal id="confirm-dialog" class="confirm-modal">
+        <header ng-show="dialogConfirmTitle">{{dialogConfirmTitle}}</header>
+        <div class="modal-message">{{dialogConfirmMessage}}</div>
+        <div class="button-bar">
+          <button class="btn btn-primary" ng-click="ok()">Yes</button>
+          <button class="btn" ng-click="cancel()">No</button>
+        </div>
+      </mac-modal>
 
       <div ng-show="initializing" id="initializing">
         <div class="grid">
@@ -102,5 +114,6 @@
          data-logged-in-user-url="@routes.SessionController.getLoggedInUser"
          data-login-url="@routes.SessionController.login"
          data-logout-url="@routes.SessionController.logout"/>
+
   </body>
 </html>

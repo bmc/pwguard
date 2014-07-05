@@ -13,6 +13,7 @@ requiredModules = ['ngRoute',
                    'ngCookies',
                    'ui.utils',
                    'tableSort',
+                   'Mac',
                    'pwguard-services',
                    'pwguard-directives']
 
@@ -38,8 +39,7 @@ initApp = ($rootScope,
            $location,
            $timeout,
            pwgAjax,
-           pwgFlash,
-           pwgConfirm) ->
+           pwgFlash) ->
 
   $rootScope.loggedInUser  = null
   $rootScope.$routeSegment = $routeSegment
@@ -94,39 +94,6 @@ initApp = ($rootScope,
       lastName:    user.lastName
       isMobile:    user.isMobile
 
-  $rootScope.logout = () ->
-    # NOTE: See https://groups.google.com/forum/#!msg/angular/bsTbZ86WAY4/gdpKwc4f7ToJ
-    #
-    # Specifically, see Majid Burney's response: "They've only disallowed
-    # accessing DOM nodes in expressions, not in directives. Your code is only
-    # broken because of Coffeescript's bad habit of automatically returning the
-    # last value in a function's scope. Angular detects that the function has
-    # returned a DOM node and throws an exception to keep you safe. Add an
-    # explicit "return" to the end of each of those functions and they should
-    # work fine."
-    #
-    # So, this means the confirm call can't be the last thing in the
-    # function.
-
-    if $rootScope.loggedIn()
-      pwgConfirm.confirm "Really log out?", (confirmed) ->
-        if confirmed
-          always = () ->
-            $rootScope.loggedInUser = null
-
-          onSuccess = (response) ->
-            always()
-
-          onFailure = (response) ->
-            console.log "WARNING: Server logout error. #{response.status}"
-            always()
-
-          url = $("#config").data("logout-url")
-
-          pwgAjax.post(url, {}, onSuccess, onFailure)
-
-    return
-
   # On initial load or reload, we need to determine whether the user is
   # still logged in, since a reload clears everything in the browser.
 
@@ -173,11 +140,71 @@ catch e
 # Controllers
 # ---------------------------------------------------------------------------
 
-pwguardApp.controller 'MainCtrl', ($scope, $rootScope) ->
-  return
+mainCtrl = ($scope, $rootScope, macModal) ->
+
+  $scope.dialogConfirmTitle   = null
+  $scope.dialogConfirmMessage = null
+
+  confirmCallback = null
+  cancelCallback  = null
+  macModal.show 'confirm-dialog'
+
+  $scope.ok = ->
+    console.log "OK"
+    macModal.hide ->
+      confirmCallback() if confirmCallback?
+
+  $scope.cancel = ->
+    console.log "Cancel"
+    macModal.hide ->
+      cancelCallback() if cancelCallback?
+
+  $scope.confirm = (message, title..., callback) ->
+    if $rootScope.loggedInUser.isMobile
+      if confirm message
+        callback()
+
+    else
+      console.log "*** confirm"
+      confirmCallback             = callback
+      cancelCallback              = null
+      $scope.dialogConfirmTitle   = title[0] if title.length > 0
+      $scope.dialogConfirmMessage = message
+      macModal.show 'confirm-dialog'
+
+pwguardApp.controller 'MainCtrl', ['$scope', '$rootScope', 'modal', mainCtrl]
+
 
 pwguardApp.controller 'NavbarCtrl', ($scope, $rootScope, pwgAjax) ->
-  return
+  $scope.logout = () ->
+    # NOTE: See https://groups.google.com/forum/#!msg/angular/bsTbZ86WAY4/gdpKwc4f7ToJ
+    #
+    # Specifically, see Majid Burney's response: "They've only disallowed
+    # accessing DOM nodes in expressions, not in directives. Your code is only
+    # broken because of Coffeescript's bad habit of automatically returning the
+    # last value in a function's scope. Angular detects that the function has
+    # returned a DOM node and throws an exception to keep you safe. Add an
+    # explicit "return" to the end of each of those functions and they should
+    # work fine."
+    #
+    # So, this means the confirm call can't be the last thing in the
+    # function.
+
+    if $rootScope.loggedIn()
+      $scope.confirm "Really log out?", "Confirm log out", ->
+        always = () ->
+          $rootScope.loggedInUser = null
+
+        onSuccess = (response) ->
+          always()
+
+        onFailure = (response) ->
+          console.log "WARNING: Server logout error. #{response.status}"
+          always()
+
+        url = $("#config").data("logout-url")
+
+        pwgAjax.post(url, {}, onSuccess, onFailure)
 
 
 pwguardApp.controller 'LoginCtrl', ($scope, $rootScope, pwgAjax, pwgFlash) ->
