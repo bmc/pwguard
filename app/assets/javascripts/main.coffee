@@ -11,11 +11,8 @@ requiredModules = ['ngRoute',
                    'route-segment',
                    'view-segment',
                    'ngCookies',
-                   'ui.bootstrap',
                    'ui.utils',
                    'tableSort',
-                   'localytics.directives',
-                   'http-auth-interceptor',
                    'pwguard-services',
                    'pwguard-directives']
 
@@ -157,6 +154,16 @@ initApp = ($rootScope,
 pwguardApp = angular.module('PWGuardApp', requiredModules)
 pwguardApp.config configApp
 pwguardApp.run initApp
+
+# Instantiating the module this way, rather than via "ng-app", provides
+# better browser console errors.
+###
+try
+  angular.bootstrap document, ['PWGuardApp', requiredModules]
+catch e
+  console.error e.stack or e.message or e
+  throw e
+###
 
 # ---------------------------------------------------------------------------
 # Local Angular.js services

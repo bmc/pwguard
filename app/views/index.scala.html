@@ -11,28 +11,31 @@
     <title>PWGuard</title>
     <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
 
-    @* jQuery *@
+    @* ----------------------------------------------------------------------
+       JQuery
+       ---------------------------------------------------------------------- *@
 
     @scriptStatic("jquery/dist/jquery.min.js")
 
-    @* Fonts *@
+    @* ----------------------------------------------------------------------
+       Fonts
+       ---------------------------------------------------------------------- *@
 
     @stylesheet("https://fonts.googleapis.com/css?family=Asset")
     @stylesheet("https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,700,900")
 
-    @* Angular *@
+    @* ----------------------------------------------------------------------
+       Angular.js
+       ---------------------------------------------------------------------- *@
 
-    @script("static/angular/angular.min.js")
-    @script("static/angular-route/angular-route.min.js")
-    @script("static/angular-cookies/angular-cookies.min.js")
-    @script("static/angular-animate/angular-animate.min.js")
+    @script("static/angular/angular.js")
+    @script("static/angular-route/angular-route.js")
+    @script("static/angular-cookies/angular-cookies.js")
+    @script("static/angular-animate/angular-animate.js")
 
-    @* Angular.js add-ons *@
-
-    @scriptStatic("angular-ui-utils/ui-utils.min.js")
-    @scriptStatic("angular-ui-utils/ui-utils-ieshiv.min.js")
-
-    @* Third-party stuff *@
+    @* ----------------------------------------------------------------------
+      Other third-party stuff
+      ---------------------------------------------------------------------- *@
 
     @scriptStatic("jquery-ui/jquery-ui.min.js")
     @stylesheetStatic("jquery-ui/themes/ui-lightness/jquery-ui.min.css")
@@ -41,15 +44,22 @@
     @scriptStatic("momentjs/min/moment.min.js")
     @scriptStatic("chosen/chosen.jquery.min.js")
     @stylesheetStatic("chosen/chosen.min.css")
+
+    @scriptStatic("angular-ui-utils/ui-utils.min.js")
     @scriptStatic("angular-chosen/angular-chosen.js")
     @scriptStatic("angular-route-segment/build/angular-route-segment.js")
     @scriptStatic("angular-tablesort/js/angular-tablesort.js")
 
-    @* Font Awesome *@
-
     @stylesheetStatic("font-awesome/css/font-awesome.min.css")
 
-    @* Local *@
+    @* ----------------------------------------------------------------------
+        Local
+       ---------------------------------------------------------------------- *@
+
+    @* This <script> block MUST precede other local stuff. *@
+    <script type="text/javascript">
+      window.ANGULAR_TEMPLATE_URL = "@routes.MainController.getAngularTemplate("TOKEN")";
+    </script>
 
     @stylesheetAsset("main.css")
 
@@ -59,13 +69,9 @@
     @scriptAsset("angular-services.js")
     @scriptAsset("main.js")
 
-    <script type="text/javascript">
-      window.ANGULAR_TEMPLATE_URL = "@routes.MainController.getAngularTemplate("TOKEN")";
-    </script>
-
   </head>
 
-  <body ng-app="PWGuardApp">
+  <body ng-app="PWGuardApp"> @* See main.coffee *@
     <div ng-controller="MainCtrl">
 
       @navbar()
