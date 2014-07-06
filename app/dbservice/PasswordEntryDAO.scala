@@ -1,8 +1,8 @@
 package dbservice
 
-import play.api.Logger
-
 import models.{PasswordEntry, User}
+import play.api.Logger
+import util.RegexHelpers.Implicits._
 
 /** DAO for interacting with User objects.
   */
@@ -82,9 +82,73 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
     }
   }
 
+  /** Find password entries matching a particular search term.
+    *
+    * @param userID       the user whose passwords are to be searched
+    * @param term         the search term
+    * @param fullWordOnly match only full words
+    * @param includeDesc  whether to include the description field in the
+    *                     search
+    *
+    * @return `Left(error)` on error; `Right(Set(PasswordEntry))` on
+    *         success.
+    */
+  def search(userID:       Int,
+             term:         String,
+             fullWordOnly: Boolean = false,
+             includeDesc:  Boolean = false):
+  Either[String, Set[PasswordEntry]] = {
+
+    withTransaction { implicit session =>
+      val lcTerm  = term.toLowerCase
+      val sqlTerm = s"%$lcTerm%"
+
+      val q = if (includeDesc) {
+        PasswordEntries.filter { pwe =>
+          (pwe.name.toLowerCase like sqlTerm) ||
+          (pwe.description.toLowerCase like sqlTerm)
+        }
+      }
+      else {
+        PasswordEntries.filter { pwe => (pwe.name.toLowerCase like sqlTerm) }
+      }
+
+      val qFinal = q.filter { pwe => pwe.userID === userID }
+      logger.error(qFinal.selectStatement)
+
+      // Can't do word-only matches in the database in a database-agnostic
+      // fashion. So, we need to filter here.
+      val matches = loadMany(qFinal)
+
+      if (fullWordOnly) {
+        matches.right.map { filterFullWordMatches(_, lcTerm, includeDesc) }
+      }
+      else {
+        matches
+      }
+    }
+  }
+
   // --------------------------------------------------------------------------
   // Private methods
   // ------------------------------------------------------------------------
+
+  private def filterFullWordMatches(entries:     Set[PasswordEntry],
+                                    word:        String,
+                                    includeDesc: Boolean):
+  Set[PasswordEntry] = {
+    val re = """\b""" + word + """\b"""
+
+    entries.filter { pwe =>
+      val nameMatch = re.matches(pwe.name)
+      if (includeDesc) {
+        pwe.description.map { re.matches(_) }.getOrElse(true) || nameMatch
+      }
+      else {
+        nameMatch
+      }
+    }
+  }
 
   private def loadMany(query: PWEntryQuery)(implicit session: SlickSession):
     Either[String, Set[PasswordEntry]] = {
