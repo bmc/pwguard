@@ -1,8 +1,7 @@
-<div class="flash-container unit whole"
-     ng-hide="!message">
+<div class="flash-container unit whole" ng-show="message">
   <div class="flash flash-{{flashType}}">
-    <button class="btn btn-tiny close" ng-click="clear()">
-      &times;
+    <button class="btn btn-tiny flash-close" ng-click="clear()">
+      <i class="fa fa-circle-times-o"></i>
     </button>
     <div class="flash-message">{{message}}</div>
   </div>

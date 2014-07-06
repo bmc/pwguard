@@ -39,7 +39,8 @@ initApp = ($rootScope,
            $location,
            $timeout,
            pwgAjax,
-           pwgFlash) ->
+           pwgFlash,
+           pwgTimeout) ->
 
   $rootScope.loggedInUser  = null
   $rootScope.$routeSegment = $routeSegment
@@ -47,7 +48,10 @@ initApp = ($rootScope,
   $rootScope.initializing  = true
 
   pwgFlash.init() # initialize the flash service
-  pwgFlash.info "test"
+  pwgTimeout 2000, ->
+    pwgFlash.info 'test'
+  pwgTimeout 3000, ->
+    pwgFlash.error 'test'
 
   # Page-handling.
 

@@ -38,14 +38,22 @@
       width: 100%;
     }
 
-    .close {
-      border: 1px solid lighten(@buttonBorderColor, 10%);
+    .flash-close {
+      position: absolute;
+      top:      5px;
+      right:    @tinyButtonMinWidth / 3;
 
+      font-size: larger;
+      /*
       position: absolute;
       top: 5px;
       right: @tinyMinButtonWidth / 3;
+*/
+      border: none;
+      background: transparent;
+      color: black !important;
+      cursor: pointer;
 
-      background: white;
     }
   }
 }

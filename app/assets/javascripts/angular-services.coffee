@@ -7,10 +7,7 @@ pwgServices = angular.module('pwguard-services', [])
 # fires up a spinner.
 # ----------------------------------------------------------------------------
 
-pwgServices.factory 'pwgAjax', ($http,
-                                $rootScope,
-                                pwgSpinner,
-                                pwgFlash) ->
+pwgAjax = ($http, $rootScope, pwgSpinner, pwgFlash) ->
 
   # Local
   handleFailure = (data, status, onFailure) ->
@@ -85,12 +82,19 @@ pwgServices.factory 'pwgAjax', ($http,
       url:    url
     http(params, onSuccess, onFailure)
 
+pwgServices.factory 'pwgAjax', ['$http',
+                                '$rootScope',
+                                'pwgSpinner',
+                                'pwgFlash',
+                                pwgAjax]
+
+
 # ----------------------------------------------------------------------------
 # Simple spinner service. Assumes the existence of an element that's monitoring
 # the root scope's "showSpinner" variable.
 # ----------------------------------------------------------------------------
 
-pwgServices.factory 'pwgSpinner', ($rootScope) ->
+pwgSpinner = ($rootScope) ->
   $rootScope.showSpinner = true
 
   start: ->
@@ -98,6 +102,18 @@ pwgServices.factory 'pwgSpinner', ($rootScope) ->
 
   stop: ->
     $rootScope.showSpinner = false
+
+pwgServices.factory 'pwgSpinner', ['$rootScope', pwgSpinner]
+
+# ----------------------------------------------------------------------------
+# A timeout service with arguments in a more sane order.
+# ----------------------------------------------------------------------------
+
+pwgTimeout = ($timeout) ->
+  return (timeout, callback) ->
+    $timeout callback, timeout
+
+pwgServices.factory 'pwgTimeout', ['$timeout', pwgTimeout]
 
 # ----------------------------------------------------------------------------
 # Simple flash service. Use in conjunction with the pwg-flash directive.
@@ -125,7 +141,7 @@ pwgServices.factory 'pwgSpinner', ($rootScope) ->
 # clearAll()         - convenience
 # ----------------------------------------------------------------------------
 
-pwgServices.factory 'pwgFlash', ($rootScope, $timeout) ->
+pwgFlash = ($rootScope) ->
 
   handleMessage = (type, msg) ->
     m = $rootScope.flash.message
@@ -194,3 +210,4 @@ pwgServices.factory 'pwgFlash', ($rootScope, $timeout) ->
   clearWarning: ->
     $rootScope.flash.clearWarning()
 
+pwgServices.factory 'pwgFlash', ['$rootScope', pwgFlash]

@@ -1,36 +1,25 @@
 /* Definitions of animations, used with the Angular.js animation plugin. */
 
 // ---------------------------------------------------------------------------
-// Fade-in, fade-out
+// Fade-in, fade-out. Uses animate.css.
 //
-// See http://www.yearofmoo.com/2013/04/animation-in-angularjs.html#animating-ng-show-ng-hide
+// See https://docs.angularjs.org/api/ng/directive/ngShow#usage_animations
+// and http://css-tricks.com/snippets/css/keyframe-animation-syntax/
+// and http://www.divshot.com/blog/tips-and-tricks/angular-1-2-and-animate-css/
 // ---------------------------------------------------------------------------
 
-.fade-hide, .fade-show {
-  -webkit-transition:      all 0.5s linear;
-  -moz-transition:         all 0.5s linear;
-  -o-transition:           all 0.5s linear;
 
-  /* IE */
-  -ms-transition-property: background, color;
-  -ms-transition-duration: 0.5s;
-  -o-transition-property:  background-color;
-
-  transition:              all 0.5s linear;
+.apply-animation(@name, @duration, @type: linear) {
+  -webkit-animation: @name @duration @type;
+  -moz-animation:    @name @duration @type;
+  -o-animation:      @name @duration @type;
+  animation:         @name @duration @type;
 }
 
-.fade-hide {
-  opacity: 1;
-
-  &.fade-hide-active {
-    opacity: 0;
-  }
+.animate-hide.ng-hide-add {
+  .apply-animation(fadeOutUp, 1s);
 }
 
-.fade-show {
-  opacity: 0;
-
-  &.fade-show-active {
-    opacity: 1;
-  }
+.animate-show.ng-hide-remove {
+  .apply-animation(fadeInDown, 1s);
 }
