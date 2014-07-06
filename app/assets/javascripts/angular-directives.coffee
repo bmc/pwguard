@@ -1,13 +1,14 @@
 # Local Angular directives.
 
-pwgDirectives = angular.module 'pwguard-directives', ['pwguard-services']
+pwgDirectives = angular.module 'pwguard-directives', ['pwguard-services',
+                                                      'ngAnimate']
 templateURL   = window.angularTemplateURL
 
 # -----------------------------------------------------------------------------
 # Flash block
 # -----------------------------------------------------------------------------
 
-pwgDirectives.directive 'pwgFlash', ($compile, pwgFlash, $rootScope) ->
+pwgFlash = ($compile, $rootScope) ->
   restrict:    'EA'
   transclude:  false
   templateUrl: templateURL('directives/pwgFlash.html')
@@ -18,11 +19,24 @@ pwgDirectives.directive 'pwgFlash', ($compile, pwgFlash, $rootScope) ->
   link: (scope, element, attrs) ->
     scope.message = null
 
+    animations = []
+    if attrs.animateShow?
+      animations.push "show: 'fade-show'"
+    if attrs.animateHide?
+      animations.push "hide: 'fade-hide'"
+
+    if animations.length > 0
+      element.attr 'ng-animate', "{#{animations.join(',')}}"
+
     $rootScope.$watch "flash.message.#{scope.flashType}", (newValue) ->
       scope.message = newValue
 
     scope.clear = ->
       scope.message = null
+
+pwgDirectives.directive 'pwgFlash', ['$compile',
+                                     '$rootScope',
+                                     pwgFlash]
 
 # -----------------------------------------------------------------------------
 # Drop down menu
@@ -31,7 +45,8 @@ pwgDirectives.directive 'pwgFlash', ($compile, pwgFlash, $rootScope) ->
 menuNextID = 0
 
 # Simple drop-down menu, no cascading.
-pwgDirectives.directive 'dropdownMenu', ($compile) ->
+
+dropdownMenu = ->
   # Based on http://tympanus.net/codrops/2012/10/04/custom-drop-down-list-styling/
 
   DropDown = (element) ->
@@ -94,8 +109,9 @@ pwgDirectives.directive 'dropdownMenu', ($compile) ->
     $(document).click ->
       wrapper.removeClass 'active'
 
+pwgDirectives.directive 'dropdownMenu', [dropdownMenu]
 
-pwgDirectives.directive 'dropdownMenuItem', ($compile) ->
+dropdownMenuItem = ->
   restrict:   'EA'
   transclude: true
   replace:    true
@@ -107,3 +123,5 @@ pwgDirectives.directive 'dropdownMenuItem', ($compile) ->
 
   link: (scope, element, attrs, controller) ->
     return
+
+pwgDirectives.directive 'dropdownMenuItem', [dropdownMenuItem]

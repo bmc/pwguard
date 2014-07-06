@@ -47,6 +47,7 @@ initApp = ($rootScope,
   $rootScope.initializing  = true
 
   pwgFlash.init() # initialize the flash service
+  pwgFlash.info "test"
 
   # Page-handling.
 

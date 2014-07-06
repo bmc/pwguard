@@ -1,0 +1,36 @@
+/* Definitions of animations, used with the Angular.js animation plugin. */
+
+// ---------------------------------------------------------------------------
+// Fade-in, fade-out
+//
+// See http://www.yearofmoo.com/2013/04/animation-in-angularjs.html#animating-ng-show-ng-hide
+// ---------------------------------------------------------------------------
+
+.fade-hide, .fade-show {
+  -webkit-transition:      all 0.5s linear;
+  -moz-transition:         all 0.5s linear;
+  -o-transition:           all 0.5s linear;
+
+  /* IE */
+  -ms-transition-property: background, color;
+  -ms-transition-duration: 0.5s;
+  -o-transition-property:  background-color;
+
+  transition:              all 0.5s linear;
+}
+
+.fade-hide {
+  opacity: 1;
+
+  &.fade-hide-active {
+    opacity: 0;
+  }
+}
+
+.fade-show {
+  opacity: 0;
+
+  &.fade-show-active {
+    opacity: 1;
+  }
+}
