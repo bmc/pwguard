@@ -8,9 +8,10 @@ templateURL   = window.angularTemplateURL
 
 # This table allows easy mappings from route segment to URL.
 segments =
-  "login":   "/login"
-  "search":  "/search"
-  "profile": "/profile"
+  "login":       "/login"
+  "search":      "/search"
+  "profile":     "/profile"
+  "admin-users": "/admin/users"
 
 # The routes themselves.
 window.setRoutes = ($routeSegmentProvider, $routeProvider) ->
@@ -35,17 +36,25 @@ window.setRoutes = ($routeSegmentProvider, $routeProvider) ->
     templateUrl: templateURL("profile.html")
     controller:  'ProfileCtrl'
 
+  $routeSegmentProvider.segment "admin-users",
+    templateUrl: templateURL("admin-users.html")
+
+
   $routeProvider.otherwise
     redirectTo: "/search"
 
-window.POST_LOGIN_SEGMENTS = ['search', 'profile']
+POST_LOGIN_SEGMENTS = ['search', 'profile', 'admin-users']
+ADMIN_ONLY_SEGMENTS = ['admin-users']
 
 # -----------------------------------------------------------------------------
 # Utility functions
 # -----------------------------------------------------------------------------
 
+window.isAdminOnlySegment = (segment) ->
+  segment in ADMIN_ONLY_SEGMENTS
+
 window.isPostLoginSegment = (segment) ->
-  segment in window.POST_LOGIN_SEGMENTS
+  segment in POST_LOGIN_SEGMENTS
 
 window.isPreLoginSegment = (segment) ->
   not window.isPostLoginSegment(segment)

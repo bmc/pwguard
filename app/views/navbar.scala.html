@@ -38,6 +38,14 @@
             </a>
           </dropdown-menu-item>
 
+          <dropdown-menu-item>
+            <a href="javascript:void(0)"
+               ng-click="redirectToSegment('admin-users')"
+               ng-show="loggedInUser.isAdmin">
+              <i class="fa fa-users"></i> Edit Users
+            </a>
+          </dropdown-menu-item>
+
         </dropdown-menu>
 
       </div>

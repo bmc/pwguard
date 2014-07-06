@@ -74,7 +74,7 @@
 
   </head>
 
-  <body ng-app="PWGuardApp"> @* See main.coffee *@
+  <body ng-app="PWGuardApp">
     <div ng-controller="MainCtrl">
 
       @navbar()
@@ -101,11 +101,13 @@
       <div id="content" ng-hide="initializing">
         @flash()
 
-        <div app-view-segment="0" id="login-segment">
-        </div>
+        <div app-view-segment="0" id="login-segment"></div>
 
-        <div app-view-segment="1" id="home-segment">
-        </div>
+        <div app-view-segment="1" id="search-segment"></div>
+
+        <div app-view-segment="2" id="profile-segment"></div>
+
+        <div app-view-segment="3" id="admin-users-segment"></div>
 
       </div>
     </div>

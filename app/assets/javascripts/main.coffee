@@ -72,7 +72,7 @@ initApp = ($rootScope,
   $rootScope.saveLoggedInUser = (user) ->
     $rootScope.loggedInUser =
       email:       user.email
-      admin:       user.admin
+      isAdmin:     user.admin
       displayName: user.displayName
       firstName:   user.firstName
       lastName:    user.lastName
@@ -87,10 +87,18 @@ initApp = ($rootScope,
     useSegment = null
     if $rootScope.loggedInUser?
       # Ensure that the segment is valid for a logged in user.
-      if segment? and window.isPostLoginSegment(segment)
-        useSegment = segment
-      else
-        useSegment = 'search'
+      useSegment = 'search' # default
+      if segment?
+        if window.isPostLoginSegment(segment)
+          console.log "Segment #{segment} is post-login"
+          console.log "Admin? #{$rootScope.loggedInUser.isAdmin}"
+          if $rootScope.loggedInUser.isAdmin
+            # Admins can go anywhere.
+            console.log "Admin: Can go to #{segment}"
+            useSegment = segment
+          else if (not window.isAdminOnlySegment(segment))
+            # Non-admins can go to non-admin segments.
+            useSegment = segment
 
     else
       # Ensure that the segment is valid for a non-logged in user.
@@ -314,3 +322,11 @@ ProfileCtrl = ($scope, $rootScope) ->
 
 pwguardApp.controller 'ProfileCtrl', ['$scope', '$rootScope', ProfileCtrl]
 
+# ---------------------------------------------------------------------------
+# Admin users controller
+# ---------------------------------------------------------------------------
+
+AdminUsersCtrl = ($scope, $rootScope) ->
+  return
+
+pwguardApp.controller 'AdminUsersCtrl', ['$scope', '$rootScope', AdminUsersCtrl]
