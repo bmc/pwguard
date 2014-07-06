@@ -48,10 +48,10 @@ initApp = ($rootScope,
   $rootScope.initializing  = true
 
   pwgFlash.init() # initialize the flash service
-  pwgTimeout 2000, ->
-    pwgFlash.info 'test'
-  pwgTimeout 3000, ->
-    pwgFlash.error 'test'
+
+  $rootScope.$on '$routeChangeSuccess', ->
+    # Clear flash messages on route change.
+    pwgFlash.clear 'all'
 
   # Page-handling.
 
