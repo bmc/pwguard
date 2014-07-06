@@ -47,7 +47,7 @@ initApp = ($rootScope,
   $rootScope.initializing  = true
 
   pwgFlash.init() # initialize the flash service
-
+  ###
   $rootScope.$watch "loggedInUser", (user, prevUser) ->
     return if user is prevUser
 
@@ -63,6 +63,7 @@ initApp = ($rootScope,
       $rootScope.redirectToSegment segment
     else
       $rootScope.redirectToSegment "login"
+  ###
 
   # Page-handling.
 
@@ -96,6 +97,8 @@ initApp = ($rootScope,
 
   # On initial load or reload, we need to determine whether the user is
   # still logged in, since a reload clears everything in the browser.
+
+  $rootScope.redirectIfNotLoggedIn
 
   onSuccess = (response) ->
     $rootScope.initializing = false
@@ -132,12 +135,12 @@ catch e
   throw e
 ###
 
-# ---------------------------------------------------------------------------
-# Local Angular.js services
-# ---------------------------------------------------------------------------
+###############################################################################
+# Controllers
+###############################################################################
 
 # ---------------------------------------------------------------------------
-# Controllers
+# Main controller
 # ---------------------------------------------------------------------------
 
 mainCtrl = ($scope, $rootScope, macModal, $q) ->
@@ -183,6 +186,9 @@ mainCtrl = ($scope, $rootScope, macModal, $q) ->
 
 pwguardApp.controller 'MainCtrl', ['$scope', '$rootScope', 'modal', '$q', mainCtrl]
 
+# ---------------------------------------------------------------------------
+# Navigation bar controller
+# ---------------------------------------------------------------------------
 
 pwguardApp.controller 'NavbarCtrl', ($scope, $rootScope, pwgAjax) ->
   $scope.logout = () ->
@@ -215,6 +221,9 @@ pwguardApp.controller 'NavbarCtrl', ($scope, $rootScope, pwgAjax) ->
 
         pwgAjax.post(url, {}, onSuccess, onFailure)
 
+# ---------------------------------------------------------------------------
+# Login controller
+# ---------------------------------------------------------------------------
 
 pwguardApp.controller 'LoginCtrl', ($scope, $rootScope, pwgAjax, pwgFlash) ->
   $scope.email     = null
@@ -258,6 +267,10 @@ pwguardApp.controller 'LoginCtrl', ($scope, $rootScope, pwgAjax, pwgFlash) ->
 
   nonEmpty = (s) ->
     s? and s.trim().length > 0
+
+# ---------------------------------------------------------------------------
+# Search controller
+# ---------------------------------------------------------------------------
 
 pwguardApp.controller 'HomeCtrl', ($scope, $rootScope) ->
   return
