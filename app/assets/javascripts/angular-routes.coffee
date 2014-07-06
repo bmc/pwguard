@@ -8,8 +8,8 @@ templateURL   = window.angularTemplateURL
 
 # This table allows easy mappings from route segment to URL.
 segments =
-  "login":  "/login"
-  "home":   "/home"
+  "login":   "/login"
+  "search":  "/search"
 
 # The routes themselves.
 window.setRoutes = ($routeSegmentProvider, $routeProvider) ->
@@ -26,12 +26,12 @@ window.setRoutes = ($routeSegmentProvider, $routeProvider) ->
     templateUrl: templateURL("login.html")
     controller:  'LoginCtrl'
 
-  $routeSegmentProvider.segment "home",
-    templateUrl: templateURL("home.html")
+  $routeSegmentProvider.segment "search",
+    templateUrl: templateURL("search.html")
     controller:  'HomeCtrl'
 
   $routeProvider.otherwise
-    redirectTo: "/home"
+    redirectTo: "/search"
 
 
 # -----------------------------------------------------------------------------

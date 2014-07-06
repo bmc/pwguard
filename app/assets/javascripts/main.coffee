@@ -47,7 +47,7 @@ initApp = ($rootScope,
   $rootScope.initializing  = true
 
   pwgFlash.init() # initialize the flash service
- 
+
   # Page-handling.
 
   # Convenient way to show a page/segment
@@ -87,7 +87,7 @@ initApp = ($rootScope,
     $rootScope.initializing = false
     if response.loggedIn
       $rootScope.loggedInUser = response.user
-      $rootScope.redirectToSegment("home")
+      $rootScope.redirectToSegment("search")
     else
       $rootScope.loggedInUser = null
       $rootScope.redirectToSegment("login")
@@ -237,7 +237,7 @@ LoginCtrl = ($scope, $rootScope, pwgAjax, pwgFlash) ->
     if $scope.canSubmit
       handleLogin = (data) ->
         $rootScope.saveLoggedInUser(data.user)
-        $rootScope.redirectToSegment('home')
+        $rootScope.redirectToSegment('search')
 
       handleFailure = (data) ->
         # Nothing to do.
@@ -271,5 +271,8 @@ pwguardApp.controller 'LoginCtrl', ['$scope',
 # Search controller
 # ---------------------------------------------------------------------------
 
-pwguardApp.controller 'HomeCtrl', ($scope, $rootScope) ->
+SearchCtrl = ($scope, $rootScope) ->
   return
+
+pwguardApp.controller 'SearchCtrl', ['$scope', '$rootScope', SearchCtrl]
+
