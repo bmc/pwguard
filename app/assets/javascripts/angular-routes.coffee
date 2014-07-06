@@ -30,6 +30,10 @@ window.setRoutes = ($routeSegmentProvider, $routeProvider) ->
     templateUrl: templateURL("home.html")
     controller:  'HomeCtrl'
 
+  $routeProvider.otherwise
+    redirectTo: "/home"
+
+
 # -----------------------------------------------------------------------------
 # Utility functions
 # -----------------------------------------------------------------------------
