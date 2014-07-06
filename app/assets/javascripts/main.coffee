@@ -83,14 +83,43 @@ initApp = ($rootScope,
 
   $rootScope.redirectIfNotLoggedIn
 
+  validateLocationChange = (segment) ->
+    useSegment = null
+    if $rootScope.loggedInUser?
+      # Ensure that the segment is valid for a logged in user.
+      if segment? and window.isPostLoginSegment(segment)
+        useSegment = segment
+      else
+        useSegment = 'search'
+
+    else
+      # Ensure that the segment is valid for a non-logged in user.
+      if segment? and window.isPreLoginSegment(segment)
+        useSegment = segment
+      else
+        useSegment = 'login'
+
+    useSegment
+
+  $rootScope.$on '$locationChangeStart', (e) ->
+    segment = window.segmentForURL $location.path()
+    useSegment = validateLocationChange segment
+    if useSegment isnt segment
+      e.preventDefault()
+      $rootScope.redirectToSegment useSegment
+
+
   onSuccess = (response) ->
     $rootScope.initializing = false
+    initialSegment = $rootScope.segmentOnLoad
     if response.loggedIn
       $rootScope.loggedInUser = response.user
-      $rootScope.redirectToSegment("search")
+
     else
       $rootScope.loggedInUser = null
-      $rootScope.redirectToSegment("login")
+
+    useSegment = validateLocationChange initialSegment
+    $rootScope.redirectToSegment useSegment
 
   onFailure = (response) ->
     $rootScope.initializing = false
@@ -275,4 +304,13 @@ SearchCtrl = ($scope, $rootScope) ->
   return
 
 pwguardApp.controller 'SearchCtrl', ['$scope', '$rootScope', SearchCtrl]
+
+# ---------------------------------------------------------------------------
+# Profile controller
+# ---------------------------------------------------------------------------
+
+ProfileCtrl = ($scope, $rootScope) ->
+  return
+
+pwguardApp.controller 'ProfileCtrl', ['$scope', '$rootScope', ProfileCtrl]
 

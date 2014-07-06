@@ -10,6 +10,7 @@ templateURL   = window.angularTemplateURL
 segments =
   "login":   "/login"
   "search":  "/search"
+  "profile": "/profile"
 
 # The routes themselves.
 window.setRoutes = ($routeSegmentProvider, $routeProvider) ->
@@ -28,15 +29,26 @@ window.setRoutes = ($routeSegmentProvider, $routeProvider) ->
 
   $routeSegmentProvider.segment "search",
     templateUrl: templateURL("search.html")
-    controller:  'HomeCtrl'
+    controller:  'SearchCtrl'
+
+  $routeSegmentProvider.segment "profile",
+    templateUrl: templateURL("profile.html")
+    controller:  'ProfileCtrl'
 
   $routeProvider.otherwise
     redirectTo: "/search"
 
+window.POST_LOGIN_SEGMENTS = ['search', 'profile']
 
 # -----------------------------------------------------------------------------
 # Utility functions
 # -----------------------------------------------------------------------------
+
+window.isPostLoginSegment = (segment) ->
+  segment in window.POST_LOGIN_SEGMENTS
+
+window.isPreLoginSegment = (segment) ->
+  not window.isPostLoginSegment(segment)
 
 window.pathForSegment = (segment) ->
   segments[segment]
