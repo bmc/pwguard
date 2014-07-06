@@ -47,24 +47,7 @@ initApp = ($rootScope,
   $rootScope.initializing  = true
 
   pwgFlash.init() # initialize the flash service
-  ###
-  $rootScope.$watch "loggedInUser", (user, prevUser) ->
-    return if user is prevUser
-
-    if user?
-      segment = $rootScope.segmentOnLoad
-      if segment?
-        # We've logged in. Only honor the browser-specified URL if it's not
-        # one of the pre-login ones.
-        unless segment[0..4] is "home"
-          segment = "home"
-      else
-        segment = "home"
-      $rootScope.redirectToSegment segment
-    else
-      $rootScope.redirectToSegment "login"
-  ###
-
+ 
   # Page-handling.
 
   # Convenient way to show a page/segment
@@ -143,7 +126,7 @@ catch e
 # Main controller
 # ---------------------------------------------------------------------------
 
-mainCtrl = ($scope, $rootScope, macModal, $q) ->
+MainCtrl = ($scope, $rootScope, macModal, $q) ->
 
   $scope.dialogConfirmTitle   = null
   $scope.dialogConfirmMessage = null
@@ -184,13 +167,17 @@ mainCtrl = ($scope, $rootScope, macModal, $q) ->
 
     deferred.promise
 
-pwguardApp.controller 'MainCtrl', ['$scope', '$rootScope', 'modal', '$q', mainCtrl]
+pwguardApp.controller 'MainCtrl', ['$scope',
+                                   '$rootScope',
+                                   'modal',
+                                   '$q',
+                                   MainCtrl]
 
 # ---------------------------------------------------------------------------
 # Navigation bar controller
 # ---------------------------------------------------------------------------
 
-pwguardApp.controller 'NavbarCtrl', ($scope, $rootScope, pwgAjax) ->
+NavbarCtrl = ($scope, $rootScope, pwgAjax) ->
   $scope.logout = () ->
     # NOTE: See https://groups.google.com/forum/#!msg/angular/bsTbZ86WAY4/gdpKwc4f7ToJ
     #
@@ -209,6 +196,7 @@ pwguardApp.controller 'NavbarCtrl', ($scope, $rootScope, pwgAjax) ->
       $scope.confirm("Really log out?", "Confirm log out").then (result) ->
         always = () ->
           $rootScope.loggedInUser = null
+          $rootScope.redirectToSegment 'login'
 
         onSuccess = (response) ->
           always()
@@ -221,11 +209,16 @@ pwguardApp.controller 'NavbarCtrl', ($scope, $rootScope, pwgAjax) ->
 
         pwgAjax.post(url, {}, onSuccess, onFailure)
 
+pwguardApp.controller 'NavbarCtrl', ['$scope',
+                                     '$rootScope',
+                                     'pwgAjax',
+                                     NavbarCtrl]
+
 # ---------------------------------------------------------------------------
 # Login controller
 # ---------------------------------------------------------------------------
 
-pwguardApp.controller 'LoginCtrl', ($scope, $rootScope, pwgAjax, pwgFlash) ->
+LoginCtrl = ($scope, $rootScope, pwgAjax, pwgFlash) ->
   $scope.email     = null
   $scope.password  = null
   $scope.canSubmit = false
@@ -267,6 +260,12 @@ pwguardApp.controller 'LoginCtrl', ($scope, $rootScope, pwgAjax, pwgFlash) ->
 
   nonEmpty = (s) ->
     s? and s.trim().length > 0
+
+pwguardApp.controller 'LoginCtrl', ['$scope',
+                                    '$rootScope',
+                                    'pwgAjax',
+                                    'pwgFlash',
+                                    LoginCtrl]
 
 # ---------------------------------------------------------------------------
 # Search controller

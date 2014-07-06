@@ -8,8 +8,8 @@ templateURL   = window.angularTemplateURL
 
 # This table allows easy mappings from route segment to URL.
 segments =
-  "login":            "/login"
-  "home":             "/home"
+  "login":  "/login"
+  "home":   "/home"
 
 # The routes themselves.
 window.setRoutes = ($routeSegmentProvider, $routeProvider) ->
