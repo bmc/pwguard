@@ -27,7 +27,6 @@ pwgFlash = ($compile, $rootScope) ->
       #element.addClass "animate-hide"
 
     if attrs.animateShow?
-      console.log "adding animate-show"
       element.addClass "animate-show"
 
     scope.message = null

@@ -2,9 +2,19 @@
      ng-controller="SearchCtrl"
      ng-show="segmentIsActive('search')">
   <div class="grid">
-    <div class="unit whole">
-      Home
-      <div ng-show="loggedInUser.isMobile">Hey! You're mobile!</div>
+    <div class="unit half">
+      <form id="search-form" class="inline">
+        <div class="form-field">
+          <label for="searchTerm">
+            <i class="fa fa-search"></i>&nbsp;
+          </label>
+          <div class="input">
+            <input type="text" name="searchTerm" ng-model="searchTerm"
+                   ng-change="searchTermChanged()"/>
+          </div>
+        </div>
+      </form>
+      <p>{{searchTerm}}</p>
     </div>
   </div>
 </div>

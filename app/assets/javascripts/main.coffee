@@ -314,7 +314,11 @@ pwguardApp.controller 'LoginCtrl', ['$scope',
 # ---------------------------------------------------------------------------
 
 SearchCtrl = ($scope, $rootScope) ->
-  return
+  $scope.searchTerm = null
+
+  $scope.searchTermChanged = ->
+    if $scope.searchTerm.length >= 2
+      console.log "would search here"
 
 pwguardApp.controller 'SearchCtrl', ['$scope', '$rootScope', SearchCtrl]
 

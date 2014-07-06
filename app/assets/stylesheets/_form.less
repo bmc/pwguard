@@ -39,27 +39,48 @@ form {
       display: block;
       width:   100%;
       border:  none;
+    }
 
-      input[type="email"],
-      input[type="password"],
-      input[type="text"] {
-        .text-input-common;
+    // <input> elements do not need to be inside <div.input>
+    input[type="email"],
+    input[type="password"],
+    input[type="text"] {
+      .text-input-common;
 
-        @media @phone {
-          font-size: @phoneFontSize;
-        }
-        @media @tablet {
-          font-size: @tabletFontSize;
-        }
-        @media (@desktop) or (@wideDesktop) {
-          font-size: @desktopFontSize;
-        }
+      @media @phone {
+        font-size: @phoneFontSize;
+      }
+      @media @tablet {
+        font-size: @tabletFontSize;
+      }
+      @media (@desktop) or (@wideDesktop) {
+        font-size: @desktopFontSize;
+      }
+    }
+  }
+
+  &.inline {
+    display: table;
+
+    .form-field {
+      display: table-row;
+
+      .label {
+        display:       table-cell;
+        padding-left:  10px;
+        padding-right: 10px;
+      }
+      .input {
+        display:       table-cell;
+        padding-left:  10px;
+        padding-right: 10px;
       }
     }
   }
 
   .button-bar {
     // Centering of button bar: See http://stackoverflow.com/questions/18524722/
+
     display:    block;
     text-align: center;
     width:      100%;

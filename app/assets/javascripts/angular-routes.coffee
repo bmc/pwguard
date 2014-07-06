@@ -39,7 +39,6 @@ window.setRoutes = ($routeSegmentProvider, $routeProvider) ->
   $routeSegmentProvider.segment "admin-users",
     templateUrl: templateURL("admin-users.html")
 
-
   $routeProvider.otherwise
     redirectTo: "/search"
 

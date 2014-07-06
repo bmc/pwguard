@@ -197,6 +197,18 @@ trait BaseController {
     status.map { i => json ++ Json.obj("status" -> i) }.getOrElse(json)
   }
 
+  /** Alternate version of `jsonError` without a status code.
+    *
+    * @param error        Error string
+    * @param fieldErrors option form field errors, keyed by field ID
+    *
+    * @return the JSON result
+    */
+  protected def jsonError(error:       String,
+                          fieldErrors: (String, String)*): JsValue = {
+    jsonError(Some(error), None, fieldErrors: _*)
+  }
+
   // --------------------------------------------------------------------------
   // Protected methods
   // ------------------------------------------------------------------------
