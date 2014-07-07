@@ -65,10 +65,56 @@ header {
     @media @wideDesktop {
       .desktop-init-message-styles;
     }
+  }
+}
 
+@tableHeaderBackground: #f4f4f4;
+
+table.data-table {
+  width:            100%;
+  margin-top:       20px;
+  border-width:     0;
+  border-spacing:   2px;
+  border-style:     none;
+  border-collapse:  collapse;
+
+  thead {
+    background: @tableHeaderBackground;
+
+    th {
+      border-width: 0;
+      padding:      3px;
+      border-style: none;
+      background:   @tableHeaderBackground;
+      text-align:   left;
+
+      &.sortable-column {
+        cursor: pointer;
+      }
+
+      &.tablesort-asc:after {
+        content: "\25b4"; // small up arrow
+        visibility: visible;
+        // float: right;
+      }
+
+      &.tablesort-desc:after {
+        content: "\25be"; // small up arrow
+        visibility: visible;
+        // float: right;
+      }
+    }
   }
 
+  tbody {
+    td {
+      border-width: 0;
+      padding:      3px;
+      border-style: none;
+    }
+  }
 }
+
 
 @import "_buttons.less";
 @import "_form.less";

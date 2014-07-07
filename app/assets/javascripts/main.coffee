@@ -311,18 +311,21 @@ pwguardApp.controller 'LoginCtrl', ['$scope',
 # ---------------------------------------------------------------------------
 
 SearchCtrl = ($scope, $rootScope, pwgAjax) ->
-  $scope.searchTerm = null
+  $scope.searchTerm    = null
   $scope.searchResults = null
 
   $scope.searchTermChanged = ->
-    if $scope.searchTerm.length >= 2
+    trimmed = if $scope.searchTerm? then $scope.searchTerm.trim() else ""
+    len     = trimmed.length
+    if len >= 2
       doSearch()
+    else
+      $scope.searchResults = null
 
   doSearch = ->
     url = $("#config").data('search-url')
 
     onSuccess = (data) ->
-      console.log data
       $scope.searchResults = data.results
 
     params =

@@ -10,12 +10,45 @@
           </label>
           <div class="input">
             <input type="text" name="searchTerm" ng-model="searchTerm"
-                   ng-change="searchTermChanged()"/>
+                   ng-change="searchTermChanged()"
+                   placeholder="Enter at least two letters to search."/>
           </div>
         </div>
       </form>
-      <p>{{searchTerm}}</p>
-      <pre>{{searchResults}}</pre>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="unit whole" ng-show="searchResults != null" id="search-results">
+      <div ng-show="searchResults.length == 0">No results.</div>
+      <div ng-show="searchResults.length == 1">One result.</div>
+      <div ng-show="searchResults.length > 1">{{searchResults.length}} results</div>
+
+      <div ng-show="searchResults.length > 0">
+        <table class="data-table" ts-wrapper>
+          <thead>
+            <tr>
+              <th class="sortable-column" ts-criteria="name|lowercase" ts-default>
+                Name
+              </th>
+              <th class="sortable-column" ts-criteria="description|lowercase">
+                Description
+              </th>
+              <th>Password</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr ng-repeat="result in searchResults" ts-repeat>
+              <td>{{result.name}}</td>
+              <td>{{result.description}}</td>
+              <td>************</td>
+              <td>{{result.notes}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
