@@ -48,10 +48,10 @@ form {
       .text-input-common;
 
       @media @phone {
-        font-size: @phoneFontSize;
+        font-size: @phoneFontSize * 0.7; // smaller than regular font
       }
       @media @tablet {
-        font-size: @tabletFontSize;
+        font-size: @tabletFontSize * 0.8;
       }
       @media (@desktop) or (@wideDesktop) {
         font-size: @desktopFontSize;
