@@ -15,30 +15,30 @@ a relatively secure deployment, by providing the following capabilities:
 PWGuard is open source and is released under a New BSD license. PWGuard also
 uses many excellent open source packages, most of which are listed below.
 
-* [Akka][http://akka.io/]
-* [Angular.js][http://angularjs.org]
-* [angular-route-segment][http://angular-route-segment.com/]
-* [angular-chosen][https://github.com/localytics/angular-chosen]
-* [angular-tablesort][https://mattiash.github.io/angular-tablesort/]
-* Portions of [AngularUI][http://angular-ui.github.io/]
-* [Animate.css][https://daneden.github.io/animate.css/]
-* Portions of [Apache Commons Math][http://commons.apache.org/proper/commons-math/\
-* [Chosen][https://harvesthq.github.io/chosen/]
-* Portions of [MacGyver][http://starttheshift.github.io/MacGyver/]
-* [Font Awesome][http://fontawesome.io/]
-* Portions of [Google Guava][https://code.google.com/p/guava-libraries/]
-* [Gridism][http://cobyism.com/gridism/]
-* [Grizzled Scala][http://software.clapper.org/grizzled-scala/]
+* [Akka](http://akka.io/)
+* [Angular.js](http://angularjs.org)
+* [angular-route-segment](http://angular-route-segment.com/)
+* [angular-chosen](https://github.com/localytics/angular-chosen)
+* [angular-tablesort](https://mattiash.github.io/angular-tablesort/)
+* Portions of [AngularUI](http://angular-ui.github.io/)
+* [Animate.css](https://daneden.github.io/animate.css/)
+* Portions of [Apache Commons Math](http://commons.apache.org/proper/commons-math/)
+* [Chosen](https://harvesthq.github.io/chosen/)
+* Portions of [MacGyver](http://starttheshift.github.io/MacGyver/)
+* [Font Awesome](http://fontawesome.io/)
+* Portions of [Google Guava](https://code.google.com/p/guava-libraries/)
+* [Gridism](http://cobyism.com/gridism/)
+* [Grizzled Scala](http://software.clapper.org/grizzled-scala/)
 * [JBcrypt][]
-* [JodaTime][http://www.joda.org/]
-* [jQuery][https://jquery.org/]
-* Portions of [JqueryUI][http://jqueryui.com/]
-* [Modernizr][http://modernizr.com/]
-* [Moment.js][http://momentjs.com/]
-* The [Play! Framework][http://www.playframework.com/]
+* [JodaTime](http://www.joda.org/)
+* [jQuery](https://jquery.org/)
+* Portions of [JqueryUI](http://jqueryui.com/)
+* [Modernizr](http://modernizr.com/)
+* [Moment.js](http://momentjs.com/)
+* The [Play! Framework](http://www.playframework.com/)
 * The [Scala][] programming language
-* [SQLite][http://sqlite.org/]
-* [UADetector][http://uadetector.sourceforge.net/]
+* [SQLite](http://sqlite.org/)
+* [UADetector](http://uadetector.sourceforge.net/)
 
 [Play! Framework]: http://playframework.org/
 [AngularJS]: http://angularjs.org/
