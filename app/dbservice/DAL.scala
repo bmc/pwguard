@@ -28,7 +28,7 @@ trait UsersComponent {
     def id                   = column[Int]("id", O.PrimaryKey, O.AutoInc)
     def email                = column[String]("email")
     def encryptedPassword    = column[String]("encrypted_password")
-    def pwEntryEncryptionKey = column[String]("pw_entry_encryption_key")
+    def pwEntryEncryptionKey = column[Option[String]]("pw_entry_encryption_key")
     def firstName            = column[Option[String]]("first_name")
     def lastName             = column[Option[String]]("last_name")
     def active               = column[Boolean]("active", O.Default(true))

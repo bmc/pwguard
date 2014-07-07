@@ -16,7 +16,7 @@ libraryDependencies ++= Seq(
   //"com.typesafe.slick" %% "slick" % "2.1.0-M2",
   "com.typesafe.slick" %% "slick"                 % "2.0.2",
   "org.xerial"          % "sqlite-jdbc"           % "3.7.2",
-  "org.clapper"        %% "grizzled-scala"        % "1.2",
+  "org.clapper"        %% "grizzled-scala"        % "1.3",
   "org.mindrot"         % "jbcrypt"               % "0.3m",
   "joda-time"           % "joda-time"             % "2.3",
   "org.apache.commons"  % "commons-math3"         % "3.3",

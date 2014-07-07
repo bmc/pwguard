@@ -1,9 +1,8 @@
 -- password is "foobar" (no quotes)
-insert into users(email, encrypted_password, pw_entry_encryption_key,
-                  first_name, last_name, active, admin)
+insert into users(email, encrypted_password, first_name, last_name,
+                  active, admin)
   values('foo@example.com', 
          '$2a$10$g8n2p9DcJe81gpf2Qh8SKO13mPhVR6Hw2Sn07uId4ORL2GeJL3ZLq',
-	 '81df269f9a1a25dd19941116537160c5',
 	 'Jimmy', 'Foo', 1, 0);
 
 -- password is "foobar"
