@@ -1,6 +1,7 @@
 package models
 
-import play.api.libs.json.Json
+import play.api.libs.json.{JsPath, Writes, Json}
+import play.api.libs.functional.syntax._
 
 /** A password entry is owned by a user. The password and notes fields are
   * encrypted with the user's symmetric key (generated when the user is
@@ -15,19 +16,25 @@ case class PasswordEntry(id:                Option[Int],
                          notes:             Option[String])
   extends BaseModel {
 
-  lazy val toJSON = Json.obj(
-    "id"                -> id,
-    "userID"            -> userID,
-    "name"              -> name,
-    "description"       -> description,
-    "encryptedPassword" -> encryptedPassword,
-    "notes"             -> notes
-  )
-
   def decryptPassword(key: String): Either[String, String] = {
     encryptedPassword.map { pw =>
       Left("stub")
     }.
     getOrElse(Right(""))
+  }
+}
+
+object PasswordEntryHelper {
+  object json {
+    object implicits {
+      implicit val passwordEntryWrites: Writes[PasswordEntry] = (
+        (JsPath \ "id").write[Option[Int]] and
+        (JsPath \ "userID").write[Int] and
+        (JsPath \ "name").write[String] and
+        (JsPath \ "description").write[Option[String]] and
+        (JsPath \ "encryptedPassword").write[Option[String]] and
+        (JsPath \ "notes").write[Option[String]]
+      )(unlift(PasswordEntry.unapply))
+    }
   }
 }

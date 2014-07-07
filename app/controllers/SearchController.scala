@@ -1,13 +1,14 @@
 package controllers
 
 import dbservice.DAO
-import models.User
+import models.{User, PasswordEntry}
+import models.PasswordEntryHelper.json.implicits._
+
 import play.api._
-import play.api.libs.json.JsValue
-import play.api.mvc._
+import play.api.libs.json.{Json, JsValue}
+import play.api.mvc.Request
 import play.api.mvc.Results._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.Play.current
 
 import scala.concurrent.Future
 import scala.util.{Success, Try}
@@ -22,6 +23,10 @@ object SearchController extends BaseController {
   // Public methods
   // -------------------------------------------------------------------------
 
+/*
+  def searchPasswordEntries() = SecuredJSONAction {
+    (user: User, req: Request[JsValue]) =>
+*/
   def searchPasswordEntries = SecuredJSONAction {
     (user: User, request: Request[JsValue]) =>
 
@@ -32,13 +37,18 @@ object SearchController extends BaseController {
                                                             .getOrElse(false)
       val wordMatch          = (json \ "wordMatch").asOpt[Boolean]
                                                    .getOrElse(false)
-
       searchTerm.map { term =>
-
-        Ok("")
+        DAO.passwordEntryDAO.search(user.id.getOrElse(0),
+                                    term,
+                                    wordMatch,
+                                    includeDescription) match {
+          case Left(error) => Ok(jsonError(s"Search error: $error"))
+          case Right(entries) => {
+            Ok(Json.obj("results" -> entries))
+          }
+        }
       }.
       getOrElse(BadRequest(jsonError("Missing search term")))
-
     }
   }
 }

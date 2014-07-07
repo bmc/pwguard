@@ -32,8 +32,4 @@ trait BaseModel {
     * @return the hash code
     */
   override def hashCode = id.getOrElse(0).hashCode
-
-  /** All implementations of models must be JSON-serializable.
-    */
-  def toJSON: JsValue
 }
