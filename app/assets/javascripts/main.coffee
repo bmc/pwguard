@@ -33,119 +33,11 @@ configApp = ($routeSegmentProvider,
 
 # Initialize the application by storing some data and functions into the
 # root scope. Invoked when the app is defined, below.
-initApp = ($rootScope,
-           $http,
-           $routeSegment,
-           $location,
-           $timeout,
-           pwgAjax,
-           pwgFlash,
-           pwgTimeout) ->
 
-  $rootScope.loggedInUser  = null
-  $rootScope.$routeSegment = $routeSegment
-  $rootScope.segmentOnLoad = window.segmentForURL($location.path())
-  $rootScope.initializing  = true
-
-  pwgFlash.init() # initialize the flash service
-
-  $rootScope.$on '$routeChangeSuccess', ->
-    # Clear flash messages on route change.
-    pwgFlash.clear 'all'
-
-  # Page-handling.
-
-  # Convenient way to show a page/segment
-
-  $rootScope.redirectToSegment = (segment) ->
-    url = $rootScope.pathForSegment segment
-    if url?
-      #console.log "Redirecting to #{url}"
-      $location.path(url)
-    else
-      console.log "(BUG) No URL for segment #{segment}"
-
-  $rootScope.segmentIsActive = (segment) ->
-    ($routeSegment.name is segment) or ($routeSegment.startsWith("#{segment}."))
-
-  $rootScope.pathForSegment = window.pathForSegment
-  $rootScope.hrefForSegment = window.hrefForSegment
-
-  $rootScope.loggedIn = ->
-    $rootScope.loggedInUser?
-
-  $rootScope.saveLoggedInUser = (user) ->
-    $rootScope.loggedInUser =
-      email:       user.email
-      isAdmin:     user.admin
-      displayName: user.displayName
-      firstName:   user.firstName
-      lastName:    user.lastName
-      isMobile:    user.isMobile
-
-  # On initial load or reload, we need to determine whether the user is
-  # still logged in, since a reload clears everything in the browser.
-
-  $rootScope.redirectIfNotLoggedIn
-
-  validateLocationChange = (segment) ->
-    useSegment = null
-    if $rootScope.loggedInUser?
-      # Ensure that the segment is valid for a logged in user.
-      useSegment = 'search' # default
-      if segment?
-        if window.isPostLoginSegment(segment)
-          if $rootScope.loggedInUser.isAdmin
-            # Admins can go anywhere.
-            useSegment = segment
-          else if (not window.isAdminOnlySegment(segment))
-            # Non-admins can go to non-admin segments.
-            useSegment = segment
-
-    else
-      # Ensure that the segment is valid for a non-logged in user.
-      if segment? and window.isPreLoginSegment(segment)
-        useSegment = segment
-      else
-        useSegment = 'login'
-
-    useSegment
-
-  $rootScope.$on '$locationChangeStart', (e) ->
-    segment = window.segmentForURL $location.path()
-    useSegment = validateLocationChange segment
-    if useSegment isnt segment
-      e.preventDefault()
-      $rootScope.redirectToSegment useSegment
-
-
-  onSuccess = (response) ->
-    $rootScope.initializing = false
-    initialSegment = $rootScope.segmentOnLoad
-    if response.loggedIn
-      $rootScope.loggedInUser = response.user
-
-    else
-      $rootScope.loggedInUser = null
-
-    useSegment = validateLocationChange initialSegment
-    $rootScope.redirectToSegment useSegment
-
-  onFailure = (response) ->
-    $rootScope.initializing = false
-    $rootScope.loggedInUser = null
-    $rootScope.redirectToSegment("login")
-
-  checkUser = ->
-    url = $("#config").data("logged-in-user-url")
-    pwgAjax.post(url, {}, onSuccess, onFailure)
-
-  checkUser()
 
 # The app itself.
 pwguardApp = angular.module('PWGuardApp', requiredModules)
 pwguardApp.config configApp
-pwguardApp.run initApp
 
 # Instantiating the module this way, rather than via "ng-app", provides
 # better browser console errors.
@@ -165,10 +57,111 @@ catch e
 # Main controller
 # ---------------------------------------------------------------------------
 
-MainCtrl = ($scope, $rootScope, macModal, $q) ->
+
+MainCtrl = ($scope, $routeSegment, $location, pwgTimeout, pwgAjax, pwgFlash, macModal, $q) ->
 
   $scope.dialogConfirmTitle   = null
   $scope.dialogConfirmMessage = null
+
+  $scope.loggedInUser  = null
+  $scope.$routeSegment = $routeSegment
+  $scope.segmentOnLoad = window.segmentForURL($location.path())
+  $scope.initializing  = true
+
+  pwgFlash.init() # initialize the flash service
+
+  $scope.$on '$routeChangeSuccess', ->
+    # Clear flash messages on route change.
+    pwgFlash.clear 'all'
+
+  # Page-handling.
+
+  # Convenient way to show a page/segment
+
+  $scope.redirectToSegment = (segment) ->
+    url = $scope.pathForSegment segment
+    if url?
+      #console.log "Redirecting to #{url}"
+      $location.path(url)
+    else
+      console.log "(BUG) No URL for segment #{segment}"
+
+  $scope.segmentIsActive = (segment) ->
+    ($routeSegment.name is segment) or ($routeSegment.startsWith("#{segment}."))
+
+  $scope.pathForSegment = window.pathForSegment
+  $scope.hrefForSegment = window.hrefForSegment
+
+  $scope.loggedIn = ->
+    $scope.loggedInUser?
+
+  $scope.saveLoggedInUser = (user) ->
+    $scope.loggedInUser =
+      email:       user.email
+      isAdmin:     user.admin
+      displayName: user.displayName
+      firstName:   user.firstName
+      lastName:    user.lastName
+      isMobile:    user.isMobile
+
+  # On initial load or reload, we need to determine whether the user is
+  # still logged in, since a reload clears everything in the browser.
+
+  $scope.redirectIfNotLoggedIn
+
+  validateLocationChange = (segment) ->
+    useSegment = null
+    if $scope.loggedInUser?
+      # Ensure that the segment is valid for a logged in user.
+      useSegment = 'search' # default
+      if segment?
+        if window.isPostLoginSegment(segment)
+          if $scope.loggedInUser.isAdmin
+            # Admins can go anywhere.
+            useSegment = segment
+          else if (not window.isAdminOnlySegment(segment))
+            # Non-admins can go to non-admin segments.
+            useSegment = segment
+
+    else
+      # Ensure that the segment is valid for a non-logged in user.
+      if segment? and window.isPreLoginSegment(segment)
+        useSegment = segment
+      else
+        useSegment = 'login'
+
+    useSegment
+
+  $scope.$on '$locationChangeStart', (e) ->
+    segment = window.segmentForURL $location.path()
+    useSegment = validateLocationChange segment
+    if useSegment isnt segment
+      e.preventDefault()
+      $scope.redirectToSegment useSegment
+
+
+  onSuccess = (response) ->
+    $scope.initializing = false
+    initialSegment = $scope.segmentOnLoad
+    if response.loggedIn
+      $scope.loggedInUser = response.user
+
+    else
+      $scope.loggedInUser = null
+
+    useSegment = validateLocationChange initialSegment
+    $scope.redirectToSegment useSegment
+
+  onFailure = (response) ->
+    $scope.initializing = false
+    $scope.loggedInUser = null
+    $scope.redirectToSegment("login")
+
+  checkUser = ->
+    url = $("#config").data("logged-in-user-url")
+    pwgAjax.post(url, {}, onSuccess, onFailure)
+
+  checkUser()
 
   deferred = null
 
@@ -192,7 +185,7 @@ MainCtrl = ($scope, $rootScope, macModal, $q) ->
   $scope.confirm = (message, title) ->
     deferred = $q.defer()
 
-    if $rootScope.loggedInUser.isMobile
+    if $scope.loggedInUser.isMobile
       if confirm message
         deferred.resolve()
       else
@@ -207,7 +200,11 @@ MainCtrl = ($scope, $rootScope, macModal, $q) ->
     deferred.promise
 
 pwguardApp.controller 'MainCtrl', ['$scope',
-                                   '$rootScope',
+                                   '$routeSegment',
+                                   '$location',
+                                   'pwgTimeout',
+                                   'pwgAjax',
+                                   'pwgFlash',
                                    'modal',
                                    '$q',
                                    MainCtrl]
@@ -216,7 +213,7 @@ pwguardApp.controller 'MainCtrl', ['$scope',
 # Navigation bar controller
 # ---------------------------------------------------------------------------
 
-NavbarCtrl = ($scope, $rootScope, pwgAjax) ->
+NavbarCtrl = ($scope, pwgAjax) ->
   $scope.logout = () ->
     # NOTE: See https://groups.google.com/forum/#!msg/angular/bsTbZ86WAY4/gdpKwc4f7ToJ
     #
@@ -231,11 +228,11 @@ NavbarCtrl = ($scope, $rootScope, pwgAjax) ->
     # So, this means the confirm call can't be the last thing in the
     # function.
 
-    if $rootScope.loggedIn()
+    if $scope.loggedIn()
       $scope.confirm("Really log out?", "Confirm log out").then (result) ->
         always = () ->
-          $rootScope.loggedInUser = null
-          $rootScope.redirectToSegment 'login'
+          $scope.loggedInUser = null
+          $scope.redirectToSegment 'login'
 
         onSuccess = (response) ->
           always()
@@ -248,16 +245,13 @@ NavbarCtrl = ($scope, $rootScope, pwgAjax) ->
 
         pwgAjax.post(url, {}, onSuccess, onFailure)
 
-pwguardApp.controller 'NavbarCtrl', ['$scope',
-                                     '$rootScope',
-                                     'pwgAjax',
-                                     NavbarCtrl]
+pwguardApp.controller 'NavbarCtrl', ['$scope', 'pwgAjax', NavbarCtrl]
 
 # ---------------------------------------------------------------------------
 # Login controller
 # ---------------------------------------------------------------------------
 
-LoginCtrl = ($scope, $rootScope, pwgAjax, pwgFlash) ->
+LoginCtrl = ($scope, pwgAjax, pwgFlash) ->
   $scope.email     = null
   $scope.password  = null
   $scope.canSubmit = false
@@ -275,8 +269,8 @@ LoginCtrl = ($scope, $rootScope, pwgAjax, pwgFlash) ->
   $scope.login = ->
     if $scope.canSubmit
       handleLogin = (data) ->
-        $rootScope.saveLoggedInUser(data.user)
-        $rootScope.redirectToSegment('search')
+        $scope.saveLoggedInUser(data.user)
+        $scope.redirectToSegment('search')
 
       handleFailure = (data) ->
         # Nothing to do.
@@ -301,7 +295,6 @@ LoginCtrl = ($scope, $rootScope, pwgAjax, pwgFlash) ->
     s? and s.trim().length > 0
 
 pwguardApp.controller 'LoginCtrl', ['$scope',
-                                    '$rootScope',
                                     'pwgAjax',
                                     'pwgFlash',
                                     LoginCtrl]
@@ -310,7 +303,7 @@ pwguardApp.controller 'LoginCtrl', ['$scope',
 # Search controller
 # ---------------------------------------------------------------------------
 
-SearchCtrl = ($scope, $rootScope, pwgAjax) ->
+SearchCtrl = ($scope, pwgAjax) ->
   $scope.searchTerm    = null
   $scope.searchResults = null
 
@@ -336,7 +329,6 @@ SearchCtrl = ($scope, $rootScope, pwgAjax) ->
     pwgAjax.post url, params, onSuccess
 
 pwguardApp.controller 'SearchCtrl', ['$scope',
-                                     '$rootScope',
                                      'pwgAjax'
                                      SearchCtrl]
 
@@ -344,16 +336,16 @@ pwguardApp.controller 'SearchCtrl', ['$scope',
 # Profile controller
 # ---------------------------------------------------------------------------
 
-ProfileCtrl = ($scope, $rootScope) ->
+ProfileCtrl = ($scope) ->
   return
 
-pwguardApp.controller 'ProfileCtrl', ['$scope', '$rootScope', ProfileCtrl]
+pwguardApp.controller 'ProfileCtrl', ['$scope', ProfileCtrl]
 
 # ---------------------------------------------------------------------------
 # Admin users controller
 # ---------------------------------------------------------------------------
 
-AdminUsersCtrl = ($scope, $rootScope) ->
+AdminUsersCtrl = ($scope) ->
   return
 
-pwguardApp.controller 'AdminUsersCtrl', ['$scope', '$rootScope', AdminUsersCtrl]
+pwguardApp.controller 'AdminUsersCtrl', ['$scope', AdminUsersCtrl]
