@@ -1,10 +1,13 @@
 package controllers
 
 import play.api._
+import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.mvc.Results._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.Play.current
+import pwguard.global.Globals
+import util.UserAgent.UserAgent
 
 import scala.concurrent.Future
 import scala.util.{Success, Try}
@@ -59,7 +62,9 @@ object MainController extends BaseController {
     *
     * @param name  the template name.
     */
-  def getAngularTemplate(name: String) = Action.async {
+  def getAngularTemplate(name: String) = UnsecuredAction {
+    implicit request =>
+
     Future {
       val file = Play.getFile(s"static/AngularTemplates/$name")
       val result = if (file.exists) {
@@ -83,6 +88,24 @@ object MainController extends BaseController {
         }
       }.get
     }
+  }
+
+  /** Get decoded information about the user agent.
+    */
+  def getUserAgentInfo = UnsecuredAction {
+    implicit request =>
+
+    val uaService = Globals.UserAgentDecoderService
+    val userAgent = request.headers.get("User-Agent").getOrElse("")
+
+    val f = uaService.decodeUserAgent(userAgent) map { userAgent: UserAgent =>
+      Json.obj("isMobile" -> userAgent.isMobile)
+    }
+
+    f.map { json => Ok(Json.obj("userAgentInfo" -> json)) }
+     .recover { case _ =>
+        Ok(jsonError("Unable to get information about your browser."))
+     }
   }
 
   // -------------------------------------------------------------------------

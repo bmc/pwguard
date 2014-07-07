@@ -11,6 +11,8 @@ POST       /logout                        controllers.SessionController.logout
 
 POST       /search                        controllers.SearchController.searchPasswordEntries
 
+GET        /user-agent-info               controllers.MainController.getUserAgentInfo
+
 GET        /angular/template/*path        controllers.MainController.getAngularTemplate(path: String)
 
 # Map static resources from the /public folder to the /assets URL path

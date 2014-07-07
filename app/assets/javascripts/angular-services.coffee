@@ -211,3 +211,49 @@ pwgFlash = ($rootScope) ->
     $rootScope.flash.clearWarning()
 
 pwgServices.factory 'pwgFlash', ['$rootScope', pwgFlash]
+
+# ----------------------------------------------------------------------------
+# Get info about the currently logged-in user
+# ----------------------------------------------------------------------------
+
+pwgCheckUser = ($q, pwgAjax) ->
+  deferred = null
+
+  onSuccess = (response) ->
+    deferred.resolve response
+    deferred = null
+
+  onFailure = (response) ->
+    deferred.reject response
+    deferred = null
+
+  checkUser: ->
+    deferred = $q.defer()
+    url = $("#config").data("logged-in-user-url")
+    pwgAjax.post url, {}, onSuccess, onFailure
+    deferred.promise
+
+pwgServices.factory 'pwgCheckUser', ['$q', 'pwgAjax', pwgCheckUser]
+
+# ----------------------------------------------------------------------------
+# Get decoded info about the browser
+# ----------------------------------------------------------------------------
+
+pwgGetBrowserInfo = ($q, pwgAjax) ->
+  deferred = null
+
+  onSuccess = (response) ->
+    deferred.resolve response.userAgentInfo
+    deferred = null
+
+  onFailure = (response) ->
+    deferred.reject response
+    deferred = null
+
+  getBrowserInfo: ->
+    deferred = $q.defer()
+    url = $("#config").data("user-agent-info-url")
+    pwgAjax.get url, onSuccess, onFailure
+    deferred.promise
+
+pwgServices.factory 'pwgGetBrowserInfo', ['$q', 'pwgAjax', pwgGetBrowserInfo]

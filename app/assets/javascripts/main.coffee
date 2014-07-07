@@ -37,7 +37,10 @@ configApp = ($routeSegmentProvider,
 
 # The app itself.
 pwguardApp = angular.module('PWGuardApp', requiredModules)
-pwguardApp.config configApp
+pwguardApp.config ['$routeSegmentProvider',
+                   '$routeProvider',
+                   '$locationProvider',
+                   configApp]
 
 # Instantiating the module this way, rather than via "ng-app", provides
 # better browser console errors.
@@ -58,7 +61,16 @@ catch e
 # ---------------------------------------------------------------------------
 
 
-MainCtrl = ($scope, $routeSegment, $location, pwgTimeout, pwgAjax, pwgFlash, macModal, $q) ->
+MainCtrl = ($scope,
+            $routeSegment,
+            $location,
+            pwgTimeout,
+            pwgAjax,
+            pwgFlash,
+            pwgCheckUser,
+            pwgGetBrowserInfo,
+            macModal,
+            $q) ->
 
   $scope.dialogConfirmTitle   = null
   $scope.dialogConfirmMessage = null
@@ -139,41 +151,50 @@ MainCtrl = ($scope, $routeSegment, $location, pwgTimeout, pwgAjax, pwgFlash, mac
       e.preventDefault()
       $scope.redirectToSegment useSegment
 
+  userPromise        = pwgCheckUser.checkUser()
+  browserInfoPromise = pwgGetBrowserInfo.getBrowserInfo()
+  combinedPromise    = $q.all [userPromise, browserInfoPromise]
 
-  onSuccess = (response) ->
+  combinedPromise.then ->
     $scope.initializing = false
-    initialSegment = $scope.segmentOnLoad
-    if response.loggedIn
-      $scope.loggedInUser = response.user
 
-    else
+    # Check each of the completed promises.
+
+    userInfoSuccess = (response) ->
+      if response.loggedIn
+        $scope.loggedInUser = response.user
+      else
+        $scope.loggedInUser = null
+
+      useSegment = validateLocationChange $scope.segmentOnLoad
+      $scope.redirectToSegment useSegment
+
+    userInfoFailure = (response) ->
       $scope.loggedInUser = null
+      $scope.redirectToSegment "login"
 
-    useSegment = validateLocationChange initialSegment
-    $scope.redirectToSegment useSegment
+    userPromise.then userInfoSuccess, userInfoFailure
 
-  onFailure = (response) ->
-    $scope.initializing = false
-    $scope.loggedInUser = null
-    $scope.redirectToSegment("login")
+    browserInfoSuccess = (userAgentInfo) ->
+      $scope.isMobile = userAgentInfo.isMobile
 
-  checkUser = ->
-    url = $("#config").data("logged-in-user-url")
-    pwgAjax.post(url, {}, onSuccess, onFailure)
+    browserInfoFailure = (response) ->
+      $scope.isMobile = false
 
-  checkUser()
+    browserInfoPromise.then browserInfoSuccess
 
-  deferred = null
+  # Modal handler
+  modalDeferred = null
 
   $scope.ok = ->
     macModal.hide ->
-      deferred.resolve()
-      deferred = null
+      modalDeferred.resolve()
+      modalDeferred = null
 
   $scope.cancel = ->
     macModal.hide ->
-      deferred.reject()
-      deferred = null
+      modalDeferred.reject()
+      modalDeferred = null
 
   # Shows an appropriate confirmation dialog, depending on whether the user
   # is mobile or not. Returns a promise (via $q) that resolves on confirmation
@@ -183,13 +204,13 @@ MainCtrl = ($scope, $routeSegment, $location, pwgTimeout, pwgAjax, pwgFlash, mac
   #   message - the confirmation message
   #   title   - optional title for the dialog, if supported
   $scope.confirm = (message, title) ->
-    deferred = $q.defer()
+    modalDeferred = $q.defer()
 
-    if $scope.loggedInUser.isMobile
+    if $scope.isMobile
       if confirm message
-        deferred.resolve()
+        modalDeferred.resolve()
       else
-        deferred.reject()
+        modalDeferred.reject()
 
     else
       $scope.dialogConfirmTitle   = title
@@ -197,7 +218,7 @@ MainCtrl = ($scope, $routeSegment, $location, pwgTimeout, pwgAjax, pwgFlash, mac
 
       macModal.show 'confirm-dialog'
 
-    deferred.promise
+    modalDeferred.promise
 
 pwguardApp.controller 'MainCtrl', ['$scope',
                                    '$routeSegment',
@@ -205,6 +226,8 @@ pwguardApp.controller 'MainCtrl', ['$scope',
                                    'pwgTimeout',
                                    'pwgAjax',
                                    'pwgFlash',
+                                   'pwgCheckUser',
+                                   'pwgGetBrowserInfo'
                                    'modal',
                                    '$q',
                                    MainCtrl]
@@ -294,10 +317,7 @@ LoginCtrl = ($scope, pwgAjax, pwgFlash) ->
   nonEmpty = (s) ->
     s? and s.trim().length > 0
 
-pwguardApp.controller 'LoginCtrl', ['$scope',
-                                    'pwgAjax',
-                                    'pwgFlash',
-                                    LoginCtrl]
+pwguardApp.controller 'LoginCtrl', ['$scope', 'pwgAjax', 'pwgFlash', LoginCtrl]
 
 # ---------------------------------------------------------------------------
 # Search controller
@@ -328,9 +348,7 @@ SearchCtrl = ($scope, pwgAjax) ->
 
     pwgAjax.post url, params, onSuccess
 
-pwguardApp.controller 'SearchCtrl', ['$scope',
-                                     'pwgAjax'
-                                     SearchCtrl]
+pwguardApp.controller 'SearchCtrl', ['$scope', 'pwgAjax', SearchCtrl]
 
 # ---------------------------------------------------------------------------
 # Profile controller

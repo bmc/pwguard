@@ -8,25 +8,54 @@
   position:         relative; // Allow for absolute positioning of children
 }
 
-#logo {
-  font-family: 'Asset', cursive;
-  color: @logoColor;
-  float: left;
+#brand {
+  vertical-align: bottom;
+  display:        inline-block;
 
-  @media @phone {
-    font-size: 18px;
+  .logo {
+    display:     inline-block;
+    font-family: 'Asset', cursive;
+    color:       @logoColor;
+    float:       left;
+
+    @media @phone {
+      font-size: 18px;
+    }
+
+    @media @tablet {
+      font-size: 24px;
+    }
+
+    @media @desktop {
+      font-size: 32px;
+    }
+
+    @media @wideDesktop {
+      font-size: 40px;
+    }
   }
 
-  @media @tablet {
-    font-size: 24px;
-  }
+  .qualifier {
+    display:     inline-block;
+    font-style:  italic;
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    color:       @logoColor;
 
-  @media @desktop {
-    font-size: 32px;
-  }
+    @media @phone {
+      font-size: 10px;
+    }
 
-  @media @wideDesktop {
-    font-size: 40px;
+    @media @tablet {
+      font-size: 12px;
+    }
+
+    @media @desktop {
+      font-size: 14px;
+    }
+
+    @media @wideDesktop {
+      font-size: 18px;
+    }
   }
 }
 

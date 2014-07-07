@@ -3,8 +3,13 @@
 <div id="navbar" ng-controller="NavbarCtrl">
   <div class="grid">
     <div class="unit half">
-      <div id="logo">
-        <i class="fa fa-lock"></i> PWGuard
+      <div id="brand">
+        <span class="logo">
+          <i class="fa fa-lock"></i> PWGuard
+        </span>
+        <span ng-show="isMobile" class="qualifier">
+          Mobile
+        </span>
       </div>
     </div>
     <div class="unit half">
