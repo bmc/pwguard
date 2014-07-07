@@ -5,6 +5,7 @@
   width:            100%;
   margin:           0;
   padding:          0;
+  position:         relative; // Allow for absolute positioning of children
 }
 
 #logo {
@@ -66,33 +67,39 @@
 }
 
 #loading-spinner {
-  color: #dddddd;
+  position:         absolute;
+  top:              5px;
+  color:            #dddddd;
   background-color: #888888;
-  text-align: center;
-  border-radius: 5px 5px 5px 5px;
-  float: right;
+  text-align:       center;
+  border-radius:    5px 5px 5px 5px;
+  float:            right;
 
   @media @phone {
-    font-size: 30px;
-    height: 40px;
-    width: 40px;
+    font-size: 20px;
+    height:    25px;
+    width:     25px;
+    right:     20px;
   }
 
   @media @tablet {
-    font-size: 50px;
-    height: 60px;
-    width: 60px;
+    font-size: 20px;
+    height:    25px;
+    width:     25px;
+    right:     30px;
   }
 
   @media @desktop {
-    font-size: 70px;
-    height: 80px;
-    width: 80px;
+    font-size: 40px;
+    height:    50px;
+    width:     50px;
+    right:     55px;
   }
 
   @media @wideDesktop {
-    font-size: 70px;
-    height: 80px;
-    width: 80px;
+    font-size: 40px;
+    height:    50px;
+    width:     50px;
+    right:     55px;
   }
 }

@@ -2,13 +2,14 @@ package controllers
 
 import dbservice.DAO
 import models.{UserHelper, User}
-import play.api._
+import models.UserHelper.json._
+import models.UserHelper.json.implicits._
 import play.api.libs.json.{Json, JsValue}
 import play.api.mvc._
 import play.api.mvc.Results._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.Play.current
 import pwguard.global.Globals
+import util.JsonHelpers
 import util.UserAgent.UserAgent
 
 import scala.concurrent.Future
@@ -35,7 +36,9 @@ object SessionController extends BaseController {
           InternalServerError
         }
         case Right(sessionData) => {
-          val userJson = user.toJSON ++ Json.obj("isMobile" -> userAgent.isMobile)
+          val userJson = JsonHelpers.addFields(
+            safeUserJSON(user), "isMobile" -> Json.toJson(userAgent.isMobile)
+          )
           val payload = Json.obj("user" -> userJson)
 
           val sessionPairs = Seq(
@@ -82,7 +85,7 @@ object SessionController extends BaseController {
           }
 
           case Right(Some(user)) => {
-            Json.obj("loggedIn" -> true, "user" -> user.toJSON)
+            Json.obj("loggedIn" -> true, "user" -> safeUserJSON(user))
           }
         }
       }.

@@ -32,11 +32,12 @@ object SearchController extends BaseController {
 
     Future {
       val json               = request.body
-      val searchTerm         = (json \ "term").asOpt[String]
+      val searchTerm         = (json \ "searchTerm").asOpt[String]
       val includeDescription = (json \ "includeDescription").asOpt[Boolean]
                                                             .getOrElse(false)
       val wordMatch          = (json \ "wordMatch").asOpt[Boolean]
                                                    .getOrElse(false)
+      logger.debug(s"Received: $json")
       searchTerm.map { term =>
         DAO.passwordEntryDAO.search(user.id.getOrElse(0),
                                     term,

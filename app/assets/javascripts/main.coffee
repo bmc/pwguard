@@ -95,11 +95,8 @@ initApp = ($rootScope,
       useSegment = 'search' # default
       if segment?
         if window.isPostLoginSegment(segment)
-          console.log "Segment #{segment} is post-login"
-          console.log "Admin? #{$rootScope.loggedInUser.isAdmin}"
           if $rootScope.loggedInUser.isAdmin
             # Admins can go anywhere.
-            console.log "Admin: Can go to #{segment}"
             useSegment = segment
           else if (not window.isAdminOnlySegment(segment))
             # Non-admins can go to non-admin segments.
@@ -313,14 +310,32 @@ pwguardApp.controller 'LoginCtrl', ['$scope',
 # Search controller
 # ---------------------------------------------------------------------------
 
-SearchCtrl = ($scope, $rootScope) ->
+SearchCtrl = ($scope, $rootScope, pwgAjax) ->
   $scope.searchTerm = null
+  $scope.searchResults = null
 
   $scope.searchTermChanged = ->
     if $scope.searchTerm.length >= 2
-      console.log "would search here"
+      doSearch()
 
-pwguardApp.controller 'SearchCtrl', ['$scope', '$rootScope', SearchCtrl]
+  doSearch = ->
+    url = $("#config").data('search-url')
+
+    onSuccess = (data) ->
+      console.log data
+      $scope.searchResults = data.results
+
+    params =
+      searchTerm:         $scope.searchTerm
+      includeDescription: true
+      wordMatch:          false
+
+    pwgAjax.post url, params, onSuccess
+
+pwguardApp.controller 'SearchCtrl', ['$scope',
+                                     '$rootScope',
+                                     'pwgAjax'
+                                     SearchCtrl]
 
 # ---------------------------------------------------------------------------
 # Profile controller

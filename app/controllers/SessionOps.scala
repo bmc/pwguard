@@ -22,8 +22,8 @@ object SessionOps {
                                       .map { JodaDuration.millis(_) }
                                       .get
 
-  val SessionKey  = "PWGuard-Session-ID"
-  val IsMobileKey = "PWGuard-Is-Mobile"
+  val SessionKey  = "session_id"
+  val IsMobileKey = "is_mobile"
 
   // --------------------------------------------------------------------------
   // Public methods

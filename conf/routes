@@ -9,6 +9,7 @@ POST       /logged-in-user                controllers.SessionController.getLogge
 POST       /login                         controllers.SessionController.login
 POST       /logout                        controllers.SessionController.logout
 
+POST       /search                        controllers.SearchController.searchPasswordEntries
 
 GET        /angular/template/*path        controllers.MainController.getAngularTemplate(path: String)
 

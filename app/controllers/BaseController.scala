@@ -92,26 +92,21 @@ trait BaseController {
                                   noUser:       Request[T] => Future[Result]): Action[T] = {
 
     Action.async(bodyParser) { implicit request =>
-      Future {
-        SessionOps.loggedInEmail(request).map { email =>
-          DAO.userDAO.findByEmail(email) match {
-            case Left(_)           => logAndHandleRequest(noUser, request)
-            case Right(None)       => logAndHandleRequest(noUser, request)
-            case Right(Some(user)) => {
-              val f = { r: Request[T] => whenLoggedIn(user, r) }
-              logAndHandleRequest(f, request)
-            }
+      SessionOps.loggedInEmail(request).map { email =>
+        DAO.userDAO.findByEmail(email) match {
+          case Left(_)           => logAndHandleRequest(noUser, request)
+          case Right(None)       => logAndHandleRequest(noUser, request)
+          case Right(Some(user)) => {
+            def fwd(r: Request[T]): Future[Result] = whenLoggedIn(user, r)
+            logAndHandleRequest(fwd, request)
           }
-        }.
-        getOrElse(logAndHandleRequest(noUser, request))
-
-        Ok("")
-      }
+        }
+      }.
+      getOrElse(logAndHandleRequest(noUser, request))
     }
-
   }
 
-  /** Convenience method to processing incoming secured JSON request, sending
+  /** Convenience method to process incoming secured JSON request, sending
     * back a consistent error when no user is logged in. Built on top of
     * `ActionWithUser`.
     *
@@ -215,9 +210,14 @@ trait BaseController {
 
   private def logAndHandleRequest[T](handler: Request[T] => Future[Result],
                                      request: Request[T]): Future[Result] = {
-    logger.debug { s"Received request ${request}" }
-    val res = handler(request)
-    logger.debug { s"Finished processing request ${request}" }
-    res
+    def futureLog(msg: => String): Future[Unit] = {
+      Future { logger.debug(msg) }
+    }
+
+    // Chained futures ensure that the logging occurs in the right order.
+    for { f1 <- futureLog { s"Received request ${request}" }
+          res <- handler(request)
+          f2  <- futureLog { s"Finished processing request ${request}" } }
+    yield res
   }
 }

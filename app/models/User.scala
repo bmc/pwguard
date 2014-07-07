@@ -1,8 +1,10 @@
 package models
 
 import java.security.SecureRandom
+import _root_.util.JsonHelpers
 import org.mindrot.jbcrypt.BCrypt
-import play.api.libs.json.Json
+import play.api.libs.json._
+import play.api.libs.functional.syntax._
 
 /** Basic user model
   */
@@ -15,16 +17,6 @@ case class User(id:                   Option[Int],
                 active:               Boolean,
                 admin:                Boolean)
   extends BaseModel {
-
-  lazy val toJSON = Json.obj(
-    "id"          -> id,
-    "email"       -> email,
-    "firstName"   -> firstName,
-    "lastName"    -> lastName,
-    "displayName" -> displayName,
-    "active"      -> active,
-    "admin"       -> admin
-  )
 
   /** What to display for the user's name.
     */
@@ -81,5 +73,38 @@ object UserHelper {
     */
   def passwordMatches(plaintext: String, encrypted: String): Boolean = {
     BCrypt.checkpw(plaintext, encrypted)
+  }
+
+
+  /** Various implicits, including JSON implicits.
+    */
+  object json {
+    object implicits {
+
+      implicit val userWrites: Writes[User] = (
+        (JsPath \ "id").write[Option[Int]] and
+        (JsPath \ "email").write[String] and
+        (JsPath \ "encryptedPassword").write[String] and
+        (JsPath \ "passwordEncryptionKey").write[String] and
+        (JsPath \ "firstName").write[Option[String]] and
+        (JsPath \ "lastName").write[Option[String]] and
+        (JsPath \ "active").write[Boolean] and
+        (JsPath \ "admin").write[Boolean]
+        )(unlift(User.unapply))
+    }
+
+    private val UnsafeUserFields = Seq("encryptedPassword",
+                                       "passwordEncryptionKey")
+
+    // Call this method to fix up the User JSON (i.e., remove sensitive
+    // fields
+    def safeUserJSON(user: User): JsValue = {
+      import implicits._
+
+      JsonHelpers.addFields(
+        JsonHelpers.removeFields(Json.toJson(user), UnsafeUserFields: _*),
+        "displayName" -> Json.toJson(user.displayName)
+      )
+    }
   }
 }
