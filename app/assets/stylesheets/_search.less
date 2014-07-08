@@ -79,6 +79,8 @@
       .angular-accordion-header {
         background: @accordionHeaderBackgroundColor;
         color:      black;
+        padding-top: 15px;
+        padding-bottom: 15px;
 
         &:hover {
           text-decoration: none !important;
@@ -86,9 +88,13 @@
       }
 
       .angular-accordion-pane-content {
-        border-left: 1px solid @accordionBorderColor;
-        border-right: 1px solid @accordionBorderColor;
+        border-left:   1px solid @accordionBorderColor;
+        border-right:  1px solid @accordionBorderColor;
         border-bottom: 1px solid @accordionBorderColor;
+
+        div {
+          margin-top: 5px;
+        }
       }
     }
   }
