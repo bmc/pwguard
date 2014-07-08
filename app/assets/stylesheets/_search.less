@@ -18,5 +18,29 @@
         width: 60%;
       }
     }
+
+    .angular-accordion-container {
+      @media @phone {
+        font-size: @phoneFontSize - 3px;
+      }
+      @media @tablet {
+        font-size: @tabletFontSize - 2px;
+      }
+
+      .angular-accordion-header {
+        background: @accordionHeaderBackgroundColor;
+        color:      black;
+
+        &:hover {
+          text-decoration: none !important;
+        }
+      }
+
+      .angular-accordion-pane-content {
+        border-left: 1px solid @accordionBorderColor;
+        border-right: 1px solid @accordionBorderColor;
+        border-bottom: 1px solid @accordionBorderColor;
+      }
+    }
   }
 }

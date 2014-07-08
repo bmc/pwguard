@@ -69,11 +69,16 @@
         </div>
 
         <div ng-show="isMobile">
-          Accordion
           <angular-accordion ng-repeat="result in searchResults">
             <pane>
               <pane-header>{{result.name}}</pane-header>
-              <pane-content>{{result.description}}</pane-content>
+              <pane-content>
+                <div>{{result.description}}</div>
+                <div>
+                  <input type="text" readonly="readonly"
+                         ng-model="result.plaintextPassword"/>
+                </div>
+              </pane-content>
             </pane>
           </angular-accordion>
         </div>

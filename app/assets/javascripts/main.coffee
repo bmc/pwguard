@@ -342,12 +342,8 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash) ->
       $scope.searchResults = null
 
   doSearch = ->
-    url = $("#config").data('search-url')
-
     onSuccess = (data) ->
-      $scope.searchResults = for r in data.results
-        r.showPassword = false
-        r
+      $scope.searchResults = adjustResults data.results
 
     onFailure = (response) ->
       pwgFlash.error "Server error issuing the search. We're looking into it."
@@ -357,12 +353,18 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash) ->
       includeDescription: true
       wordMatch:          false
 
+    url = $("#config").data('search-url')
     pwgAjax.post url, params, onSuccess, onFailure
 
   $scope.showAll = ->
-    url = $("#config").data("all-pw-url")
+    onSuccess = (data) ->
+      $scope.searchResults = adjustResults data.results
 
-    onSuccess
+    onFailure = (response) ->
+      pwgFlash.error "Server error. We're looking into it."
+
+    url = $("#config").data("all-pw-url")
+    pwgAjax.get url, onSuccess, onFailure
 
   adjustResults = (results) ->
     for r in results
