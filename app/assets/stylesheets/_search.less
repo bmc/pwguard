@@ -19,10 +19,19 @@
 
   .search-box {
     #search-form {
-      .input-term {
-        @media (@desktop) or (@wideDesktop) {
-          width: 200px !important;
-          display: inline-block;
+
+      .desktop-styles {
+        max-width: 400px;
+        display: inline-block;
+      }
+
+      div.input {
+        @media @desktop {
+          .desktop-styles;
+        }
+
+        @media @wideDesktop {
+          .desktop-styles;
         }
       }
     }
