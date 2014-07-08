@@ -178,6 +178,6 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
   private def loadMany(query: PWEntryQuery)(implicit session: SlickSession):
     Either[String, Set[PasswordEntry]] = {
 
-    Right(query.list.toSet)
+    Right(query.sorted { _.name }.list.toSet)
   }
 }
