@@ -94,6 +94,17 @@ MainCtrl = ($scope,
     # Clear flash messages on route change.
     pwgFlash.clear 'all'
 
+  $scope.$on '$locationChangeStart', (e) ->
+    # Skip, while initializing. (Doing this during initialization screws
+    # things up, causing multiple redirects that play games with Angular.)
+    unless $scope.initializing
+      segment = window.segmentForURL $location.path()
+      useSegment = validateLocationChange segment
+      $scope.log.debug "segment=#{segment}, useSegment=#{useSegment}"
+      if useSegment isnt segment
+        e.preventDefault()
+        $scope.redirectToSegment useSegment
+
   # Page-handling.
 
   # Convenient way to show a page/segment
@@ -102,6 +113,7 @@ MainCtrl = ($scope,
     url = $scope.pathForSegment segment
     if url?
       $scope.log.debug "Redirecting to #{url}"
+      $scope.log.debug (new Error("trace").stack)
       $location.path(url)
     else
       console.log "(BUG) No URL for segment #{segment}"
@@ -153,14 +165,6 @@ MainCtrl = ($scope,
         useSegment = 'login'
 
     useSegment
-
-  $scope.$on '$locationChangeStart', (e) ->
-    segment = window.segmentForURL $location.path()
-    useSegment = validateLocationChange segment
-    $scope.log.debug "segment=#{segment}, useSegment=#{useSegment}"
-    if useSegment isnt segment
-      e.preventDefault()
-      $scope.redirectToSegment useSegment
 
   userPromise        = pwgCheckUser.checkUser()
   browserInfoPromise = pwgGetBrowserInfo.getBrowserInfo()
