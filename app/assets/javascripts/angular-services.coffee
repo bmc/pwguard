@@ -12,6 +12,8 @@ pwgLogging = ->
   log      = log4javascript.getLogger()
   appender = new log4javascript.BrowserConsoleAppender()
 
+  log4javascript.setShowStackTraces true
+
   # Allow the console appender to use the default NullLayout, which allows
   # for the logging of objects without converting them to strings.
   ###
