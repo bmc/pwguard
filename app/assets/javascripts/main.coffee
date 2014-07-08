@@ -359,6 +359,16 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash) ->
 
     pwgAjax.post url, params, onSuccess, onFailure
 
+  $scope.showAll = ->
+    url = $("#config").data("all-pw-url")
+
+    onSuccess
+
+  adjustResults = (results) ->
+    for r in results
+      r.showPassword = false
+      r
+
 pwguardApp.controller 'SearchCtrl', ['$scope',
                                      'pwgAjax',
                                      'pwgFlash',

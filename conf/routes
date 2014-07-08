@@ -3,21 +3,22 @@
 # ~~~~
 
 # Home page
-GET        /                              controllers.MainController.index
+GET         /                              controllers.MainController.index
 
-POST       /logged-in-user                controllers.SessionController.getLoggedInUser
-POST       /login                         controllers.SessionController.login
-POST       /logout                        controllers.SessionController.logout
+POST        /logged-in-user                controllers.SessionController.getLoggedInUser
+POST        /login                         controllers.SessionController.login
+POST        /logout                        controllers.SessionController.logout
 
-POST       /search                        controllers.SearchController.searchPasswordEntries
+POST        /pw/search                     controllers.PasswordEntryController.searchPasswordEntries
+GET         /pw/all                        controllers.PasswordEntryController.all
 
-GET        /user-agent-info               controllers.MainController.getUserAgentInfo
+GET         /user-agent-info               controllers.MainController.getUserAgentInfo
 
-GET        /angular/template/*path        controllers.MainController.getAngularTemplate(path: String)
+GET         /angular/template/*path        controllers.MainController.getAngularTemplate(path: String)
 
 # Map static resources from the /public folder to the /assets URL path
-GET        /assets/*file                  controllers.Assets.at(path="/public", file)
+GET         /assets/*file                  controllers.Assets.at(path="/public", file)
 
 # Static handler, for development. Should be handled by front-end web server
 # in production.
-GET        /static/*path                  controllers.MainController.static(path: String)
+GET         /static/*path                  controllers.MainController.static(path: String)

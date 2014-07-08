@@ -16,9 +16,9 @@ import scala.util.{Success, Try}
 
 /** Controller for search operations.
   */
-object SearchController extends BaseController {
+object PasswordEntryController extends BaseController {
 
-  override protected val logger = Logger("pwguard.controllers.SearchController")
+  override protected val logger = Logger("pwguard.controllers.PasswordEntryController")
 
   // -------------------------------------------------------------------------
   // Public methods
@@ -44,22 +44,36 @@ object SearchController extends BaseController {
 
       logger.debug(s"Received: $json")
       searchTerm.map { term =>
-        val res = for { entries   <- searchDB(term).right
-                        jsEntries <- jsonPasswordEntries(user, entries).right }
-                  yield Json.obj("results" -> jsEntries)
-
-        res match {
-          case Left(error) => Ok(jsonError(s"Search error: $error"))
-          case Right(json) => logger.error(json.toString);Ok(json)
+        mapToJSON(user) { searchDB(term) } match {
+          case Left(error) => Ok(jsonError(s"Search failed for $user: $error"))
+          case Right(json) => Ok(json)
         }
       }.
       getOrElse(BadRequest(jsonError("Missing search term")))
     }
   }
 
+  def all = SecuredAction { (user: User, request: Request[Any]) =>
+    Future {
+      mapToJSON(user) { DAO.passwordEntryDAO.allForUser(user) } match {
+        case Left(error) => Ok(jsonError(s"Failed for $user: $error"))
+        case Right(json) => Ok(json)
+      }
+    }
+  }
+
   // -------------------------------------------------------------------------
   // Private methods
   // -------------------------------------------------------------------------
+
+  private def mapToJSON(user: User)
+                       (getEntries: => Either[String, Set[PasswordEntry]]):
+    Either[String, JsValue] = {
+
+    for { entries   <- getEntries.right
+          jsEntries <- jsonPasswordEntries(user, entries).right }
+    yield Json.obj("results" -> jsEntries)
+  }
 
   // Decrypt the encrypted passwords and produce the final JSON.
   private def jsonPasswordEntries(user:            User,
