@@ -346,6 +346,11 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
   $scope.searchDescription = true
   $scope.matchFullWord     = false
 
+  for v in ['searchDescription', 'matchFullWord']
+    console.log "watching #{v}"
+    $scope.$watch v, ->
+      searchOptionChanged()
+
   keyboardTimeout = null
   $scope.searchTermChanged = ->
     if validSearchTerm()
@@ -355,7 +360,7 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
     else
       $scope.searchResults = null
 
-  $scope.searchOptionChanged = ->
+  searchOptionChanged = ->
     if validSearchTerm()
       doSearch()
     else

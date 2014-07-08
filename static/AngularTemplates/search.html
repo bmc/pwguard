@@ -19,21 +19,69 @@
       </div>
     </div>
     <div class="grid no-gutters">
-      <div class="unit half">
-        <div class="search-options">
+      <div class="unit" ng-class="{half: !isMobile, whole: isMobile}">
+
+        <!-- mobile -->
+
+        <div class="search-options-mobile" ng-show="isMobile">
           <span class="all-button">
             <button class="btn btn-small" ng-click="showAll()">All</button>
           </span>
+
+          <span class="search-option-mobile"
+                ng-click="searchDescription=!searchDescription">
+
+            <!--
+             A fake checkbox for mobile, since we're clicking the whole
+             thing.
+            -->
+            <span class="fake-checkbox">
+              <span ng-hide="searchDescription">&nbsp;</span>
+              <span ng-show="searchDescription">
+                <i class="fa fa-check"></i>
+              </span>
+            </span>
+
+            <label>Description</label>
+          </span>
+
+          <span class="search-option-mobile"
+                ng-click="matchFullWord=!matchFullWord">
+
+            <!--
+             A fake checkbox for mobile, since we're clicking the whole
+             thing.
+            -->
+            <span class="fake-checkbox">
+              <span ng-hide="matchFullWord">&nbsp;</span>
+              <span ng-show="matchFullWord">
+                <i class="fa fa-check"></i>
+              </span>
+            </span>
+
+            <label>Whole word</label>
+          </span>
+        </div>
+
+        <!-- non-mobile -->
+
+        <div class="search-options mobile" ng-hide="isMobile">
           <span class="search-option">
-            <span class="search-option-label">Description</span>
-            <input type="checkbox" ng-model="searchDescription"
-                   ng-change="searchOptionChanged()">
+            <div class="input checkbox">
+              <label class="search-option-label" for="description">
+                Description
+              </label>
+              <input type="checkbox"
+                     name="description"
+                     ng-model="searchDescription"
+                     ng-change="searchOptionChanged()"/>
+            </div>
           </span>
           <span class="search-option">
             <span class="search-option-label">Whole word</span>
             <input type="checkbox" ng-model="matchFullWord"
-                   ng-change="searchOptionChanged()">
-          </span>
+                   ng-change="searchOptionChanged()"/>
+           </span>
         </div>
       </div>
     </div>
