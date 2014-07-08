@@ -43,6 +43,10 @@ pwguardApp.config ['$routeSegmentProvider',
                    '$locationProvider',
                    configApp]
 
+###############################################################################
+# Local functions
+###############################################################################
+
 # Instantiating the module this way, rather than via "ng-app", provides
 # better browser console errors.
 ###
@@ -65,13 +69,16 @@ catch e
 MainCtrl = ($scope,
             $routeSegment,
             $location,
+            macModal,
             pwgTimeout,
             pwgAjax,
             pwgFlash,
             pwgCheckUser,
             pwgGetBrowserInfo,
-            macModal,
+            pwgLogging,
             $q) ->
+
+  $scope.log = pwgLogging.logger "MainCtrl"
 
   $scope.dialogConfirmTitle   = null
   $scope.dialogConfirmMessage = null
@@ -94,7 +101,7 @@ MainCtrl = ($scope,
   $scope.redirectToSegment = (segment) ->
     url = $scope.pathForSegment segment
     if url?
-      #console.log "Redirecting to #{url}"
+      $scope.log.debug "Redirecting to #{url}"
       $location.path(url)
     else
       console.log "(BUG) No URL for segment #{segment}"
@@ -124,8 +131,6 @@ MainCtrl = ($scope,
   # On initial load or reload, we need to determine whether the user is
   # still logged in, since a reload clears everything in the browser.
 
-  $scope.redirectIfNotLoggedIn
-
   validateLocationChange = (segment) ->
     useSegment = null
     if $scope.loggedInUser?
@@ -152,6 +157,7 @@ MainCtrl = ($scope,
   $scope.$on '$locationChangeStart', (e) ->
     segment = window.segmentForURL $location.path()
     useSegment = validateLocationChange segment
+    $scope.log.debug "segment=#{segment}, useSegment=#{useSegment}"
     if useSegment isnt segment
       e.preventDefault()
       $scope.redirectToSegment useSegment
@@ -229,12 +235,13 @@ MainCtrl = ($scope,
 pwguardApp.controller 'MainCtrl', ['$scope',
                                    '$routeSegment',
                                    '$location',
+                                   'modal',
                                    'pwgTimeout',
                                    'pwgAjax',
                                    'pwgFlash',
                                    'pwgCheckUser',
                                    'pwgGetBrowserInfo'
-                                   'modal',
+                                   'pwgLogging',
                                    '$q',
                                    MainCtrl]
 
@@ -330,8 +337,10 @@ pwguardApp.controller 'LoginCtrl', ['$scope', 'pwgAjax', 'pwgFlash', LoginCtrl]
 # ---------------------------------------------------------------------------
 
 SearchCtrl = ($scope, pwgAjax, pwgFlash) ->
-  $scope.searchTerm    = null
-  $scope.searchResults = null
+  $scope.searchTerm        = null
+  $scope.searchResults     = null
+  $scope.searchDescription = true
+  $scope.matchFullWord     = false
 
   $scope.searchTermChanged = ->
     trimmed = if $scope.searchTerm? then $scope.searchTerm.trim() else ""
@@ -350,8 +359,8 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash) ->
 
     params =
       searchTerm:         $scope.searchTerm
-      includeDescription: true
-      wordMatch:          false
+      includeDescription: $scope.searchDescription
+      wordMatch:          $scope.matchFullWord
 
     url = $("#config").data('search-url')
     pwgAjax.post url, params, onSuccess, onFailure

@@ -3,6 +3,46 @@
 pwgServices = angular.module('pwguard-services', [])
 
 # ----------------------------------------------------------------------------
+# Logging service. Basically, this service simply hides the initialization
+# of a log4javascript-compatible logging service, providing a simple
+# logger() function to retrieve a new logger.
+# ----------------------------------------------------------------------------
+
+pwgLogging = ->
+  log      = log4javascript.getLogger()
+  appender = new log4javascript.BrowserConsoleAppender()
+
+  # Allow the console appender to use the default NullLayout, which allows
+  # for the logging of objects without converting them to strings.
+  ###
+  layout   = new log4javascript.PatternLayout "%d{HH:mm:ss} (%-5p) %c %m"
+  appender.setLayout layout
+  ###
+
+  log.addAppender appender
+
+  mapLevel = (stringLevel) ->
+    switch stringLevel
+      when "trace" then log4javascript.Level.TRACE
+      when "debug" then log4javascript.Level.DEBUG
+      when "info" then log4javascript.Level.INFO
+      when "warn" then log4javascript.Level.WARN
+      when "error" then log4javascript.Level.ERROR
+      when "fatal" then log4javascript.Level.FATAL
+      else log4javascript.Level.INFO
+
+  loggingLevel = mapLevel $("#config").data("log-level")
+  appender.setThreshold loggingLevel
+
+  logger: (name, level='debug') ->
+    logger = log4javascript.getLogger(name)
+    logger.addAppender appender
+    logger.setLevel mapLevel(level)
+    logger
+
+pwgServices.factory 'pwgLogging', [pwgLogging]
+
+# ----------------------------------------------------------------------------
 # Front-end service for AJAX calls. Handles errors in a consistent way, and
 # fires up a spinner.
 # ----------------------------------------------------------------------------
