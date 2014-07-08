@@ -113,7 +113,7 @@ MainCtrl = ($scope,
     url = $scope.pathForSegment segment
     if url?
       $scope.log.debug "Redirecting to #{url}"
-      $scope.log.debug (new Error("trace").stack)
+      $scope.log.trace (new Error("Debug stack trace").stack)
       $location.path(url)
     else
       console.log "(BUG) No URL for segment #{segment}"
