@@ -114,7 +114,6 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
       }
 
       val qFinal = q.filter { pwe => pwe.userID === userID }
-      logger.error(qFinal.selectStatement)
 
       // Can't do word-only matches in the database in a database-agnostic
       // fashion. So, we need to filter here.
@@ -162,12 +161,12 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
                                     word:        String,
                                     includeDesc: Boolean):
   Set[PasswordEntry] = {
-    val re = """\b""" + word + """\b"""
+    val re = ("""\b""" + word + """\b""").r
 
     entries.filter { pwe =>
       val nameMatch = re.matches(pwe.name)
       if (includeDesc) {
-        pwe.description.map { re.matches(_) }.getOrElse(true) || nameMatch
+        pwe.description.map { re.matches(_) }.getOrElse(false) || nameMatch
       }
       else {
         nameMatch
