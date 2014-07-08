@@ -21,10 +21,20 @@
     <div class="grid no-gutters">
       <div class="unit half">
         <div class="search-options">
-          <button type="btn btn-small" ng-click="showAll()" class="all-button">
-            All
-          </button>
-          Description <input type="checkbox" ng-model="searchDescription">
+          <span class="all-button">
+            <button type="btn btn-small" ng-click="showAll()">All</button>
+          </span>
+          Search:
+          <span class="search-option">
+            <span class="search-option-label">Description</span>
+            <input type="checkbox" ng-model="searchDescription"
+                   ng-change="searchOptionChanged()">
+          </span>
+          <span class="search-option">
+            <span class="search-option-label">Whole word</span>
+            <input type="checkbox" ng-model="matchFullWord"
+                   ng-change="searchOptionChanged()">
+          </span>
         </div>
       </div>
     </div>

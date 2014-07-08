@@ -1,5 +1,21 @@
+@phoneSearchFontSize:   @phoneFontSize - 4px;
+@tabletSearchFontSize:  @tabletFontSize - 3px;
+@desktopSearchFontSize: @desktopFontSize;
+
 #search-screen {
   width: 100%;
+
+  @media @phone {
+    font-size: @phoneSearchFontSize;
+  }
+
+  @media @tablet {
+    font-size: @tabletSearchFontSize;
+  }
+
+  @media (@desktop) or (@wideDesktop) {
+    font-size: @desktopSearchFontSize;
+  }
 
   .search-box {
     #search-form {
@@ -17,8 +33,12 @@
       border:        @inputBorderColor;
       border-radius: 5px 5px 5px 5px;
 
-      &.all-button {
-        margin-right: 20px !important;
+      .all-button {
+        margin-right: 10px !important;
+      }
+
+      .search-option {
+        margin-left: 5px;
       }
     }
   }
@@ -37,12 +57,6 @@
     }
 
     .angular-accordion-container {
-      @media @phone {
-        font-size: @phoneFontSize - 3px;
-      }
-      @media @tablet {
-        font-size: @tabletFontSize - 2px;
-      }
 
       .angular-accordion-header {
         background: @accordionHeaderBackgroundColor;

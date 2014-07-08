@@ -128,7 +128,6 @@ pwgServices.factory 'pwgAjax', ['$http',
                                 'pwgFlash',
                                 pwgAjax]
 
-
 # ----------------------------------------------------------------------------
 # Simple spinner service. Assumes the existence of an element that's monitoring
 # the root scope's "showSpinner" variable.
@@ -150,7 +149,10 @@ pwgServices.factory 'pwgSpinner', ['$rootScope', pwgSpinner]
 # ----------------------------------------------------------------------------
 
 pwgTimeout = ($timeout) ->
-  return (timeout, callback) ->
+  cancel: (promise) ->
+    $timeout.cancel promise
+
+  timeout: (timeout, callback) ->
     $timeout callback, timeout
 
 pwgServices.factory 'pwgTimeout', ['$timeout', pwgTimeout]

@@ -340,19 +340,30 @@ pwguardApp.controller 'LoginCtrl', ['$scope', 'pwgAjax', 'pwgFlash', LoginCtrl]
 # Search controller
 # ---------------------------------------------------------------------------
 
-SearchCtrl = ($scope, pwgAjax, pwgFlash) ->
+SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
   $scope.searchTerm        = null
   $scope.searchResults     = null
   $scope.searchDescription = true
   $scope.matchFullWord     = false
 
+  keyboardTimeout = null
   $scope.searchTermChanged = ->
-    trimmed = if $scope.searchTerm? then $scope.searchTerm.trim() else ""
-    len     = trimmed.length
-    if len >= 2
+    if validSearchTerm()
+      # Allow time for user to finish typing.
+      pwgTimeout.cancel keyboardTimeout if keyboardTimeout?
+      keyboardTimeout = pwgTimeout.timeout 250, doSearch
+    else
+      $scope.searchResults = null
+
+  $scope.searchOptionChanged = ->
+    if validSearchTerm()
       doSearch()
     else
       $scope.searchResults = null
+
+  validSearchTerm = ->
+    trimmed = if $scope.searchTerm? then $scope.searchTerm.trim() else ""
+    trimmed.length >= 2
 
   doSearch = ->
     onSuccess = (data) ->
@@ -376,6 +387,7 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash) ->
     onFailure = (response) ->
       pwgFlash.error "Server error. We're looking into it."
 
+    $scope.searchTerm = null
     url = $("#config").data("all-pw-url")
     pwgAjax.get url, onSuccess, onFailure
 
@@ -387,6 +399,7 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash) ->
 pwguardApp.controller 'SearchCtrl', ['$scope',
                                      'pwgAjax',
                                      'pwgFlash',
+                                     'pwgTimeout',
                                      SearchCtrl]
 
 # ---------------------------------------------------------------------------
