@@ -1,8 +1,25 @@
 #search-screen {
   width: 100%;
 
-  #search-form {
-    .search-box {
+  .search-box {
+    #search-form {
+      .input-term {
+        @media (@desktop) or (@wideDesktop) {
+          width: 200px !important;
+          display: inline-block;
+        }
+      }
+    }
+
+    .search-options {
+      padding-left:  16px !important;
+      display:       inline-block;
+      border:        @inputBorderColor;
+      border-radius: 5px 5px 5px 5px;
+
+      &.all-button {
+        margin-right: 20px !important;
+      }
     }
   }
 

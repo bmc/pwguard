@@ -1,7 +1,7 @@
 // Styling for all forms.
 
 .text-input-common() {
-  width:         100% !important;
+  width:         100%;
   margin-top:    5px;
   margin-bottom: 10px;
   border:        1px solid @borderColor;
@@ -12,9 +12,9 @@
   color:         @formInputTextColor !important;
 
   &:focus {
-    box-shadow: 0px 0px 2px 2px #E1F7FA;
-    border:     1px solid #52C2D1;
-    background: #faf8e1;
+    box-shadow: 0px 0px 2px 2px @inputFocusBoxShadowColor;
+    border:     1px solid @inputFocusBorderColor;
+    background: @inputFocusBackgroundColor;
     outline:    none;
   }
 }
