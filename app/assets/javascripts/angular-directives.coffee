@@ -132,3 +132,25 @@ dropdownMenuItem = ->
     return
 
 pwgDirectives.directive 'dropdownMenuItem', [dropdownMenuItem]
+
+# -----------------------------------------------------------------------------
+# The GitHub Clippy widget
+# -----------------------------------------------------------------------------
+
+clippy = ->
+  restrict:    'EA'
+  transclude:  false
+  replace:     true
+  templateUrl: templateURL('directives/clippy.html')
+  scope:
+    text:    "@"
+    bgColor: "@"
+
+  link: (scope, element, attrs) ->
+    unless attrs.ngHide?
+      scope.ngHide = false
+    unless attrs.ngShow?
+      scope.ngShow = true
+    return
+
+pwgDirectives.directive 'clippy', [clippy]

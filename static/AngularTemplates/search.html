@@ -74,10 +74,14 @@
                       <span ng-show="result.passwordVisible">hide</span>
                       <span ng-show="!result.passwordVisible">show</span>
                     </button>
-                    <input type="text" readonly="readonly"
-                           class="shown-password"
-                           ng-show="result.passwordVisible"
-                           ng-model="result.plaintextPassword"/>
+                    <span ng-show="result.passwordVisible">
+                      <input type="text" readonly="readonly"
+                             class="shown-password"
+                             ng-show="result.passwordVisible"
+                             ng-model="result.plaintextPassword"/>
+                      <clippy text="{{result.plaintextPassword}}"/>
+                    </span>
+
                     <span ng-show="!result.passwordVisible"
                           class="hidden-password">
                       **************
