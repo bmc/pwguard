@@ -3,6 +3,7 @@ package models
 import java.security.SecureRandom
 import grizzled.string.{util => GrizzledStringUtil}
 import _root_.util.JsonHelpers
+import _root_.util.EitherOptionHelpers.Implicits._
 import org.mindrot.jbcrypt.BCrypt
 import play.api.Logger
 import play.api.libs.json._
@@ -69,13 +70,13 @@ case class User(id:                         Option[Int],
 
 /** Some helper routes for users.
   */
-object UserHelper {
-  import javax.crypto.{Cipher, KeyGenerator => KG}
+object UserHelpers {
+  import javax.crypto.{Cipher, SecretKey}
+  import javax.crypto.spec.SecretKeySpec
 
   private val KeyAlgorithm = "Blowfish"
   private val random       = new SecureRandom
-  private val KeyGenerator = KG.getInstance(KeyAlgorithm)
-  private val logger       = Logger("models.UserHelper")
+  private val logger       = Logger("models.UserHelpers")
 
   /** Helper method to create a user, with various bits already filled in.
     *
@@ -94,7 +95,7 @@ object UserHelper {
                  admin:     Boolean = false):
     Either[String, User] = {
 
-    val encryptedPassword = UserHelper.encryptPassword(password)
+    val encryptedPassword = UserHelpers.encryptLoginPassword(password)
     val user              = User(id                         = None,
                                  email                      = email,
                                  encryptedPassword          = encryptedPassword,
@@ -104,7 +105,7 @@ object UserHelper {
                                  active                     = true,
                                  admin                      = admin)
 
-    UserHelper.createPasswordEncryptionKey(user)
+    UserHelpers.createPasswordEncryptionKey(user)
   }
 
   /** Encrypt a user password.
@@ -113,7 +114,7 @@ object UserHelper {
     *
     * @return encrypted version
     */
-  def encryptPassword(password: String): String = {
+  def encryptLoginPassword(password: String): String = {
     BCrypt.hashpw(password, BCrypt.gensalt())
   }
 
@@ -138,9 +139,12 @@ object UserHelper {
     */
   def createPasswordEncryptionKey(user: User): Either[String, User] = {
     Try {
-      val cipher = Cipher.getInstance(KeyAlgorithm)
-      val key = KeyGenerator.generateKey()
-      val keyString = GrizzledStringUtil.bytesToHexString(key.getEncoded)
+      import javax.crypto.KeyGenerator
+
+      val keyGenerator = KeyGenerator.getInstance(KeyAlgorithm)
+      val key          = keyGenerator.generateKey()
+      val keyString    = GrizzledStringUtil.bytesToHexString(key.getEncoded)
+
       Right(user.copy(pwEntryEncryptionKeyString = Some(keyString)))
     }.
     recover { case e: Exception =>
@@ -148,9 +152,73 @@ object UserHelper {
       Left(e.getMessage)
     }.
     get
-
   }
 
+  /** Decrypt an encrypted (stored) password for a user.
+    *
+    * @param user              the user
+    * @param encryptedPassword the encrypted password string
+    *
+    * @return `Right(plaintextPassword)` or `Left(error)
+    */
+  def decryptStoredPassword(user: User, encryptedPassword: String):
+    Either[String, String] = {
+
+    withPasswordKey(user) { key =>
+      val cipher = Cipher.getInstance(KeyAlgorithm)
+      cipher.init(Cipher.DECRYPT_MODE, key)
+      GrizzledStringUtil.hexStringToBytes(encryptedPassword).map { bytes =>
+        val res = cipher.doFinal(bytes)
+                        .map { _.asInstanceOf[Char] }
+                        .mkString("")
+        Right(res)
+      }.
+      getOrElse {
+        logger.error(s"Can't decrypt encrypted password $encryptedPassword " +
+                     s"for user ${user.email}")
+        Left(s"Unable to decode encrypted password for ${user.email}")
+      }
+    }
+  }
+
+  /** Encrypt a password for storage.
+    *
+    * @param user              the user
+    * @param plaintextPassword the plaintext password to encrypt
+    *
+    * @return `Right(encryptedPassword)` or `Left(error)`
+    */
+  def encryptStoredPassword(user: User, plaintextPassword: String):
+    Either[String, String] = {
+
+    withPasswordKey(user) { key =>
+      val cipher = Cipher.getInstance(KeyAlgorithm)
+      cipher.init(Cipher.ENCRYPT_MODE, key)
+      val result = cipher.doFinal(plaintextPassword.getBytes)
+      Right(GrizzledStringUtil.bytesToHexString(result))
+    }
+  }
+
+  private def withPasswordKey[T](user: User)
+                                (code: SecretKey => Either[String, T]):
+    Either[String, T] = {
+
+    def makeKey(keyBytes: Array[Byte]): Either[String, SecretKey] = {
+      Right(new SecretKeySpec(keyBytes, KeyAlgorithm))
+    }
+    Try {
+      for { keyOpt   <- user.passwordEncryptionKey.right
+            keyBytes <- keyOpt.toRight("Unable to decode password key").right
+            key      <- makeKey(keyBytes).right
+            result   <- code(key).right }
+      yield result
+    }.
+    recover { case e: Exception =>
+      logger.error(s"Error while using password key for user ${user.email}", e)
+      Left(e.getMessage)
+    }.
+    get
+  }
 
   /** Various implicits, including JSON implicits.
     */

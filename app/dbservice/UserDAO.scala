@@ -65,31 +65,18 @@ class UserDAO(_dal: DAL, _logger: Logger) extends BaseDAO[User](_dal, _logger) {
     }
   }
 
-  /** Save a user to the database.
-    *
-    * @param user  the user to save
-    *
-    * @return `Right(user)`, with a possibly changed `User` object, on success.
-    *         `Left(error)` on error.
-    */
-  def save(user: User): Either[String, User] = {
-    withTransaction { implicit session: SlickSession =>
-      user.id.map { _ => update(user) }.getOrElse { insert(user) }
-    }
-  }
-
   // --------------------------------------------------------------------------
-  // Private methods
+  // Protected methods
   // ------------------------------------------------------------------------
 
-  private def insert(user: User)(implicit session: SlickSession):
+  protected def insert(user: User)(implicit session: SlickSession):
     Either[String, User] = {
 
     val id = (Users returning Users.map(_.id)) += user
     Right(user.copy(id = Some(id)))
   }
 
-  private def update(user: User)(implicit session: SlickSession):
+  protected def update(user: User)(implicit session: SlickSession):
     Either[String, User] = {
 
     val q = for { u <- Users if u.id === user.id.get }
@@ -104,6 +91,10 @@ class UserDAO(_dal: DAL, _logger: Logger) extends BaseDAO[User](_dal, _logger) {
               user.admin))
     Right(user)
   }
+
+  // --------------------------------------------------------------------------
+  // Private methods
+  // ------------------------------------------------------------------------
 
   private def checkUser(user: User): Either[String, User] = {
     Right(user)

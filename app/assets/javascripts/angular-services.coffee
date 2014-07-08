@@ -17,17 +17,15 @@ pwgAjax = ($http, $rootScope, pwgSpinner, pwgFlash) ->
     console.log data
     onFailure(data) if onFailure?
 
-  handleSuccess = (data, status, onSuccess, onFailure) ->
+  handleSuccess = (response, status, onSuccess, onFailure) ->
 
     # Angular doesn't seem to handle 401 responses properly, so we're
     # mimicking them with JSON.
-
-    if data.error?
-
-      pwgFlash.error data.error.message if response.data.error.message?
-      onFailure(data) if onFailure?
+    if response.error?
+      pwgFlash.error response.error.message if response.error.message?
+      onFailure(response) if onFailure?
     else
-      onSuccess(data)
+      onSuccess(response)
 
   http = (config, onSuccess, onFailure)->
     failed = (data, status, headers, config) ->

@@ -14,15 +14,7 @@ case class PasswordEntry(id:                Option[Int],
                          description:       Option[String],
                          encryptedPassword: Option[String],
                          notes:             Option[String])
-  extends BaseModel {
-
-  def decryptPassword(key: String): Either[String, String] = {
-    encryptedPassword.map { pw =>
-      Left("stub")
-    }.
-    getOrElse(Right(""))
-  }
-}
+  extends BaseModel
 
 object PasswordEntryHelper {
   object json {

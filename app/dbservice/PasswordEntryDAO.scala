@@ -97,7 +97,7 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
              term:         String,
              fullWordOnly: Boolean = false,
              includeDesc:  Boolean = false):
-  Either[String, Set[PasswordEntry]] = {
+    Either[String, Set[PasswordEntry]] = {
 
     withTransaction { implicit session =>
       val lcTerm  = term.toLowerCase
@@ -127,6 +127,31 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
         matches
       }
     }
+  }
+
+  // --------------------------------------------------------------------------
+  // Protected methods
+  // ------------------------------------------------------------------------
+
+  protected def insert(pwEntry: PasswordEntry)(implicit session: SlickSession):
+    Either[String, PasswordEntry] = {
+
+    val id = (PasswordEntries returning PasswordEntries.map(_.id)) += pwEntry
+    Right(pwEntry.copy(id = Some(id)))
+  }
+
+  protected def update(pwEntry: PasswordEntry)(implicit session: SlickSession):
+    Either[String, PasswordEntry] = {
+
+    val q = for { pwe <- PasswordEntries if pwe.id === pwEntry.id.get }
+            yield (pwe.userID, pwe.name, pwe.description,
+                   pwe.encryptedPassword, pwe.notes)
+    q.update((pwEntry.userID,
+              pwEntry.name,
+              pwEntry.description,
+              pwEntry.encryptedPassword,
+              pwEntry.notes))
+    Right(pwEntry)
   }
 
   // --------------------------------------------------------------------------

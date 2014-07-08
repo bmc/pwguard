@@ -10,6 +10,7 @@ requiredModules = ['ngRoute',
                    'ngAnimate',
                    'route-segment',
                    'view-segment',
+                   'angular-accordion',
                    'ngCookies',
                    'ui.utils',
                    'tableSort',
@@ -107,14 +108,18 @@ MainCtrl = ($scope,
   $scope.loggedIn = ->
     $scope.loggedInUser?
 
-  $scope.saveLoggedInUser = (user) ->
-    $scope.loggedInUser =
-      email:       user.email
-      isAdmin:     user.admin
-      displayName: user.displayName
-      firstName:   user.firstName
-      lastName:    user.lastName
-      isMobile:    user.isMobile
+  # NOTE: It's important to o l
+  $scope.setLoggedInUser = (user) ->
+    if user?
+      $scope.loggedInUser =
+        email:       user.email
+        isAdmin:     user.admin
+        displayName: user.displayName
+        firstName:   user.firstName
+        lastName:    user.lastName
+        isMobile:    user.isMobile
+    else
+      $scope.loggedInUser = null
 
   # On initial load or reload, we need to determine whether the user is
   # still logged in, since a reload clears everything in the browser.
@@ -162,15 +167,16 @@ MainCtrl = ($scope,
 
     userInfoSuccess = (response) ->
       if response.loggedIn
-        $scope.loggedInUser = response.user
+        $scope.setLoggedInUser response.user
       else
-        $scope.loggedInUser = null
+        $scope.setLoggedInUser null
 
       useSegment = validateLocationChange $scope.segmentOnLoad
       $scope.redirectToSegment useSegment
+      $scope.segmentOnLoad = false
 
     userInfoFailure = (response) ->
-      $scope.loggedInUser = null
+      $scope.setLoggedInUser null
       $scope.redirectToSegment "login"
 
     userPromise.then userInfoSuccess, userInfoFailure
@@ -254,7 +260,7 @@ NavbarCtrl = ($scope, pwgAjax) ->
     if $scope.loggedIn()
       $scope.confirm("Really log out?", "Confirm log out").then (result) ->
         always = () ->
-          $scope.loggedInUser = null
+          $scope.setLoggedInUser null
           $scope.redirectToSegment 'login'
 
         onSuccess = (response) ->
@@ -292,8 +298,8 @@ LoginCtrl = ($scope, pwgAjax, pwgFlash) ->
   $scope.login = ->
     if $scope.canSubmit
       handleLogin = (data) ->
-        $scope.saveLoggedInUser(data.user)
-        $scope.redirectToSegment('search')
+        $scope.setLoggedInUser data.user
+        $scope.redirectToSegment 'search'
 
       handleFailure = (data) ->
         # Nothing to do.
@@ -323,7 +329,7 @@ pwguardApp.controller 'LoginCtrl', ['$scope', 'pwgAjax', 'pwgFlash', LoginCtrl]
 # Search controller
 # ---------------------------------------------------------------------------
 
-SearchCtrl = ($scope, pwgAjax) ->
+SearchCtrl = ($scope, pwgAjax, pwgFlash) ->
   $scope.searchTerm    = null
   $scope.searchResults = null
 
@@ -339,16 +345,24 @@ SearchCtrl = ($scope, pwgAjax) ->
     url = $("#config").data('search-url')
 
     onSuccess = (data) ->
-      $scope.searchResults = data.results
+      $scope.searchResults = for r in data.results
+        r.showPassword = false
+        r
+
+    onFailure = (response) ->
+      pwgFlash.error "Server error issuing the search. We're looking into it."
 
     params =
       searchTerm:         $scope.searchTerm
       includeDescription: true
       wordMatch:          false
 
-    pwgAjax.post url, params, onSuccess
+    pwgAjax.post url, params, onSuccess, onFailure
 
-pwguardApp.controller 'SearchCtrl', ['$scope', 'pwgAjax', SearchCtrl]
+pwguardApp.controller 'SearchCtrl', ['$scope',
+                                     'pwgAjax',
+                                     'pwgFlash',
+                                     SearchCtrl]
 
 # ---------------------------------------------------------------------------
 # Profile controller

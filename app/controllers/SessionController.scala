@@ -1,9 +1,9 @@
 package controllers
 
 import dbservice.DAO
-import models.{UserHelper, User}
-import models.UserHelper.json._
-import models.UserHelper.json.implicits._
+import models.{UserHelpers, User}
+import models.UserHelpers.json._
+import models.UserHelpers.json.implicits._
 import play.api.libs.json.{Json, JsValue}
 import play.api.mvc._
 import play.api.mvc.Results._
@@ -29,7 +29,7 @@ object SessionController extends BaseController {
   def login = UnsecuredAction(BodyParsers.parse.json) {
     implicit request: Request[JsValue] =>
 
-    def resultWithSession(user: User, userAgent: UserAgent): Result = {
+    def resultWithSession(user: User): Result = {
       SessionOps.newSessionDataFor(request, user) match {
         case Left(error) => {
           logger.error(s"Can't store session data for ${user.email}: $error")
@@ -45,17 +45,10 @@ object SessionController extends BaseController {
       }
     }
 
-    val uaService = Globals.UserAgentDecoderService
-    val userAgent = request.headers.get("User-Agent").getOrElse("")
-    val fLogin = handleLogin(request)
-    val fUserAgent = uaService.decodeUserAgent(userAgent)
-
-    for { userEither <- fLogin
-          userAgent  <- fUserAgent }
-    yield {
-      userEither match {
+    handleLogin(request) map { either =>
+      either match {
         case Left(result) => result
-        case Right(user)  => resultWithSession(user, userAgent)
+        case Right(user)  => resultWithSession(user)
       }
     }
   }
@@ -122,7 +115,7 @@ object SessionController extends BaseController {
 
               userOpt.map { user: User =>
                 if (user.active &&
-                  UserHelper.passwordMatches(password, user.encryptedPassword)) {
+                  UserHelpers.passwordMatches(password, user.encryptedPassword)) {
                   Right(user)
                 }
                 else {

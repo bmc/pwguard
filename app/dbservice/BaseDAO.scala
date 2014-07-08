@@ -12,7 +12,7 @@ import scala.reflect.runtime.{universe => ru}
   * @tparam M     the type of the model the DAO loads
 
   */
-abstract class BaseDAO[M](val dal: DAL, val logger: Logger) {
+abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
   import dal.profile.simple._
   import scala.slick.jdbc.JdbcBackend
 
@@ -39,9 +39,44 @@ abstract class BaseDAO[M](val dal: DAL, val logger: Logger) {
     */
   def findByIDs(idSet: Set[Int]): Either[String, Set[M]]
 
+  /** Save an instance of this model to the database.
+    *
+    * @param model  the model object to save
+    *
+    * @return `Right(model)`, with a possibly changed model object,
+    *         on success. `Left(error)` on error.
+    */
+  def save(model: M): Either[String, M] = {
+    withTransaction { implicit session: SlickSession =>
+      model.id.map { _ => update(model) }.getOrElse { insert(model) }
+    }
+  }
+
   // --------------------------------------------------------------------------
   // Protected methods
   // ------------------------------------------------------------------------
+
+  /** Insert an instance of the model. Must be supplied by subclasses.
+    *
+    * @param model   the model object to save
+    * @param session the active session
+    *
+    * @return `Left(error)` on error, `Right(model)` (with a possibly-updated
+    *         model) on success.
+    */
+  protected def insert(model: M)(implicit session: SlickSession):
+    Either[String, M]
+
+  /** Update an instance of the model. Must be supplied by subclasses.
+    *
+    * @param model   the model object to save
+    * @param session the active session
+    *
+    * @return `Left(error)` on error, `Right(model)` (with a possibly-updated
+    *         model) on success.
+    */
+  protected def update(model: M)(implicit session: SlickSession):
+    Either[String, M]
 
   /** Run the specified code within a session.
     *
