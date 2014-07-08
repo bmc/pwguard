@@ -1,4 +1,4 @@
-@()
+@(browserLoggingLevel: String)
 
 <!DOCTYPE html>
 
@@ -113,7 +113,7 @@
     </div>
 
     <div ng-hide="true" id="config"
-         data-log-level="debug"
+         data-log-level="@browserLoggingLevel"
          data-logged-in-user-url="@routes.SessionController.getLoggedInUser"
          data-login-url="@routes.SessionController.login"
          data-logout-url="@routes.SessionController.logout"

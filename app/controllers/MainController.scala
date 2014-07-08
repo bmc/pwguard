@@ -22,15 +22,19 @@ object MainController extends BaseController {
   // Public methods
   // -------------------------------------------------------------------------
 
-  def index = Action {
-    Ok(views.html.index())
+  def index = UnsecuredAction { implicit request =>
+    Future {
+      val browserLogLevel = current.configuration.getString("browserLoggingLevel")
+                                                 .getOrElse("error")
+      Ok(views.html.index(browserLogLevel))
+    }
   }
 
   /** Static handler, for delivering static files during development. Should
     * be subsumed by a static handler in the front-end web server, for
     * development.
     */
-  def static(path: String) = Action.async {
+  def static(path: String) = UnsecuredAction { implicit request =>
     // Search both "static" and "bower_components".
     Future {
       val files = Seq(s"static/bower/$path",
@@ -62,8 +66,7 @@ object MainController extends BaseController {
     *
     * @param name  the template name.
     */
-  def getAngularTemplate(name: String) = UnsecuredAction {
-    implicit request =>
+  def getAngularTemplate(name: String) = UnsecuredAction { implicit request =>
 
     Future {
       val file = Play.getFile(s"static/AngularTemplates/$name")
