@@ -21,6 +21,33 @@ trait BaseController {
   // Protected methods
   // ------------------------------------------------------------------------
 
+  /** Add appropriate "no cache" headers to a result.
+    *
+    * @param result the result to annotate
+    *
+    * @return the modified result
+    */
+  protected def noCache(result: Result): Result = {
+    result.withHeaders("Pragma" -> "no-cache", "Cache-Control" -> "no-cache")
+  }
+
+  /** Modify a result to honor the configured caching directive.
+    *
+    * @param result the result to check and possibly modify
+    *
+    * @return the possibly modified result
+    */
+  protected def maybeCached(result: Result): Result = {
+    val cache = current.configuration
+                       .getBoolean("http.cacheStaticResources")
+                       .getOrElse(false)
+
+    if (cache)
+      result
+    else
+      noCache(result)
+  }
+
   /** `Action` wrapper for actions that do not require a logged-in user.
     * Play infers the body parser to use from the incoming HTTP headers.
     *
@@ -134,28 +161,6 @@ trait BaseController {
 
       { request => Future { Unauthorized } }
     )
-  }
-
-  /** Send a file to the browser.
-    *
-    * @param path the full path to the file
-    *
-    * @return the HTTP result, as a Future.
-    */
-  protected def sendFile(path: String): Future[Result] = {
-    Future {
-      val file = Play.getFile(path)
-      if (file.exists) {
-        // See http://www.playframework.com/documentation/2.1.1/ScalaStream
-        Ok.sendFile(
-          content = file,
-          inline = true
-        )
-      }
-      else {
-        NotFound
-      }
-    }
   }
 
   /** Parameters to pass back in a new session.
