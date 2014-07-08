@@ -1,21 +1,32 @@
 <div id="search-screen"
      ng-controller="SearchCtrl"
      ng-show="segmentIsActive('search')">
-  <div class="grid">
-    <div class="unit half">
-      <form id="search-form" class="inline">
-        <div class="form-field">
-          <label for="searchTerm">
-            <i class="fa fa-search"></i>&nbsp;
-          </label>
-          <div class="input">
-            <input type="text" name="searchTerm" ng-model="searchTerm"
-                   ng-change="searchTermChanged()"
-                   placeholder="Enter at least two letters to search."/>
-            <button type="btn btn-small" ng-click="showAll()">All</button>
+  <div class="search-box">
+    <div class="grid no-gutters">
+      <div class="unit">
+        <form id="search-form" class="inline">
+          <div class="form-field">
+            <label for="searchTerm">
+              <i class="fa fa-search"></i>&nbsp;
+            </label>
+            <div class="input">
+              <input type="text" name="searchTerm" ng-model="searchTerm"
+                     ng-change="searchTermChanged()" class="search-term"
+                     placeholder="Enter at least two letters to search."/>
+            </div>
           </div>
+        </form>
+      </div>
+    </div>
+    <div class="grid no-gutters">
+      <div class="unit half">
+        <div class="search-options">
+          <button type="btn btn-small" ng-click="showAll()" class="all-button">
+            All
+          </button>
+          Description <input type="checkbox" ng-model="searchDescription">
         </div>
-      </form>
+      </div>
     </div>
   </div>
 
