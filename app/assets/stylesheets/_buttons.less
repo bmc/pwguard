@@ -17,12 +17,19 @@
       .gradient-top-bottom(#90a8ab, #8b9aa6);
     }
   }
+
+
   &.btn-tiny {
-    min-width: @tinyButtonMinWidth;
-    min-height: @tinyButtonMinHeight;
+    min-width:     @tinyButtonMinWidth;
+    min-height:    @tinyButtonMinHeight;
     font-size:     @baseFontSize - 5px;
     padding:       1px;
     border-radius: 2px 2px 2px 2px;
+
+    @media (@phone) or (@tablet) {
+      font-size:  @baseFontSize - 3px;
+      min-height: @tinyButtonMinHeight + 2px;
+    }
   }
 
   &.btn-small {

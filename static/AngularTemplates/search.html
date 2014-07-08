@@ -22,9 +22,8 @@
       <div class="unit half">
         <div class="search-options">
           <span class="all-button">
-            <button type="btn btn-small" ng-click="showAll()">All</button>
+            <button class="btn btn-small" ng-click="showAll()">All</button>
           </span>
-          Search:
           <span class="search-option">
             <span class="search-option-label">Description</span>
             <input type="checkbox" ng-model="searchDescription"
@@ -70,7 +69,7 @@
                 <td>{{result.description}}</td>
                 <td class="password">
                   <div ng-show="result.plaintextPassword">
-                    <button type="btn btn-tiny"
+                    <button class="btn btn-small"
                             ng-click="result.passwordVisible=!result.passwordVisible">
                       <span ng-show="result.passwordVisible">hide</span>
                       <span ng-show="!result.passwordVisible">show</span>
