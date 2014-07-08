@@ -42,9 +42,11 @@
 
   <div class="grid">
     <div class="unit whole" ng-show="searchResults != null" id="search-results">
-      <div ng-show="searchResults.length == 0">No results.</div>
-      <div ng-show="searchResults.length == 1">One result.</div>
-      <div ng-show="searchResults.length > 1">{{searchResults.length}} results</div>
+      <div class="search-results-header">
+        <div ng-show="searchResults.length == 0">No results.</div>
+        <div ng-show="searchResults.length == 1">One result.</div>
+        <div ng-show="searchResults.length > 1">{{searchResults.length}} results</div>
+      </div>
 
       <div ng-show="(searchResults.length > 0)">
         <div ng-show="!isMobile">
