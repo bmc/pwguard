@@ -33,20 +33,6 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
     }
   }
 
-  /** Find a user by ID.
-    *
-    * @param id  the user id
-    *
-    * @return `Left(error)` on error; `Right(None)` if no such user exists;
-    *         `Right(Some(user))` if the user is found.
-    */
-  def findByID(id: Int): Either[String, Option[PasswordEntry]] = {
-    withTransaction { implicit session =>
-      val q = for { pwe <- PasswordEntries if pwe.id === id } yield pwe
-      loadOneModel(q)
-    }
-  }
-
   /** Find all users with the specified IDs.
 
     * @param idSet the IDs
@@ -131,6 +117,10 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
   // --------------------------------------------------------------------------
   // Protected methods
   // ------------------------------------------------------------------------
+
+  protected def queryByID(id: Int): Query[PasswordEntriesTable, PasswordEntry] = {
+    for {p <- PasswordEntries if p.id === id } yield p
+  }
 
   protected def insert(pwEntry: PasswordEntry)(implicit session: SlickSession):
     Either[String, PasswordEntry] = {

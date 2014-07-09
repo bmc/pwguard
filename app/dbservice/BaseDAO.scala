@@ -28,7 +28,11 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     *
     * @return `Right(model)` if found, `Left(error)` on error
     */
-  def findByID(id: Int): Either[String, Option[M]]
+  def findByID(id: Int): Either[String, Option[M]] = {
+    withTransaction { implicit session =>
+      loadOneModel(queryByID(id))
+    }
+  }
 
   /** Find one or more instances of the underlying model, by their IDs. All
     * DAOs must provide this method.
@@ -52,9 +56,31 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     }
   }
 
+  /** Delete an instance of this model, by ID. All DAOs must provide this
+    * method.
+    *
+    * @param id  the ID
+    *
+    * @return `Right(true)` on success, `Left(error)` on error
+    */
+  def delete(id: Int): Either[String, Boolean] = {
+    withTransaction { implicit session =>
+      queryByID(id).delete
+      Right(true)
+    }
+  }
+
   // --------------------------------------------------------------------------
   // Protected methods
   // ------------------------------------------------------------------------
+
+  /** Get the Slick query that retrieves a model object by ID.
+    *
+    * @param id  the ID
+    *
+    * @return the query
+    */
+  protected def queryByID(id: Int): Query[Table[M], M]
 
   /** Insert an instance of the model. Must be supplied by subclasses.
     *

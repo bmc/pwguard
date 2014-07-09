@@ -27,19 +27,6 @@ class UserDAO(_dal: DAL, _logger: Logger) extends BaseDAO[User](_dal, _logger) {
     }
   }
 
-  /** Find a user by ID.
-    *
-    * @param id  the user id
-    *
-    * @return `Left(error)` on error; `Right(None)` if no such user exists;
-    *         `Right(Some(user))` if the user is found.
-    */
-  def findByID(id: Int): Either[String, Option[User]] = {
-    withTransaction { implicit session =>
-      loadOneModel( for {u <- Users if u.id === id } yield u )
-    }
-  }
-
   /** Find all users with the specified IDs.
 
     * @param idSet the IDs
@@ -68,6 +55,10 @@ class UserDAO(_dal: DAL, _logger: Logger) extends BaseDAO[User](_dal, _logger) {
   // --------------------------------------------------------------------------
   // Protected methods
   // ------------------------------------------------------------------------
+
+  protected def queryByID(id: Int): Query[UsersTable, User] = {
+    for {u <- Users if u.id === id } yield u
+  }
 
   protected def insert(user: User)(implicit session: SlickSession):
     Either[String, User] = {
