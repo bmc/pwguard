@@ -24,6 +24,7 @@ uses many excellent open source packages, most of which are listed below.
 * [Animate.css](https://daneden.github.io/animate.css/)
 * Portions of [Apache Commons Math](http://commons.apache.org/proper/commons-math/)
 * [Chosen](https://harvesthq.github.io/chosen/)
+* [Clippy](https://github.com/mojombo/clippy)
 * Portions of [MacGyver](http://starttheshift.github.io/MacGyver/)
 * [Font Awesome](http://fontawesome.io/)
 * Portions of [Google Guava](https://code.google.com/p/guava-libraries/)
@@ -33,12 +34,14 @@ uses many excellent open source packages, most of which are listed below.
 * [JodaTime](http://www.joda.org/)
 * [jQuery](https://jquery.org/)
 * Portions of [JqueryUI](http://jqueryui.com/)
+* [Log4Javascript](http://log4javascript.org/)
 * [Modernizr](http://modernizr.com/)
 * [Moment.js](http://momentjs.com/)
 * The [Play! Framework](http://www.playframework.com/)
 * The [Scala][] programming language
 * [SQLite](http://sqlite.org/)
 * [UADetector](http://uadetector.sourceforge.net/)
+* [Underscore.js](http://documentcloud.github.io/underscore/)
 
 [Play! Framework]: http://playframework.org/
 [AngularJS]: http://angularjs.org/
