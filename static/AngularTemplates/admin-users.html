@@ -91,7 +91,8 @@
             </tr>
           </thead>
           <tbody>
-            <tr ng-repeat="user in users" ts-repeat>
+            <tr ng-repeat="user in users" ts-repeat
+                ng-class="{admin: user.admin}">
               <td>
                 {{user.email}}
               </td>

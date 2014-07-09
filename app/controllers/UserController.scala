@@ -116,8 +116,10 @@ object UserController extends BaseController {
     else {
       def handleExistingUser(u: User): User = {
         // Can't overwrite email address on an existing user.
-        logger.error(s"*** firstName=$firstName, lastName=$lastName")
-        val u2 = u.copy(firstName = firstName, lastName = lastName)
+        val u2 = u.copy(firstName = firstName,
+                        lastName  = lastName,
+                        active    = active,
+                        admin     = admin)
         password1.map { pw =>
           u2.copy(encryptedPassword = UserHelpers.encryptLoginPassword(pw))
         }
