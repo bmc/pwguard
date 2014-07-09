@@ -1,20 +1,26 @@
 #admin-users {
+  .inline-button {
+    margin-left: 10px;
+    border: none;
+    background: transparent;
+    &:hover {
+      cursor: pointer;
+    }
+
+    &.cancel {
+      color: red;
+    }
+
+    &.save {
+      color: green;
+    }
+  }
+
+
   table {
     a {
       text-decoration: none;
       color:           black;
-
-      &.inline-button {
-        margin-left: 10px;
-
-        &.cancel {
-          color: red;
-        }
-
-        &.save {
-          color: green;
-        }
-      }
     }
 
     input {

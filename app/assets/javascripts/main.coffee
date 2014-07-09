@@ -491,6 +491,7 @@ pwguardApp.controller 'ProfileCtrl', ['$scope',
 
 AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
   $scope.users = null
+  $scope.addingUser = null
 
   originalUsers = {}
 
@@ -505,6 +506,7 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
       onSuccess = ->
         originalUsers[u.email] = _.omit 'save', 'cancel', 'edit', 'editing'
         u.editing = false
+        loadUsers()
 
       pwgAjax.post url, u, onSuccess, onFailure
     else
@@ -514,24 +516,79 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
     _.extend u, originalUsers[u.email]
     u.editing = false
 
-  $scope.$watch 'segmentIsActive("admin-users")', (visible) ->
-    if visible
-      url = $("#config").data("all-users-url")
-      pwgAjax.get url, (result) ->
-        $scope.users = for u in result.users
-          u.editing = false
-          u.password1 = ""
-          u.password2 = ""
-          originalUsers[u.email] = _.clone u
-          u.edit    = ->
-            this.editing = true
-          u.save    = ->
-            saveUser this
-          u.cancel  = ->
-            cancelEdit this
-          u.passwordsMatch = true
+  createUser = (u) ->
 
-          u
+    if normalizeValue(u.email) == ""
+      pwgFlash.error "Missing email address."
+    else if normalizeValue(u.password1) == ""
+      pwgFlash.error "Missing password."
+    else if (not passwordsOkay(u.password1, u.password2))
+      pwgFlash.error "Passwords don't match."
+    else
+      url = $("#config").data("create-user-url")
+
+      onSuccess = ->
+        loadUsers()
+        $scope.addingUser = null
+
+      onFailure = ->
+        pwgFlash.error "Save failed."
+
+      console.log "Posting to #{url}"
+      pwgAjax.post url, $scope.addingUser, onSuccess, onFailure
+
+  $scope.editingAny = ->
+    if $scope.users?
+      first = _.find $scope.users, (u) -> u.editing
+      first?
+    else
+      false
+
+  $scope.editNewUser = ->
+    $scope.addingUser =
+      id:             null
+      email:          ""
+      password1:      ""
+      password2:      ""
+      firstName:      ""
+      lastName:       ""
+      admin:          false
+      active:         true
+      editing:        true
+      isNew:          true
+      passwordsMatch: true
+      cancel: ->
+        $scope.addingUser = null
+      save: ->
+        createUser this
+
+  loadUsers = ->
+    originalUsers = {}
+    $scope.users = null
+    url = $("#config").data("all-users-url")
+    pwgAjax.get url, (result) ->
+      $scope.users = for u in result.users
+        if u.id is $scope.loggedInUser?.id
+          $scope.setLoggedInUser u
+
+        u2 = _.clone u
+        u2.editing   = false
+        u2.password1 = ""
+        u2.password2 = ""
+        u2.isNew     = false
+        originalUsers[u.email] = _.clone u
+        u2.edit    = ->
+          this.editing = true
+        u2.save    = ->
+          saveUser this
+        u2.cancel  = ->
+          cancelEdit this
+        u2.passwordsMatch = true
+
+        u2
+
+  $scope.$watch 'segmentIsActive("admin-users")', (visible) ->
+    loadUsers() if visible
 
 pwguardApp.controller 'AdminUsersCtrl', ['$scope',
                                          'pwgAjax',

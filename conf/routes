@@ -13,6 +13,7 @@ POST        /pw/search                     controllers.PasswordEntryController.s
 GET         /pw/all                        controllers.PasswordEntryController.all
 
 POST        /user/:id                      controllers.UserController.saveUser(id: Int)
+POST        /user                          controllers.UserController.createUser
 GET         /users                         controllers.UserController.getAll
 
 GET         /user-agent-info               controllers.MainController.getUserAgentInfo

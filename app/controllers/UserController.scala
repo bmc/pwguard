@@ -27,48 +27,33 @@ object UserController extends BaseController {
   // -------------------------------------------------------------------------
 
   def saveUser(id: Int) = SecuredJSONAction {
-    (user: User, request: Request[JsValue]) =>
-
-    def emptyToNone(opt: Option[String]): Option[String] = {
-      opt.flatMap { s => if (s.trim().length == 0 ) None else Some(s) }
-    }
+    (currentUser: User, request: Request[JsValue]) =>
 
     Future {
-      val json = request.body
-      val firstName = (json \ "firstName").asOpt[String]
-      val lastName  = (json \ "lastName").asOpt[String]
-      val password1 = emptyToNone((json \ "password1").asOpt[String])
-      val password2 = emptyToNone((json \ "password2").asOpt[String])
+      val res = for { userOpt <- userDAO.findByID(id).right
+                      user    <- userOpt.toEither("User not found.").right
+                      user2   <- decodeUserJSON(Some(user), request.body).right
+                      saved   <- userDAO.save(user2).right }
+                yield saved
 
-      val pwMatch = Seq(password1, password2) match {
-        case pw1 :: pw2 :: Nil => pw1 == pw2
-        case Nil               => true
-        case _                 => false
+      res match {
+        case Left(error)  => Ok(jsonError(error))
+        case Right(saved) => Ok(safeUserJSON(saved))
       }
+    }
+  }
 
-      if (! pwMatch) {
-        Ok(jsonError("Passwords don't match."))
-      }
-      else {
-        def doSave(u: User): Either[String, User] = {
-          val u2 = u.copy(firstName = firstName, lastName = lastName)
-          val u3 = password1.map { pw =>
-            u2.copy(encryptedPassword = UserHelpers.encryptLoginPassword(pw))
-          }.
-          getOrElse(u2)
-          userDAO.save(u3)
-        }
+  def createUser = SecuredJSONAction {
+    (currentUser: User, request: Request[JsValue]) =>
 
-        val saveRes =
-          for { userOpt   <- userDAO.findByID(id).right
-                user      <- userOpt.toRight(s"User $id not found.").right
-                savedUser <- doSave(user).right }
-          yield savedUser
+    Future {
+      val res = for { user  <- decodeUserJSON(None, request.body).right
+                      saved <- userDAO.save(user).right }
+                yield saved
 
-        saveRes match {
-          case Left(error) => Ok(jsonError(error))
-          case Right(u)    => Ok(safeUserJSON(u))
-        }
+      res match {
+        case Left(error)  => Ok(jsonError(error))
+        case Right(saved) => Ok(safeUserJSON(saved))
       }
     }
   }
@@ -87,6 +72,64 @@ object UserController extends BaseController {
           }
         }
       }
+    }
+  }
+  // -------------------------------------------------------------------------
+  // Private methods
+  // -------------------------------------------------------------------------
+
+  private def emptyToNone(opt: Option[String]): Option[String] = {
+    opt.flatMap { s => if (s.trim().length == 0 ) None else Some(s) }
+  }
+
+  private def decodeUserJSON(userOpt: Option[User], json: JsValue):
+    Either[String, User] = {
+
+    val email     = (json \ "email").asOpt[String]
+    val firstName = (json \ "firstName").asOpt[String]
+    val lastName  = (json \ "lastName").asOpt[String]
+    val password1 = emptyToNone((json \ "password1").asOpt[String])
+    val password2 = emptyToNone((json \ "password2").asOpt[String])
+    val admin     = (json \ "admin").asOpt[Boolean].getOrElse(false)
+    val active    = (json \ "active").asOpt[Boolean].getOrElse(true)
+
+    val pwMatch = Seq(password1, password2) match {
+      case pw1 :: pw2 :: Nil => pw1 == pw2
+      case Nil               => true
+      case _                 => false
+    }
+
+    if (! pwMatch) {
+      Left("Passwords don't match.")
+    }
+
+    else {
+      def handleExistingUser(u: User): User = {
+        // Can't overwrite email address on an existing user.
+        logger.error(s"*** firstName=$firstName, lastName=$lastName")
+        val u2 = u.copy(firstName = firstName, lastName = lastName)
+        password1.map { pw =>
+          u2.copy(encryptedPassword = UserHelpers.encryptLoginPassword(pw))
+        }
+       .getOrElse(u2)
+      }
+
+      def handleNewUser: Either[String, User] = {
+        // New user. Email and password are required.
+        val resOpt: Option[Either[String, User]] =
+          for { e  <- email
+                pw <- password1 }
+          yield UserHelpers.createUser(email     = e,
+                                       password  = pw,
+                                       firstName = firstName,
+                                       lastName  = lastName,
+                                       admin     = admin)
+
+        resOpt.map { res => res }.getOrElse(Left("Missing field(s)."))
+      }
+
+      userOpt.map { u => Right(handleExistingUser(u)) }
+             .getOrElse { handleNewUser }
     }
   }
 }

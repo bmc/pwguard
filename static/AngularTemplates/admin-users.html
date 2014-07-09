@@ -11,6 +11,61 @@
       </div>
 
       <div ng-show="users.length > 0">
+
+        <!-- For creating a new user. -->
+
+        <form name="newUser" ng-submit="addingUser.save()">
+          <table class="new-user-table" ng-show="addingUser">
+            <tbody>
+              <tr>
+                <td>
+                  <input class="standalone" ng-model="addingUser.email"
+                         type="email" placeholder="Email" required/>
+                </td>
+                <td>
+                  <input class="standalone" ng-model="addingUser.password1"
+                         type="password" placeholder="Password" required/>
+                </td>
+                <td>
+                  <input class="standalone" ng-model="addingUser.password2"
+                         type="password" placeholder="Password (again)" required/>
+                </td>
+                <td>
+                  <input class="standalone" ng-model="addingUser.firstName"
+                         type="text" placeholder="First name"/>
+                </td>
+                <td>
+                  <input class="standalone" ng-model="addingUser.lastName"
+                         type="text" placeholder="Last name"/>
+                </td>
+                <td>
+                  <input class="standalone" type="checkbox"
+                         ng-model="addingUser.active"/>
+                  <label>Active</label>
+                </td>
+                <td>
+                  <input class="standalone" type="checkbox"
+                         ng-model="addingUser.admin"/>
+                  <label>Admin</label>
+                </td>
+                <td>
+                  <button type="submit" class="inline-button save">
+                    <i class="fa fa-save"></i>
+                  </button>
+                  <a href="javascript:void(0)"
+                     class="inline-button cancel"
+                     ng-click="addingUser.cancel()">
+                    <i class="fa fa-times"></i>
+                  </a>
+                </td>
+              </tr>
+            </tbody>
+
+          </table>
+        </form>
+
+        <!-- List of existing users -->
+
         <table class="data-table" ts-wrapper>
           <thead>
             <tr>
@@ -27,12 +82,19 @@
               <th class="sortable-column" ts-criteria="active">
                 Active
               </th>
-              <th></th>
+              <th>
+                <a href="javascript:void(0)" ng-click="editNewUser()"
+                   class="inline-button" ng-hide="editingAny()">
+                  <i class="fa fa-plus"></i>
+                </a>
+              </th>
             </tr>
           </thead>
           <tbody>
             <tr ng-repeat="user in users" ts-repeat>
-              <td>{{user.email}}</td>
+              <td>
+                {{user.email}}
+              </td>
 
               <td>
                 <span ng-hide="user.editing">{{user.displayName}}</span>
@@ -77,6 +139,12 @@
                    ng-click="user.edit()"
                    ng-hide="user.editing">
                   <i class="fa fa-pencil"></i>
+                </a>
+                <a href="javascript:void(0)"
+                   class="inline-button"
+                   ng-click="user.delete()"
+                   ng-hide="user.editing">
+                  <i class="fa fa-trash-o"></i>
                 </a>
                 <a href="javascript:void(0)"
                    class="inline-button save"
