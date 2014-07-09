@@ -25,7 +25,10 @@
 
         <div class="search-options-mobile" ng-show="isMobile">
           <span class="all-button">
-            <button class="btn btn-small" ng-click="showAll()">All</button>
+            <button class="btn btn-normal" ng-click="showAll()">
+              Get all passwords
+            </button>
+
           </span>
 
           <span class="search-option-mobile"
@@ -149,8 +152,12 @@
               <pane-content>
                 <div>{{result.description}}</div>
                 <div>
-                  <input type="text" readonly="readonly"
-                         ng-model="result.plaintextPassword"/>
+                  <input id="result-{$index}" type="text" readonly="readonly"
+                         ng-model="result.plaintextPassword"
+                         ng-click="this.select()"/>
+                  <button class="btn btn-small" ng-click="mobileSelect($index)">
+                    Select
+                  </button>
                 </div>
               </pane-content>
             </pane>

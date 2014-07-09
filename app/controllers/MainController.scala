@@ -18,16 +18,24 @@ object MainController extends BaseController {
 
   override protected val logger = Logger("pwguard.controllers.MainController")
 
+  private val UserAgentService = Globals.UserAgentDecoderService
+
   // -------------------------------------------------------------------------
   // Public methods
   // -------------------------------------------------------------------------
 
   def index = UnsecuredAction { implicit request =>
-    Future {
       val browserLogLevel = current.configuration.getString("browserLoggingLevel")
                                                  .getOrElse("error")
-      Ok(views.html.index(browserLogLevel))
-    }
+      getUserAgent(request).map { userAgent: UserAgent =>
+        userAgent.isMobile
+      }
+      .recover { case _ =>
+        false
+      }
+      .map { isMobile =>
+        Ok(views.html.index(browserLogLevel, isMobile))
+      }
   }
 
   /** Static handler, for delivering static files during development. Should
@@ -95,25 +103,25 @@ object MainController extends BaseController {
 
   /** Get decoded information about the user agent.
     */
-  def getUserAgentInfo = UnsecuredAction {
-    implicit request =>
-
-    val uaService = Globals.UserAgentDecoderService
-    val userAgent = request.headers.get("User-Agent").getOrElse("")
-
-    val f = uaService.decodeUserAgent(userAgent) map { userAgent: UserAgent =>
-      Json.obj("isMobile" -> userAgent.isMobile)
+  def getUserAgentInfo = UnsecuredAction { implicit request =>
+    getUserAgent(request).map { userAgent: UserAgent =>
+      Ok(Json.obj("userAgentInfo" -> Json.obj("isMobile" -> userAgent.isMobile)))
     }
-
-    f.map { json => Ok(Json.obj("userAgentInfo" -> json)) }
-     .recover { case _ =>
-        Ok(jsonError("Unable to get information about your browser."))
-     }
+    .recover { case _ =>
+      Ok(jsonError("Unable to get information about your browser."))
+    }
   }
 
   // -------------------------------------------------------------------------
   // Private methods
   // -------------------------------------------------------------------------
+
+  private def getUserAgent[T](request: Request[T]): Future[UserAgent] = {
+
+    val userAgent = request.headers.get("User-Agent").getOrElse("")
+
+    UserAgentService.decodeUserAgent(userAgent)
+  }
 
   private def findAngularPlayTemplate(name: String): Try[Result] = {
     import grizzled.file.util

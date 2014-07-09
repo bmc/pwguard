@@ -1,4 +1,4 @@
-@(browserLoggingLevel: String)
+@(browserLoggingLevel: String, mobile: Boolean = false)
 
 <!DOCTYPE html>
 
@@ -39,6 +39,7 @@
 
     @scriptStatic("jquery-ui/jquery-ui.min.js")
     @stylesheetStatic("jquery-ui/themes/ui-lightness/jquery-ui.min.css")
+
     @scriptStatic("modernizr/modernizr.js")
     @stylesheetStatic("gridism/gridism.css")
     @scriptStatic("momentjs/min/moment.min.js")
