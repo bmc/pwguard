@@ -1,6 +1,6 @@
 // Styling for all forms.
 
-.text-input-common() {
+.text-input-common {
   width:         100%;
   margin-top:    5px;
   margin-bottom: 10px;
@@ -16,6 +16,14 @@
     border:     1px solid @inputFocusBorderColor;
     background: @inputFocusBackgroundColor;
     outline:    none;
+  }
+}
+
+input[type="email"],
+input[type="password"],
+input[type="text"] {
+  &.standalone {
+    .text-input-common;
   }
 }
 

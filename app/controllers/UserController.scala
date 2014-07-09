@@ -2,6 +2,8 @@ package controllers
 
 import dbservice.DAO.userDAO
 import models.{UserHelpers, User}
+import models.UserHelpers.json._
+import models.UserHelpers.json.implicits._
 
 import play.api._
 import play.api.libs.json.{JsString, Json, JsValue}
@@ -27,7 +29,6 @@ object UserController extends BaseController {
   def saveUser(id: Int) = SecuredJSONAction {
     (user: User, request: Request[JsValue]) =>
 
-    import models.UserHelpers.json._
 
     Future {
       val json = request.body
@@ -65,6 +66,21 @@ object UserController extends BaseController {
         saveRes match {
           case Left(error) => Ok(jsonError(error))
           case Right(u)    => Ok(safeUserJSON(u))
+        }
+      }
+    }
+  }
+
+  def getAll = SecuredAction { (user: User, request: Request[Any]) =>
+    Future {
+      if (! user.admin) {
+        Forbidden("You are not an administrator")
+      }
+
+      else {
+        userDAO.all match {
+          case Left(error)  => Ok(jsonError(error))
+          case Right(users) => Ok(Json.obj("users" -> Json.toJson(users)))
         }
       }
     }

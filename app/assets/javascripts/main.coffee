@@ -16,6 +16,7 @@ requiredModules = ['ngRoute',
                    'tableSort',
                    'Mac',
                    'pwguard-services',
+                   'pwguard-filters',
                    'pwguard-directives']
 
 # Angular.js configuration function. Passed into the actual application, below,
@@ -496,7 +497,18 @@ pwguardApp.controller 'ProfileCtrl', ['$scope',
 # Admin users controller
 # ---------------------------------------------------------------------------
 
-AdminUsersCtrl = ($scope) ->
-  return
+AdminUsersCtrl = ($scope, pwgAjax) ->
+  $scope.users = null
+  $scope.$watch 'segmentIsActive("admin-users")', (visible) ->
+    if visible
+      url = $("#config").data("all-users-url")
+      pwgAjax.get url, (result) ->
+        $scope.users = for u in result.users
+          u.editing = false
+          u.edit    = ->
+            this.editing = true
+          u.save    = ->
+            this.editing = false
+          u
 
-pwguardApp.controller 'AdminUsersCtrl', ['$scope', AdminUsersCtrl]
+pwguardApp.controller 'AdminUsersCtrl', ['$scope', 'pwgAjax', AdminUsersCtrl]

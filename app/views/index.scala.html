@@ -78,6 +78,7 @@
     @scriptAsset("angular-routes.js")
     @scriptAsset("angular-directives.js")
     @scriptAsset("angular-services.js")
+    @scriptAsset("angular-filters.js")
     @scriptAsset("main.js")
   </head>
 
@@ -121,7 +122,8 @@
          data-search-url="@routes.PasswordEntryController.searchPasswordEntries"
          data-all-pw-url="@routes.PasswordEntryController.all"
          data-user-agent-info-url="@routes.MainController.getUserAgentInfo"
-         data-save-user-url="@routes.UserController.saveUser(0)"/>
+         data-save-user-url="@routes.UserController.saveUser(0)"
+         data-all-users-url="@routes.UserController.getAll"/>
 
   </body>
 </html>
