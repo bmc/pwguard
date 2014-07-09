@@ -38,30 +38,13 @@
              A fake checkbox for mobile, since we're clicking the whole
              thing.
             -->
-            <span class="fake-checkbox">
-              <span ng-hide="searchDescription">&nbsp;</span>
-              <span ng-show="searchDescription">
-                <i class="fa fa-check"></i>
-              </span>
-            </span>
-
+            <pwg-fake-checkbox ng-model="searchDescription"></pwg-fake-checkbox>
             <label>Description</label>
           </span>
 
           <span class="search-option-mobile"
                 ng-click="matchFullWord=!matchFullWord">
-
-            <!--
-             A fake checkbox for mobile, since we're clicking the whole
-             thing.
-            -->
-            <span class="fake-checkbox">
-              <span ng-hide="matchFullWord">&nbsp;</span>
-              <span ng-show="matchFullWord">
-                <i class="fa fa-check"></i>
-              </span>
-            </span>
-
+            <pwg-fake-checkbox ng-model="matchFullWord"></pwg-fake-checkbox>
             <label>Whole word</label>
           </span>
         </div>

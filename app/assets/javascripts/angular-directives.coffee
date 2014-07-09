@@ -154,3 +154,23 @@ clippy = ->
     return
 
 pwgDirectives.directive 'clippy', [clippy]
+
+# -----------------------------------------------------------------------------
+# Fake checkbox, useful when you want to support clicking outside the checkbox
+# itself
+# -----------------------------------------------------------------------------
+
+pwgFakeCheckbox = ->
+  restrict:    'EA'
+  transclude:  false
+  replace:     true
+  templateUrl: templateURL('directives/pwgFakeCheckbox.html')
+  scope:
+    ngModel: "=ngModel"
+
+  link: (scope, element, attrs) ->
+    console.log scope.ngModel
+    scope.$watch scope.ngModel, (v) ->
+      console.log v
+
+pwgDirectives.directive 'pwgFakeCheckbox', [pwgFakeCheckbox]
