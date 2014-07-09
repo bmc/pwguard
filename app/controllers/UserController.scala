@@ -74,6 +74,16 @@ object UserController extends BaseController {
       }
     }
   }
+
+  def delete(id: Int) = SecuredAction { (user: User, request: Request[Any]) =>
+    Future {
+      userDAO.delete(id) match {
+        case Left(error) => Ok(jsonError(error))
+        case Right(_)    => Ok(Json.obj("ok" -> true))
+      }
+    }
+  }
+
   // -------------------------------------------------------------------------
   // Private methods
   // -------------------------------------------------------------------------

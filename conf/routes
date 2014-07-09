@@ -15,6 +15,7 @@ GET         /pw/all                        controllers.PasswordEntryController.a
 POST        /user/:id                      controllers.UserController.saveUser(id: Int)
 POST        /user                          controllers.UserController.createUser
 GET         /users                         controllers.UserController.getAll
+DELETE      /user/:id                      controllers.UserController.delete(id: Int)
 
 GET         /user-agent-info               controllers.MainController.getUserAgentInfo
 

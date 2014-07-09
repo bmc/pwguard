@@ -516,6 +516,18 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
     _.extend u, originalUsers[u.email]
     u.editing = false
 
+  deleteUser = (u) ->
+    if u.id is $scope.loggedInUser.id
+      pwgFlash.error "You can't delete yourself!"
+
+    else
+      $scope.confirm("Really delete #{u.email}?",
+                     "Confirm deletion").then (result) ->
+        url = $("#config").data("delete-user-url").replace("0", u.id)
+        pwgAjax.delete url, ->
+          loadUsers()
+
+
   createUser = (u) ->
 
     if normalizeValue(u.email) == ""
@@ -583,6 +595,8 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
           saveUser this
         u2.cancel  = ->
           cancelEdit this
+        u2.delete  = ->
+          deleteUser this
         u2.passwordsMatch = true
 
         u2
