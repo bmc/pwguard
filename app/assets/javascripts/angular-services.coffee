@@ -51,19 +51,31 @@ pwgServices.factory 'pwgLogging', [pwgLogging]
 
 pwgAjax = ($http, $rootScope, pwgSpinner, pwgFlash) ->
 
+  callOn401 = null
+
   # Local
   handleFailure = (data, status, onFailure) ->
     # invoke flash service here
-    message = data.error?.message or "Server request failed. We're looking into it."
-    pwgFlash.error "(#{status}) #{message}", status
-    console.log data
-    onFailure(data) if onFailure?
+    message = data.error?.message or "Server error. We're looking into it."
+    if status is 401
+      data =
+        error:
+          status: 401
+          message: "Login required."
+      callOn401() if callOn401?
+    else
+      pwgFlash.error "(#{status}) #{message}", status
+      onFailure(data) if onFailure?
 
   handleSuccess = (response, status, onSuccess, onFailure) ->
 
     # Angular doesn't seem to handle 401 responses properly, so we're
     # mimicking them with JSON.
+    #
+    # NOTE: This happens when an HTTP interceptor is injected. Without
+    # the interceptor, Angular behaves correctly.
     if response.error?
+      console.log response
       pwgFlash.error response.error.message if response.error.message?
       onFailure(response) if onFailure?
     else
@@ -72,6 +84,7 @@ pwgAjax = ($http, $rootScope, pwgSpinner, pwgFlash) ->
   http = (config, onSuccess, onFailure)->
     failed = (data, status, headers, config) ->
       pwgSpinner.stop()
+      console.log typeof(status)
       handleFailure data, status, onFailure
 
     succeeded = (data, status, headers, config) ->
@@ -121,6 +134,10 @@ pwgAjax = ($http, $rootScope, pwgSpinner, pwgFlash) ->
       method: 'DELETE'
       url:    url
     http(params, onSuccess, onFailure)
+
+  # Specify a function to call when a 401 (Unauthorized) error occurs.
+  on401: (callback) ->
+    callOn401 = callback
 
 pwgServices.factory 'pwgAjax', ['$http',
                                 '$rootScope',

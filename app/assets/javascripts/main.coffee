@@ -80,19 +80,26 @@ MainCtrl = ($scope,
 
   $scope.log = pwgLogging.logger "MainCtrl"
 
-  $scope.dialogConfirmTitle   = null
-  $scope.dialogConfirmMessage = null
-
-  $scope.loggedInUser  = null
-  $scope.$routeSegment = $routeSegment
-  $scope.segmentOnLoad = window.segmentForURL($location.path())
-  $scope.initializing  = true
+  $scope.dialogConfirmTitle    = null
+  $scope.dialogConfirmMessage  = null
+  $scope.loggedInUser          = null
+  $scope.$routeSegment         = $routeSegment
+  $scope.segmentOnLoad         = window.segmentForURL($location.path())
+  $scope.initializing          = true
+  $scope.flashAfterRouteChange = null
 
   pwgFlash.init() # initialize the flash service
+  pwgAjax.on401 ->
+    $scope.loggedInUser = null
+    $scope.redirectToSegment "login"
+    $scope.flashAfterRouteChange = "Session timeout. Please log in again."
 
   $scope.$on '$routeChangeSuccess', ->
     # Clear flash messages on route change.
     pwgFlash.clear 'all'
+    if $scope.flashAfterRouteChange?
+      pwgFlash.info $scope.flashAfterRouteChange
+      $scope.flashAfterRouteChange = null
 
   $scope.$on '$locationChangeStart', (e) ->
     # Skip, while initializing. (Doing this during initialization screws

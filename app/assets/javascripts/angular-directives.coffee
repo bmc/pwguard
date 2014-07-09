@@ -169,8 +169,6 @@ pwgFakeCheckbox = ->
     ngModel: "=ngModel"
 
   link: (scope, element, attrs) ->
-    console.log scope.ngModel
-    scope.$watch scope.ngModel, (v) ->
-      console.log v
+    return
 
 pwgDirectives.directive 'pwgFakeCheckbox', [pwgFakeCheckbox]
