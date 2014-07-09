@@ -143,7 +143,7 @@ MainCtrl = ($scope,
         displayName: user.displayName
         firstName:   user.firstName
         lastName:    user.lastName
-        isMobile:    user.isMobile
+        id:          user.id
     else
       $scope.loggedInUser = null
 
@@ -420,7 +420,7 @@ pwguardApp.controller 'SearchCtrl', ['$scope',
 # Profile controller
 # ---------------------------------------------------------------------------
 
-ProfileCtrl = ($scope, pwgLogging) ->
+ProfileCtrl = ($scope, pwgLogging, pwgAjax) ->
 
   log = pwgLogging.logger "ProfileCtrl"
 
@@ -453,6 +453,19 @@ ProfileCtrl = ($scope, pwgLogging) ->
     checkErrors()
     $scope.error[field]?
 
+  $scope.save = ->
+    data =
+      firstName: $scope.firstName
+      lastName:  $scope.lastName
+      password1: $scope.password1
+      password2: $scope.password2
+
+    url = $("#config").data("save-user-url").replace("0", $scope.loggedInUser.id)
+
+    pwgAjax.post url, data, (response) ->
+      log.debug "Save complete."
+      $scope.setLoggedInUser response
+
   checkErrors = ->
     for k of $scope.error
       $scope.error[k] = null
@@ -474,7 +487,10 @@ ProfileCtrl = ($scope, pwgLogging) ->
   normalizeValue = (v) ->
     if v? then v else ""
 
-pwguardApp.controller 'ProfileCtrl', ['$scope', 'pwgLogging', ProfileCtrl]
+pwguardApp.controller 'ProfileCtrl', ['$scope',
+                                      'pwgLogging',
+                                      'pwgAjax',
+                                      ProfileCtrl]
 
 # ---------------------------------------------------------------------------
 # Admin users controller

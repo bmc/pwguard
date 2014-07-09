@@ -223,6 +223,18 @@ object UserHelpers {
   /** Various implicits, including JSON implicits.
     */
   object json {
+
+    // Call this method to fix up the User JSON (i.e., remove sensitive
+    // fields
+    def safeUserJSON(user: User): JsValue = {
+      import implicits._
+
+      JsonHelpers.addFields(
+        JsonHelpers.removeFields(Json.toJson(user), UnsafeUserFields: _*),
+        "displayName" -> Json.toJson(user.displayName)
+      )
+    }
+
     object implicits {
 
       implicit val userWrites: Writes[User] = (
@@ -240,15 +252,5 @@ object UserHelpers {
     private val UnsafeUserFields = Seq("encryptedPassword",
                                        "passwordEncryptionKey")
 
-    // Call this method to fix up the User JSON (i.e., remove sensitive
-    // fields
-    def safeUserJSON(user: User): JsValue = {
-      import implicits._
-
-      JsonHelpers.addFields(
-        JsonHelpers.removeFields(Json.toJson(user), UnsafeUserFields: _*),
-        "displayName" -> Json.toJson(user.displayName)
-      )
-    }
   }
 }
