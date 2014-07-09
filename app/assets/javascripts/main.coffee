@@ -137,14 +137,8 @@ MainCtrl = ($scope,
 
   # NOTE: It's important to o l
   $scope.setLoggedInUser = (user) ->
-    if user?
-      $scope.loggedInUser =
-        email:       user.email
-        isAdmin:     user.admin
-        displayName: user.displayName
-        firstName:   user.firstName
-        lastName:    user.lastName
-        id:          user.id
+    if user? and user.email?
+      $scope.loggedInUser = user
     else
       $scope.loggedInUser = null
 
@@ -158,7 +152,7 @@ MainCtrl = ($scope,
       useSegment = 'search' # default
       if segment?
         if window.isPostLoginSegment(segment)
-          if $scope.loggedInUser.isAdmin
+          if $scope.loggedInUser.admin
             # Admins can go anywhere.
             useSegment = segment
           else if (not window.isAdminOnlySegment(segment))
@@ -497,18 +491,45 @@ pwguardApp.controller 'ProfileCtrl', ['$scope',
 # Admin users controller
 # ---------------------------------------------------------------------------
 
-AdminUsersCtrl = ($scope, pwgAjax) ->
+AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
   $scope.users = null
+
+  originalUsers = {}
+
+  saveUser = (u) ->
+    url = $("#config").data('save-user-url').replace("0", u.id)
+
+    onFailure = ->
+      pwgFlash.error "Save failed."
+
+    onSuccess = ->
+      originalUsers[u.email] = _.omit 'save', 'cancel', 'edit'
+      u.editing = false
+
+    pwgAjax.post url, u, onSuccess, onFailure
+
+  cancelEdit = (u) ->
+    console.log "cancel"
+    _.extend u, originalUsers[u.email]
+    u.editing = false
+
   $scope.$watch 'segmentIsActive("admin-users")', (visible) ->
     if visible
       url = $("#config").data("all-users-url")
       pwgAjax.get url, (result) ->
         $scope.users = for u in result.users
           u.editing = false
+          originalUsers[u.email] = _.clone u
           u.edit    = ->
             this.editing = true
           u.save    = ->
-            this.editing = false
+            saveUser this
+          u.cancel  = ->
+            cancelEdit this
+
           u
 
-pwguardApp.controller 'AdminUsersCtrl', ['$scope', 'pwgAjax', AdminUsersCtrl]
+pwguardApp.controller 'AdminUsersCtrl', ['$scope',
+                                         'pwgAjax',
+                                         'pwgFlash',
+                                         AdminUsersCtrl]

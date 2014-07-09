@@ -43,10 +43,10 @@
             </a>
           </dropdown-menu-item>
 
-          <dropdown-menu-item ng-show="loggedInUser.isAdmin">
+          <dropdown-menu-item ng-show="loggedInUser.admin">
             <a href="javascript:void(0)"
                ng-click="redirectToSegment('admin-users')"
-               ng-show="loggedInUser.isAdmin">
+               ng-show="loggedInUser.admin">
               <i class="fa fa-users"></i> Edit Users
             </a>
           </dropdown-menu-item>

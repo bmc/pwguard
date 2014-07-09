@@ -70,15 +70,23 @@
 
               <td>
                 <a href="javascript:void(0)"
+                   class="inline-button"
                    ng-click="user.edit()"
                    ng-hide="user.editing">
                   <i class="fa fa-pencil"></i>
                 </a>
                 <a href="javascript:void(0)"
+                   class="inline-button"
                    ng-click="user.save()"
                    ng-show="user.editing">
                   <i class="fa fa-save"></i>
                 </a>
+                <a href="javascript:void(0)"
+                   class="inline-button cancel"
+                   ng-click="user.cancel()"
+                   ng-show="user.editing">
+                  <i class="fa fa-times"></i>
+                 </a>
               </td>
             </tr>
           </tbody>

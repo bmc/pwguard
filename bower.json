@@ -30,7 +30,8 @@
     "animate.css": "~3.1.1",
     "angular-accordion": "bmc/angular-accordion#~1.1.0",
     "log4javascript": "~1.4.9",
-    "clippy": "*"
+    "clippy": "*",
+    "underscore": "~1.6.0"
   },
   "license": "New BSD",
   "homepage": "http://software.clapper.org/pwguard",
