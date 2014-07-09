@@ -17,12 +17,10 @@
               <th class="sortable-column" ts-criteria="email|lowercase" ts-default>
                 Email
               </th>
-              <th class="sortable-column" ts-criteria="firstName|lowercase">
-                First Name
+              <th class="sortable-column" ts-criteria="displayName|lowercase">
+                Name
               </th>
-              <th class="sortable-column" ts-criteria="lastName|lowercase">
-                Last Name
-              </th>
+              <th></th>
               <th class="sortable-column" ts-criteria="admin">
                 Administrator
               </th>
@@ -37,16 +35,21 @@
               <td>{{user.email}}</td>
 
               <td>
-                <span ng-hide="user.editing">{{user.firstName}}</span>
+                <span ng-hide="user.editing">{{user.displayName}}</span>
                 <span ng-show="user.editing">
-                  <input class=standalone" ng-model="user.firstName" type="text"/>
+                  <input class="standalone" ng-model="user.firstName"
+                         type="text" placeholder="First name"/>
+                  <input class="standalone" ng-model="user.lastName"
+                         type="text" placeholder="Last name"/>
                 </span>
               </td>
 
               <td>
-                <span ng-hide="user.editing">{{user.lastName}}</span>
                 <span ng-show="user.editing">
-                  <input class=standalone" ng-model="user.lastName" type="text"/>
+                  <input class="standalone" ng-model="user.password1"
+                         type="password" placeholder="Password"/>
+                  <input class="standalone" ng-model="user.password2"
+                         type="password" placeholder="Password (again)"/>
                 </span>
               </td>
 
@@ -55,7 +58,7 @@
                   {{user.admin|pwgBoolean}}
                 </span>
                 <span ng-show="user.editing">
-                  <input class=standalone" ng-model="user.admin" type="checkbox"/>
+                  <input class="standalone" ng-model="user.admin" type="checkbox"/>
                 </span>
               </td>
 
@@ -76,7 +79,7 @@
                   <i class="fa fa-pencil"></i>
                 </a>
                 <a href="javascript:void(0)"
-                   class="inline-button"
+                   class="inline-button save"
                    ng-click="user.save()"
                    ng-show="user.editing">
                   <i class="fa fa-save"></i>

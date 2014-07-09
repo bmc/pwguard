@@ -29,16 +29,18 @@ object UserController extends BaseController {
   def saveUser(id: Int) = SecuredJSONAction {
     (user: User, request: Request[JsValue]) =>
 
+    def emptyToNone(opt: Option[String]): Option[String] = {
+      opt.flatMap { s => if (s.trim().length == 0 ) None else Some(s) }
+    }
 
     Future {
       val json = request.body
       val firstName = (json \ "firstName").asOpt[String]
       val lastName  = (json \ "lastName").asOpt[String]
-      val password1 = (json \ "password1").asOpt[String]
+      val password1 = emptyToNone((json \ "password1").asOpt[String])
+      val password2 = emptyToNone((json \ "password2").asOpt[String])
 
-      val pwMatch = Seq(password1,
-                        (json \ "password2").asOpt[String]).flatMap (s => s) match {
-
+      val pwMatch = Seq(password1, password2) match {
         case pw1 :: pw2 :: Nil => pw1 == pw2
         case Nil               => true
         case _                 => false
@@ -80,7 +82,9 @@ object UserController extends BaseController {
       else {
         userDAO.all match {
           case Left(error)  => Ok(jsonError(error))
-          case Right(users) => Ok(Json.obj("users" -> Json.toJson(users)))
+          case Right(users) => {
+            Ok(Json.obj("users" -> users.map { safeUserJSON(_) }))
+          }
         }
       }
     }

@@ -58,6 +58,15 @@ catch e
   throw e
 ###
 
+fieldsMatch = (v1, v2) ->
+  normalizeValue(v1) is normalizeValue(v2)
+
+normalizeValue = (v) ->
+  if v? then v else ""
+
+passwordsOkay = (pw1, pw2) ->
+  normalizeValue(pw1) is normalizeValue(pw2)
+
 ###############################################################################
 # Controllers
 ###############################################################################
@@ -465,22 +474,11 @@ ProfileCtrl = ($scope, pwgLogging, pwgAjax) ->
     for k of $scope.error
       $scope.error[k] = null
 
-    if not passwordsOkay()
+    if not passwordsOkay($scope.password1, $scope.password2)
       $scope.error.password1 = "Passwords don't match."
 
     errors = ($scope.error[k] for k of $scope.error).filter (e) -> e
     errors.length > 0
-
-  passwordsOkay = ->
-    pw1 = normalizeValue $scope.password1
-    pw2 = normalizeValue $scope.password2
-    (pw1 is pw2)
-
-  fieldsMatch = (v1, v2) ->
-    normalizeValue(v1) is normalizeValue(v2)
-
-  normalizeValue = (v) ->
-    if v? then v else ""
 
 pwguardApp.controller 'ProfileCtrl', ['$scope',
                                       'pwgLogging',
@@ -497,19 +495,22 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
   originalUsers = {}
 
   saveUser = (u) ->
-    url = $("#config").data('save-user-url').replace("0", u.id)
+    u.passwordsMatch = passwordsOkay u.password1, u.password2
+    if u.passwordsMatch
+      url = $("#config").data('save-user-url').replace("0", u.id)
 
-    onFailure = ->
-      pwgFlash.error "Save failed."
+      onFailure = ->
+        pwgFlash.error "Save failed."
 
-    onSuccess = ->
-      originalUsers[u.email] = _.omit 'save', 'cancel', 'edit'
-      u.editing = false
+      onSuccess = ->
+        originalUsers[u.email] = _.omit 'save', 'cancel', 'edit', 'editing'
+        u.editing = false
 
-    pwgAjax.post url, u, onSuccess, onFailure
+      pwgAjax.post url, u, onSuccess, onFailure
+    else
+      pwgFlash.error "Passwords don't match."
 
   cancelEdit = (u) ->
-    console.log "cancel"
     _.extend u, originalUsers[u.email]
     u.editing = false
 
@@ -519,6 +520,8 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
       pwgAjax.get url, (result) ->
         $scope.users = for u in result.users
           u.editing = false
+          u.password1 = ""
+          u.password2 = ""
           originalUsers[u.email] = _.clone u
           u.edit    = ->
             this.editing = true
@@ -526,6 +529,7 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
             saveUser this
           u.cancel  = ->
             cancelEdit this
+          u.passwordsMatch = true
 
           u
 
