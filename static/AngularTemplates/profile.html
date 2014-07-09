@@ -2,8 +2,81 @@
      ng-controller="ProfileCtrl"
      ng-show="segmentIsActive('profile')">
   <div class="grid">
-    <div class="unit whole">
-      This is where you'll edit your profile.
+    <div class="unit" ng-class="{whole: isMobile, half: !isMobile}">
+      <header>Edit your profile information.</header>
+{{scope.errorPassword1}}
+      <form id="profile-form">
+
+        <div class="form-field">
+          <div class="label">
+            <label for="email">Email</label>
+          </div>
+          <div class="input">
+            <input type="email" name="email" ng-model="email"
+                   readonly="readonly"/>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <div class="label">
+            <label for="password1">Password</label>
+          </div>
+          <div class="input" ng-class="{error: fieldInError('password1')}">
+            <input type="password" name="password1" ng-model="password1"/>
+          </div>
+          <div class="error" ng-show="fieldInError('password1')">
+            {{error.password1}}
+          </div>
+        </div>
+
+        <div class="form-field">
+          <div class="label">
+            <label for="password2">Password (again)</label>
+          </div>
+          <div class="input" ng-class="{error: fieldInError('password2')}">
+            <input type="password" name="password2" ng-model="password2"/>
+          </div>
+          <div class="error" ng-show="fieldInError('password2')">
+            {{error.password2}}
+          </div>
+        </div>
+
+        <div class="form-field">
+          <div class="label">
+            <label for="first-name">First name</label>
+          </div>
+          <div class="input" ng-class="{error: fieldInError('firstName')}">
+            <input type="text" name="first-name" ng-model="firstName"/>
+          </div>
+          <div class="error" ng-show="fieldInError('firstName')">
+            {{error.firstName}}
+          </div>
+        </div>
+
+        <div class="form-field">
+          <div class="label">
+            <label for="last-name">Last name</label>
+          </div>
+          <div class="input" ng-class="{error: fieldInError('lastName')}">
+            <input type="text" name="last-name" ng-model="lastName"/>
+          </div>
+          <div class="error" ng-show="fieldInError('lastName')">
+            {{error.lastName}}
+          </div>
+        </div>
+
+        <div class="button-bar">
+          <div class="buttons">
+            <button class="btn btn-primary btn-large"
+                    ng-click="save()"
+                    ng-disabled="!canSubmit()">
+              Save
+            </button>
+            <button class="btn btn-large" ng-click="cancel()">Cancel</button>
+          </div>
+        </div>
+
+      </form>
     </div>
   </div>
 </div>

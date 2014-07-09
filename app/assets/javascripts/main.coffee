@@ -78,7 +78,7 @@ MainCtrl = ($scope,
             pwgLogging,
             $q) ->
 
-  $scope.log = pwgLogging.logger "MainCtrl"
+  log = pwgLogging.logger "MainCtrl"
 
   $scope.dialogConfirmTitle    = null
   $scope.dialogConfirmMessage  = null
@@ -107,7 +107,7 @@ MainCtrl = ($scope,
     unless $scope.initializing
       segment = window.segmentForURL $location.path()
       useSegment = validateLocationChange segment
-      $scope.log.debug "segment=#{segment}, useSegment=#{useSegment}"
+      log.debug "segment=#{segment}, useSegment=#{useSegment}"
       if useSegment isnt segment
         e.preventDefault()
         $scope.redirectToSegment useSegment
@@ -119,8 +119,8 @@ MainCtrl = ($scope,
   $scope.redirectToSegment = (segment) ->
     url = $scope.pathForSegment segment
     if url?
-      $scope.log.debug "Redirecting to #{url}"
-      $scope.log.trace (new Error("Debug stack trace").stack)
+      log.debug "Redirecting to #{url}"
+      log.trace (new Error("Debug stack trace").stack)
       $location.path(url)
     else
       console.log "(BUG) No URL for segment #{segment}"
@@ -420,10 +420,61 @@ pwguardApp.controller 'SearchCtrl', ['$scope',
 # Profile controller
 # ---------------------------------------------------------------------------
 
-ProfileCtrl = ($scope) ->
-  return
+ProfileCtrl = ($scope, pwgLogging) ->
 
-pwguardApp.controller 'ProfileCtrl', ['$scope', ProfileCtrl]
+  log = pwgLogging.logger "ProfileCtrl"
+
+  $scope.email          = $scope.loggedInUser?.email
+  $scope.firstName      = $scope.loggedInUser?.firstName
+  $scope.lastName       = $scope.loggedInUser?.lastName
+  $scope.password1      = null
+  $scope.password2      = null
+
+  $scope.error =
+    password1: null
+    password2: null
+    firstName: null
+    lastName:  null
+
+  $scope.dirty = ->
+
+    dirty = (not fieldsMatch($scope.email, $scope.loggedInUser?.email)) or
+            (not fieldsMatch($scope.firstName, $scope.loggedInUser?.firstName)) or
+            (not fieldsMatch($scope.lastName, $scope.loggedInUser?.lastName)) or
+            (normalizeValue($scope.password1) isnt "") or
+            (normalizeValue($scope.password2) isnt "")
+    dirty
+
+  $scope.canSubmit = ->
+    error = checkErrors()
+    (not error) and $scope.dirty()
+
+  $scope.fieldInError = (field) ->
+    checkErrors()
+    $scope.error[field]?
+
+  checkErrors = ->
+    for k of $scope.error
+      $scope.error[k] = null
+
+    if not passwordsOkay()
+      $scope.error.password1 = "Passwords don't match."
+
+    errors = ($scope.error[k] for k of $scope.error).filter (e) -> e
+    errors.length > 0
+
+  passwordsOkay = ->
+    pw1 = normalizeValue $scope.password1
+    pw2 = normalizeValue $scope.password2
+    (pw1 is pw2)
+
+  fieldsMatch = (v1, v2) ->
+    normalizeValue(v1) is normalizeValue(v2)
+
+  normalizeValue = (v) ->
+    if v? then v else ""
+
+pwguardApp.controller 'ProfileCtrl', ['$scope', 'pwgLogging', ProfileCtrl]
 
 # ---------------------------------------------------------------------------
 # Admin users controller

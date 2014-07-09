@@ -34,11 +34,35 @@ form {
       padding-right: 5px;
       font-weight:   bold;
       color:         @formLabelTextColor !important;
+
+      @media @phone {
+        font-size: @phoneFontSize * 0.7; // smaller than regular font
+      }
+
+      @media @tablet {
+        font-size: @tabletFontSize * 0.8;
+      }
+
+      @media @desktop {
+        font-size: @desktopFontSize;
+      }
+
+      @media @wideDesktop {
+        font-size: @desktopFontSize;
+      }
     }
+
     div.input {
       display: block;
       width:   100%;
       border:  none;
+
+      &.error {
+        input {
+          border:        1px solid red;
+          margin-bottom: 0 !important;
+        }
+      }
     }
 
     // <input> elements do not need to be inside <div.input>
@@ -54,11 +78,32 @@ form {
       @media @tablet {
         font-size: @tabletFontSize * 0.8;
       }
-      @media (@desktop) or (@wideDesktop) {
+
+      @media @desktop {
+        font-size: @desktopFontSize;
+      }
+
+      @media @wideDesktop {
         font-size: @desktopFontSize;
       }
     }
+
+    input[readonly="readonly"] {
+      color: @inputReadonlyColor;
+      background: @inputReadonlyBackgroundColor;
+
+      &:focus {
+        background: @inputReadonlyBackgroundColor;
+      }
+    }
+
+    div.error {
+      color:         red;
+      margin-bottom: 10px;
+      margin-top:    0;
+    }
   }
+
 
   &.inline {
     display: table;
