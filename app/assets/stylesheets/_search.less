@@ -33,6 +33,18 @@
         @media @wideDesktop {
           .desktop-styles;
         }
+
+        input {
+          @media @phone {
+            min-height: 40px;
+            font-size: @phoneFontSize * 0.9;
+          }
+
+          @media @tablet {
+            min-height: 40px;
+            font-size: @tabletFontSize * 0.9;
+          }
+        }
       }
     }
 
