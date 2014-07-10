@@ -444,6 +444,12 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
     pwgAjax.post url, data, onSuccess
 
 
+  deleteEntry = (pw) ->
+    $scope.confirm("Really delete #{pw.name}?", "Confirm deletion").then (result) ->
+      url = $("#config").data("delete-pwentry-url").replace("0", pw.id)
+      pwgAjax.delete url, ->
+        $scope.showAll()
+
   cancelEdit = (pw) ->
     _.extend pw, originalEntries[pw.id]
     pw.editing = false
