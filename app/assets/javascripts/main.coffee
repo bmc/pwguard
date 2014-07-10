@@ -448,6 +448,41 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
     _.extend pw, originalEntries[pw.id]
     pw.editing = false
 
+  createNew = (pw) ->
+    if normalizeValue(pw.name) == ""
+      pwgFlash.error "Missing name."
+    else
+      url = $("#config").data("create-pwentry-url")
+
+      onSuccess = ->
+        $scope.showAll()
+        $scope.newPasswordEntry = null
+
+      onFailure = ->
+        pwgFlash.error "Save failed."
+
+      pwgAjax.post url, $scope.newPasswordEntry, onSuccess, onFailure
+
+  $scope.editingAny = ->
+    if $scope.searchResults?
+      first = _.find $scope.searchResults, (pw) -> pw.editing
+      first?
+    else
+      false
+
+  $scope.editNewEntry = ->
+    $scope.newPasswordEntry =
+      id:             null
+      name:           ""
+      password:       ""
+      description:    ""
+      notes:          ""
+      cancel: ->
+        $scope.newPasswordEntry = null
+      save: ->
+        createNew this
+    $scope.searchResults = null
+
   adjustResults = (results) ->
     originalEntries = {}
     for pw in results
@@ -578,7 +613,6 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
         pwgAjax.delete url, ->
           loadUsers()
 
-
   createUser = (u) ->
     if normalizeValue(u.email) == ""
       pwgFlash.error "Missing email address."
@@ -596,7 +630,6 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
       onFailure = ->
         pwgFlash.error "Save failed."
 
-      console.log "Posting to #{url}"
       pwgAjax.post url, $scope.addingUser, onSuccess, onFailure
 
   $scope.editingAny = ->

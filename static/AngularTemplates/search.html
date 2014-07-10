@@ -18,6 +18,7 @@
         </form>
       </div>
     </div>
+
     <div class="grid no-gutters">
       <div class="unit" ng-class="{half: !isMobile, whole: isMobile}">
 
@@ -53,8 +54,11 @@
 
         <div class="search-options mobile" ng-hide="isMobile">
           <span class="all-button">
-            <button class="btn btn-normal" ng-click="showAll()">
+            <button class="btn btn-small" ng-click="showAll()">
               All
+            </button>
+            <button class="btn btn-small btn-warning" ng-click="editNewEntry()">
+              New
             </button>
           </span>
           <span class="search-option">
@@ -78,6 +82,54 @@
     </div>
   </div>
 
+  <!-- Box for creating new entry -->
+
+  <form name="newEntry" ng-submit="newPasswordEntry.save()">
+    <table class="new-password-entry-table"
+           ng-show="newPasswordEntry">
+      <tbody>
+        <tr>
+          <td>
+            <input class="standalone"
+                   ng-model="newPasswordEntry.name"
+                   type="text"
+                   placeholder="Name"
+                   required/>
+          </td>
+          <td>
+            <input class="standalone"
+                   ng-model="newPasswordEntry.description"
+                   type="text"
+                   placeholder="Description"/>
+          </td>
+          <td>
+            <input class="standalone"
+                   ng-model="newPasswordEntry.password"
+                   type="text"
+                   placeholder="Password"/>
+          </td>
+          <td>
+            <textarea class="standalone"
+                      ng-model="newPasswordEntry.notes"
+                      placeholder="Notes"/>
+          </td>
+          <td>
+            <a href="javascript:void(0)"
+               class="btn btn-borderless save"
+               ng-click="newPasswordEntry.save()">
+              <i class="fa fa-save"></i>
+            </a>
+            <a href="javascript:void(0)"
+               class="btn btn-borderless cancel"
+               ng-click="newPasswordEntry.cancel()">
+              <i class="fa fa-times"></i>
+            </a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </form>
+
   <div class="grid">
     <div class="unit whole" ng-show="searchResults != null" id="search-results">
       <div class="search-results-header">
@@ -88,10 +140,12 @@
 
       <div ng-show="(searchResults.length > 0)">
         <div ng-show="!isMobile">
-          <span class="hint">
+          <span class="hint" ng-hide="newPasswordEntry">
             You can click on a password to show it or hide it. You
             can click on a long note to expand it.
           </span>
+
+          <!-- List of results -->
 
           <table class="data-table" ts-wrapper>
             <thead>
