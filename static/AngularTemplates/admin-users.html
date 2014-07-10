@@ -49,11 +49,11 @@
                   <label>Admin</label>
                 </td>
                 <td>
-                  <button type="submit" class="inline-button save">
+                  <button type="submit" class="btn btn-borderless save">
                     <i class="fa fa-save"></i>
                   </button>
                   <a href="javascript:void(0)"
-                     class="inline-button cancel"
+                     class="btn btn-borderless cancel"
                      ng-click="addingUser.cancel()">
                     <i class="fa fa-times"></i>
                   </a>
@@ -84,7 +84,7 @@
               </th>
               <th>
                 <a href="javascript:void(0)" ng-click="editNewUser()"
-                   class="inline-button" ng-hide="editingAny()">
+                   class="btn btn-borderless" ng-hide="editingAny()">
                   <i class="fa fa-plus"></i>
                 </a>
               </th>
@@ -136,25 +136,25 @@
 
               <td>
                 <a href="javascript:void(0)"
-                   class="inline-button"
+                   class="btn btn-borderless"
                    ng-click="user.edit()"
                    ng-hide="user.editing">
                   <i class="fa fa-pencil"></i>
                 </a>
                 <a href="javascript:void(0)"
-                   class="inline-button"
+                   class="btn btn-borderless"
                    ng-click="user.delete()"
                    ng-hide="user.editing">
                   <i class="fa fa-trash-o"></i>
                 </a>
                 <a href="javascript:void(0)"
-                   class="inline-button save"
+                   class="btn btn-borderless save"
                    ng-click="user.save()"
                    ng-show="user.editing">
                   <i class="fa fa-save"></i>
                 </a>
                 <a href="javascript:void(0)"
-                   class="inline-button cancel"
+                   class="btn btn-borderless cancel"
                    ng-click="user.cancel()"
                    ng-show="user.editing">
                   <i class="fa fa-times"></i>

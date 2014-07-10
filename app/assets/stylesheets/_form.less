@@ -1,7 +1,7 @@
 // Styling for all forms.
 
-.text-input-common {
-  width:         100%;
+.text-input-common(@width: 100%) {
+  width:         @width;
   margin-top:    5px;
   margin-bottom: 10px;
   border:        1px solid @borderColor;
@@ -23,7 +23,7 @@ input[type="email"],
 input[type="password"],
 input[type="text"] {
   &.standalone {
-    .text-input-common;
+    .text-input-common(90%);
   }
 }
 
@@ -77,7 +77,7 @@ form {
     input[type="email"],
     input[type="password"],
     input[type="text"] {
-      .text-input-common;
+      .text-input-common(100%);
 
       @media @phone {
         font-size: @phoneFontSize * 0.7; // smaller than regular font

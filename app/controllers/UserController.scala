@@ -26,7 +26,7 @@ object UserController extends BaseController {
   // Public methods
   // -------------------------------------------------------------------------
 
-  def saveUser(id: Int) = SecuredJSONAction {
+  def save(id: Int) = SecuredJSONAction {
     (currentUser: User, request: Request[JsValue]) =>
 
     Future {
@@ -43,7 +43,7 @@ object UserController extends BaseController {
     }
   }
 
-  def createUser = SecuredJSONAction {
+  def create = SecuredJSONAction {
     (currentUser: User, request: Request[JsValue]) =>
 
     Future {
@@ -88,22 +88,18 @@ object UserController extends BaseController {
   // Private methods
   // -------------------------------------------------------------------------
 
-  private def emptyToNone(opt: Option[String]): Option[String] = {
-    opt.flatMap { s => if (s.trim().length == 0 ) None else Some(s) }
-  }
-
   private def decodeUserJSON(userOpt: Option[User], json: JsValue):
     Either[String, User] = {
 
     val email     = (json \ "email").asOpt[String]
     val firstName = (json \ "firstName").asOpt[String]
     val lastName  = (json \ "lastName").asOpt[String]
-    val password1 = emptyToNone((json \ "password1").asOpt[String])
-    val password2 = emptyToNone((json \ "password2").asOpt[String])
+    val password1 = blankToNone((json \ "password1").asOpt[String])
+    val password2 = blankToNone((json \ "password2").asOpt[String])
     val admin     = (json \ "admin").asOpt[Boolean].getOrElse(false)
     val active    = (json \ "active").asOpt[Boolean].getOrElse(true)
 
-    val pwMatch = Seq(password1, password2) match {
+    val pwMatch = Seq(password1, password2).flatMap {o => o} match {
       case pw1 :: pw2 :: Nil => pw1 == pw2
       case Nil               => true
       case _                 => false

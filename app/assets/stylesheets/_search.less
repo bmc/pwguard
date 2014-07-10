@@ -17,6 +17,26 @@
     font-size: @desktopSearchFontSize;
   }
 
+  .clickable {
+    &:hover {
+      cursor: pointer;
+    }
+  }
+
+  input.standalone {
+    max-width: 150px !important;
+  }
+
+  textarea.standalone {
+    min-width:  300px;
+    max-width:  500px;
+    min-height: 100px;
+  }
+
+  .btn-borderless {
+    color: black;
+  }
+
   .search-box {
     #search-form {
 
@@ -69,9 +89,22 @@
   }
 
   #search-results {
+    .hint {
+      float:          right;
+      padding-bottom: 10px;
+    }
+
     .search-results-header {
       margin-top:    20px;
       margin-bottom: 20px;
+    }
+
+    tr {
+      vertical-align: top;
+    }
+
+    td {
+      margin-right: 10px;
     }
 
     td.password {
@@ -79,6 +112,7 @@
 
       input.shown-password {
         width: 60%;
+        max-width: 100px;
       }
 
       span.hidden-password {

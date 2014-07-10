@@ -67,6 +67,18 @@ normalizeValue = (v) ->
 passwordsOkay = (pw1, pw2) ->
   normalizeValue(pw1) is normalizeValue(pw2)
 
+ellipsize = (input, max=30) ->
+  if input?
+    m = parseInt max
+    if isNaN(max)
+      console.log "Bad max value: #{max}"
+      m = 30
+
+    trimmed = input[0..m]
+    if trimmed is input then input else "#{trimmed}..."
+  else
+    null
+
 ###############################################################################
 # Controllers
 ###############################################################################
@@ -357,6 +369,12 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
   $scope.searchDescription = true
   $scope.matchFullWord     = false
 
+  originalEntries = {}
+
+  clearResults = ->
+    originalEntries = {}
+    $scope.seaerchResults = null
+
   for v in ['searchDescription', 'matchFullWord']
     $scope.$watch v, ->
       searchOptionChanged()
@@ -368,7 +386,7 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
       pwgTimeout.cancel keyboardTimeout if keyboardTimeout?
       keyboardTimeout = pwgTimeout.timeout 250, doSearch
     else
-      $scope.searchResults = null
+      clearResults()
 
   $scope.mobileSelect = (i) ->
     $("#result-#{i}").select()
@@ -377,13 +395,15 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
     if validSearchTerm()
       doSearch()
     else
-      $scope.searchResults = null
+      clearResults()
 
   validSearchTerm = ->
     trimmed = if $scope.searchTerm? then $scope.searchTerm.trim() else ""
     trimmed.length >= 2
 
   doSearch = ->
+    originalEntries = {}
+
     onSuccess = (data) ->
       $scope.searchResults = adjustResults data.results
 
@@ -409,10 +429,41 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
     url = $("#config").data("all-pw-url")
     pwgAjax.get url, onSuccess, onFailure
 
+  saveEntry = (pw) ->
+
+    url = $("#config").data("save-pwentry-url").replace("0", pw.id)
+    data =
+      name:        pw.name
+      description: pw.description
+      password:    pw.plaintextPassword
+      notes:       pw.notes
+
+    onSuccess = ->
+      pw.editing = false
+
+    pwgAjax.post url, data, onSuccess
+
+
+  cancelEdit = (pw) ->
+    _.extend pw, originalEntries[pw.id]
+    pw.editing = false
+
   adjustResults = (results) ->
-    for r in results
-      r.showPassword = false
-      r
+    originalEntries = {}
+    for pw in results
+      pw.showPassword     = false
+      pw.editing          = false
+      pw.notesPreview     = ellipsize pw.notes
+      pw.previewAvailable = pw.notes isnt pw.notesPreview
+      pw.showPreview      = pw.previewAvailable
+
+      originalEntries[pw.id] = pw
+
+      pw.edit             = -> this.editing = true
+      pw.cancel           = -> cancelEdit this
+      pw.save             = -> saveEntry this
+      pw.delete           = -> deleteEntry this
+      pw
 
 pwguardApp.controller 'SearchCtrl', ['$scope',
                                      'pwgAjax',
@@ -529,7 +580,6 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
 
 
   createUser = (u) ->
-
     if normalizeValue(u.email) == ""
       pwgFlash.error "Missing email address."
     else if normalizeValue(u.password1) == ""
@@ -589,14 +639,12 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
         u2.password2 = ""
         u2.isNew     = false
         originalUsers[u.email] = _.clone u
-        u2.edit    = ->
-          this.editing = true
-        u2.save    = ->
-          saveUser this
-        u2.cancel  = ->
-          cancelEdit this
-        u2.delete  = ->
-          deleteUser this
+
+        u2.edit      = -> this.editing = true
+        u2.save      = -> saveUser this
+        u2.cancel    = -> cancelEdit this
+        u2.delete    = -> deleteUser this
+
         u2.passwordsMatch = true
 
         u2

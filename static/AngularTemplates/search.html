@@ -88,6 +88,11 @@
 
       <div ng-show="(searchResults.length > 0)">
         <div ng-show="!isMobile">
+          <span class="hint">
+            You can click on a password to show it or hide it. You
+            can click on a long note to expand it.
+          </span>
+
           <table class="data-table" ts-wrapper>
             <thead>
               <tr>
@@ -99,49 +104,106 @@
                 </th>
                 <th>Password</th>
                 <th>Notes</th>
+                <th></th>
               </tr>
             </thead>
 
             <tbody>
-              <tr ng-repeat="result in searchResults" ts-repeat>
-                <td>{{result.name}}</td>
-                <td>{{result.description}}</td>
-                <td class="password">
-                  <div ng-show="result.plaintextPassword">
-                    <button class="btn btn-small"
-                            ng-click="result.passwordVisible=!result.passwordVisible">
-                      <span ng-show="result.passwordVisible">hide</span>
-                      <span ng-show="!result.passwordVisible">show</span>
-                    </button>
-                    <span ng-show="result.passwordVisible">
-                      <input type="text" readonly="readonly"
-                             class="shown-password"
-                             ng-show="result.passwordVisible"
-                             ng-model="result.plaintextPassword"/>
-                      <clippy text="{{result.plaintextPassword}}"/>
-                    </span>
+              <tr ng-repeat="pw in searchResults" ts-repeat>
+                <td>
+                  <span ng-hide="pw.editing">{{pw.name}}</span>
+                  <span ng-show="pw.editing">
+                    <input class="standalone" ng-model="pw.name"
+                           type="text" placeholder="Name"/>
+                  </span>
+                </td>
 
-                    <span ng-show="!result.passwordVisible"
-                          class="hidden-password">
-                      **************
-                    </span>
+                <td>
+                  <span ng-hide="pw.editing">{{pw.description}}</span>
+                  <span ng-show="pw.editing">
+                    <input class="standalone" ng-model="pw.description"
+                           type="text" placeholder="Description"/>
+                  </span>
+                </td>
+
+                <td class="password">
+                  <div ng-hide="pw.editing">
+                    <div ng-show="pw.plaintextPassword">
+                      <span ng-show="pw.passwordVisible">
+                        <input type="text" readonly="readonly"
+                               class="shown-password clickable"
+                               ng-show="pw.passwordVisible"
+                               ng-model="pw.plaintextPassword"
+                               ng-click="pw.passwordVisible=!pw.passwordVisible"/>
+                        <clippy text="{{pw.plaintextPassword}}"/>
+                      </span>
+
+                      <span ng-show="!pw.passwordVisible"
+                            class="hidden-password clickable"
+                            ng-click="pw.passwordVisible=!pw.passwordVisible">
+                        **************
+                      </span>
+                    </div>
+                  </div>
+                  <div ng-show="pw.editing">
+                    <input class="standalone" ng-model="pw.plaintextPassword"
+                           type="text" placeholder="Password"/>
                   </div>
                 </td>
-                <td>{{result.notes}}</td>
+
+                <td>
+                  <span ng-hide="pw.editing"
+                        ng-class="{clickable: pw.previewAvailable}">
+                    <span ng-click="pw.showPreview=!pw.showPreview">
+                      <span ng-show="pw.showPreview">{{pw.notesPreview}}</span>
+                      <span ng-hide="pw.showPreview">{{pw.notes}}</span>
+                    </span>
+                  </span>
+                  <span ng-show="pw.editing">
+                    <textarea class="standalone" ng-model="pw.notes"/>
+                  </span>
+                </td>
+
+                <td>
+                  <a href="javascript:void(0)"
+                     class="btn btn-borderless"
+                     ng-click="pw.edit()"
+                     ng-hide="pw.editing">
+                    <i class="fa fa-pencil"></i>
+                  </a>
+                  <a href="javascript:void(0)"
+                     class="btn btn-borderless"
+                     ng-click="pw.delete()"
+                     ng-hide="pw.editing">
+                    <i class="fa fa-trash-o"></i>
+                  </a>
+                  <a href="javascript:void(0)"
+                     class="btn btn-borderless save"
+                     ng-click="pw.save()"
+                     ng-show="pw.editing">
+                    <i class="fa fa-save"></i>
+                  </a>
+                  <a href="javascript:void(0)"
+                     class="btn btn-borderless cancel"
+                     ng-click="pw.cancel()"
+                     ng-show="pw.editing">
+                    <i class="fa fa-times"></i>
+                  </a>
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
 
         <div ng-show="isMobile">
-          <angular-accordion ng-repeat="result in searchResults">
+          <angular-accordion ng-repeat="pw in searchResults">
             <pane>
-              <pane-header>{{result.name}}</pane-header>
+              <pane-header>{{pw.name}}</pane-header>
               <pane-content>
-                <div>{{result.description}}</div>
+                <div>{{pw.description}}</div>
                 <div>
                   <input id="result-{$index}" type="text" readonly="readonly"
-                         ng-model="result.plaintextPassword"
+                         ng-model="pw.plaintextPassword"
                          ng-click="this.select()"/>
                   <button class="btn btn-small" ng-click="mobileSelect($index)">
                     Select

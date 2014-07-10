@@ -209,6 +209,16 @@ trait BaseController {
     jsonError(Some(error), None, fieldErrors: _*)
   }
 
+  /** Check a string option and convert it to `None` if it's empty or blank.
+    *
+    * @param opt  the option
+    *
+    * @return `Some(string)` or `None`
+    */
+  protected def blankToNone(opt: Option[String]): Option[String] = {
+    opt.flatMap { s => if (s.trim().length == 0 ) None else Some(s) }
+  }
+
   // --------------------------------------------------------------------------
   // Protected methods
   // ------------------------------------------------------------------------
