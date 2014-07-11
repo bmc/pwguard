@@ -31,7 +31,8 @@
     "angular-accordion": "bmc/angular-accordion#~1.1.0",
     "log4javascript": "~1.4.9",
     "clippy": "*",
-    "underscore": "~1.6.0"
+    "underscore": "~1.6.0",
+    "zeroclipboard": "~2.1.5"
   },
   "license": "New BSD",
   "homepage": "http://software.clapper.org/pwguard",
