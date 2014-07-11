@@ -319,9 +319,9 @@ LoginCtrl = ($scope, pwgAjax, pwgFlash) ->
   $scope.password  = null
   $scope.canSubmit = false
 
-  #### DEBUG
+  ### DEBUG
   $scope.email = "admin@example.com"; $scope.password = "admin"
-  #### END DEBUG
+  ###
 
   $scope.$watch 'email', (newValue, oldValue) ->
     checkSubmit()
@@ -368,12 +368,15 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
   $scope.searchResults     = null
   $scope.searchDescription = true
   $scope.matchFullWord     = false
+  $scope.lastSearch        = null
+
+  SEARCH_ALL_MARKER = "-*-all-*-"
 
   originalEntries = {}
 
   clearResults = ->
     originalEntries = {}
-    $scope.seaerchResults = null
+    $scope.searchResults = null
 
   for v in ['searchDescription', 'matchFullWord']
     $scope.$watch v, ->
@@ -403,8 +406,10 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
 
   doSearch = ->
     originalEntries = {}
+    $scope.newPasswordEntry = null
 
     onSuccess = (data) ->
+      $scope.lastSearch = $scope.searchTerm
       $scope.searchResults = adjustResults data.results
 
     onFailure = (response) ->
@@ -419,7 +424,9 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
     pwgAjax.post url, params, onSuccess, onFailure
 
   $scope.showAll = ->
+    $scope.newPasswordEntry = null
     onSuccess = (data) ->
+      $scope.lastSearch = SEARCH_ALL_MARKER
       $scope.searchResults = adjustResults data.results
 
     onFailure = (response) ->
@@ -430,7 +437,6 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
     pwgAjax.get url, onSuccess, onFailure
 
   saveEntry = (pw) ->
-
     url = $("#config").data("save-pwentry-url").replace("0", pw.id)
     data =
       name:        pw.name
@@ -440,19 +446,28 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
 
     onSuccess = ->
       pw.editing = false
+      reissueLastSearch()
 
     pwgAjax.post url, data, onSuccess
 
+  reissueLastSearch = ->
+    if $scope.lastSearch?
+      if $scope.lastSearch is SEARCH_ALL_MARKER
+        $scope.showAll()
+      else
+        $scope.searchTerm = $scope.lastSearch
+        doSearch()
 
   deleteEntry = (pw) ->
     $scope.confirm("Really delete #{pw.name}?", "Confirm deletion").then (result) ->
       url = $("#config").data("delete-pwentry-url").replace("0", pw.id)
       pwgAjax.delete url, ->
-        $scope.showAll()
+        reissueLastSearch()
 
   cancelEdit = (pw) ->
     _.extend pw, originalEntries[pw.id]
     pw.editing = false
+    reissueLastSearch()
 
   createNew = (pw) ->
     if normalizeValue(pw.name) == ""
@@ -463,9 +478,10 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
       onSuccess = ->
         $scope.showAll()
         $scope.newPasswordEntry = null
+        reissueLastSearch()
 
-      onFailure = ->
-        pwgFlash.error "Save failed."
+      onFailure = (data) ->
+        pwgFlash.error "Save failed. #{data.error?.message}"
 
       pwgAjax.post url, $scope.newPasswordEntry, onSuccess, onFailure
 
@@ -480,11 +496,13 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
     $scope.newPasswordEntry =
       id:             null
       name:           ""
+      loginID:        ""
       password:       ""
       description:    ""
       notes:          ""
       cancel: ->
         $scope.newPasswordEntry = null
+        reissueLastSearch()
       save: ->
         createNew this
     $scope.searchResults = null

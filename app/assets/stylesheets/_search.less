@@ -5,6 +5,20 @@
 #search-screen {
   width: 100%;
 
+  #new-password-entry {
+    header {
+      margin-top: 20px;
+    }
+
+    .button-bar {
+      text-align: left;
+
+      .buttons {
+        text-align: left;
+      }
+    }
+  }
+
   @media @phone {
     font-size: @phoneSearchFontSize;
   }
@@ -28,7 +42,7 @@
   }
 
   textarea.standalone {
-    min-width:  300px;
+    min-width:  250px;
     max-width:  500px;
     min-height: 100px;
   }
@@ -104,10 +118,6 @@
     .search-results-header {
       margin-top:    20px;
       margin-bottom: 20px;
-    }
-
-    tr {
-      vertical-align: top;
     }
 
     td {

@@ -12,10 +12,12 @@ CREATE TABLE IF NOT EXISTS users(
 );
 
 -- Default admin user (admin@example.com), with password "admin".
-INSERT INTO users(email, encrypted_password, first_name, active, admin)
+INSERT INTO users(email, encrypted_password, first_name,
+                  pw_entry_encryption_key, active, admin)
 VALUES ('admin@example.com',
         '$2a$10$dod.88izAFGzSxwgMT9/Ou6xqqjX5shU9wlfKEtuc4P3DinTA2R9q',
         'Administrator',
+        '339f4cb5dc577c4ef75eaf4c73adad8f',
         1,
         1);
 
@@ -26,6 +28,7 @@ CREATE TABLE IF NOT EXISTS password_entries(
   id                       INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id                  INTEGER NOT NULL,
   name                     VARCHAR(255) NOT NULL,
+  login_id                 VARCHAR(255) NULL,
   description              TEXT,
   encrypted_password       TEXT,
   notes                    TEXT,

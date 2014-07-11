@@ -75,7 +75,9 @@ header {
   }
 }
 
-@tableHeaderBackground: #f4f4f4;
+@tableHeaderBackground:  white;
+@tableOddRowBackground:  #f9f9f9;
+@tableEvenRowBackground: white;
 
 table.data-table {
   width:            100%;
@@ -90,7 +92,7 @@ table.data-table {
 
     th {
       border-width: 0;
-      padding:      3px;
+      padding:      5px;
       border-style: none;
       background:   @tableHeaderBackground;
       text-align:   left;
@@ -114,9 +116,21 @@ table.data-table {
   }
 
   tbody {
+    tr {
+      vertical-align: top;
+
+      &.odd {
+        background: @tableOddRowBackground;
+      }
+
+      &.even {
+        background: @tableEvenRowBackground;
+      }
+    }
+
     td {
       border-width: 0;
-      padding:      3px;
+      padding:      5px;
       border-style: none;
     }
   }

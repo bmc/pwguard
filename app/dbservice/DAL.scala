@@ -57,11 +57,12 @@ trait PasswordEntriesComponent {
     def userID               = column[Int]("user_id")
     def name                 = column[String]("name")
     def description          = column[Option[String]]("description")
+    def loginID              = column[Option[String]]("login_id")
     def encryptedPassword    = column[Option[String]]("encrypted_password")
     def notes                = column[Option[String]]("notes")
 
-    def * = (id.?, userID, name, description, encryptedPassword, notes) <>
-            (PasswordEntry.tupled, PasswordEntry.unapply)
+    def * = (id.?, userID, name, description, loginID, encryptedPassword,
+             notes) <> (PasswordEntry.tupled, PasswordEntry.unapply)
 
     def user = foreignKey("user_fk", userID, Users)(
       _.id, onUpdate = ForeignKeyAction.Restrict

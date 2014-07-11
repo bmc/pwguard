@@ -118,6 +118,7 @@ object PasswordEntryController extends BaseController {
     val descriptionOpt = blankToNone((json \ "description").asOpt[String])
     val passwordOpt    = blankToNone((json \ "password").asOpt[String])
     val notesOpt       = blankToNone((json \ "notes").asOpt[String])
+    val loginIDOpt     = blankToNone((json \ "login_id").asOpt[String])
 
     def maybeEncryptPassword(pwEntry: PasswordEntry):
       Either[String, PasswordEntry] = {
@@ -144,6 +145,7 @@ object PasswordEntryController extends BaseController {
                             userID            = userID,
                             name              = name,
                             description       = descriptionOpt,
+                            loginID           = loginIDOpt,
                             encryptedPassword = None,
                             notes             = notesOpt))
       }

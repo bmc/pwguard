@@ -84,51 +84,86 @@
 
   <!-- Box for creating new entry -->
 
-  <form name="newEntry" ng-submit="newPasswordEntry.save()">
-    <table class="new-password-entry-table"
-           ng-show="newPasswordEntry">
-      <tbody>
-        <tr>
-          <td>
-            <input class="standalone"
+  <div class="grid" ng-show="newPasswordEntry" id="new-password-entry">
+    <div class="unit whole">
+      <header>New Password Entry</header>
+      <form name="newEntry" ng-submit="newPasswordEntry.save()"
+            id="new-password-entry-form">
+        <div class="form-field">
+          <div class="label">
+            <label for="name">Name:</label>
+          </div>
+          <div class="input">
+            <input class="standalone" name="name"
                    ng-model="newPasswordEntry.name"
                    type="text"
                    placeholder="Name"
                    required/>
-          </td>
-          <td>
-            <input class="standalone"
+          </div>
+        </div>
+
+        <div class="form-field">
+          <div class="label">
+            <label for="description">Description</label>
+          </div>
+          <div class="input">
+            <input class="standalone" name="description"
                    ng-model="newPasswordEntry.description"
                    type="text"
                    placeholder="Description"/>
-          </td>
-          <td>
-            <input class="standalone"
+          </div>
+        </div>
+
+        <div class="form-field">
+          <div class="label">
+            <label for="password">Password</label>
+          </div>
+          <div class="input">
+            <input class="standalone" name="password"
                    ng-model="newPasswordEntry.password"
                    type="text"
                    placeholder="Password"/>
-          </td>
-          <td>
-            <textarea class="standalone"
+          </div>
+        </div>
+
+        <div class="form-field">
+          <div class="label">
+            <label for="loginID">ID</label>
+          </div>
+          <div class="input">
+            <input class="standalone" name="loginID"
+                   ng-model="newPasswordEntry.loginID"
+                   type="text"
+                   placeholder="Login ID"/>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <div class="label">
+            <label for="notes">Notes</label>
+          </div>
+          <div class="input">
+            <textarea class="standalone" name="notes"
                       ng-model="newPasswordEntry.notes"
                       placeholder="Notes"/>
-          </td>
-          <td>
-            <a href="javascript:void(0)"
-               class="btn btn-borderless save"
-               ng-click="newPasswordEntry.save()">
-              <i class="fa fa-save"></i>
-            </a>
-            <a href="javascript:void(0)"
-               class="btn btn-borderless cancel"
-               ng-click="newPasswordEntry.cancel()">
-              <i class="fa fa-times"></i>
-            </a>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </form>
+          </div>
+        </div>
+
+        <div class="button-bar">
+          <div class="buttons">
+            <button class="btn btn-primary btn-large"
+                    ng-disabled="!newPasswordEntry.name"
+                    ng-click="newPasswordEntry.save()">
+              Save
+            </button>
+            <button class="btn btn-large" ng-click="newPasswordEntry.cancel()">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <div class="grid">
     <div class="unit whole" ng-show="searchResults != null" id="search-results">
@@ -156,6 +191,7 @@
                 <th class="sortable-column" ts-criteria="description|lowercase">
                   Description
                 </th>
+                <th>ID</th>
                 <th>Password</th>
                 <th>Notes</th>
                 <th></th>
@@ -163,7 +199,9 @@
             </thead>
 
             <tbody>
-              <tr ng-repeat="pw in searchResults" ts-repeat>
+              <tr ng-repeat="pw in searchResults" ts-repeat
+                  ng-class-odd="'odd'" ng-class-even="'even'">
+
                 <td>
                   <span ng-hide="pw.editing">{{pw.name}}</span>
                   <span ng-show="pw.editing">
@@ -177,6 +215,14 @@
                   <span ng-show="pw.editing">
                     <input class="standalone" ng-model="pw.description"
                            type="text" placeholder="Description"/>
+                  </span>
+                </td>
+
+                <td>
+                  <span ng-hide="pw.editing">{{pw.loginID}}</span>
+                  <span ng-show="pw.editing">
+                    <input class="standalone" ng-model="pw.loginID"
+                           type="text" placeholder="ID"/>
                   </span>
                 </td>
 
@@ -244,6 +290,7 @@
                     <i class="fa fa-times"></i>
                   </a>
                 </td>
+
               </tr>
             </tbody>
           </table>
