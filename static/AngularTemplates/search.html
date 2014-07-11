@@ -235,7 +235,6 @@
                                ng-show="pw.passwordVisible"
                                ng-model="pw.plaintextPassword"
                                ng-click="pw.passwordVisible=!pw.passwordVisible"/>
-                        <clippy text="{{pw.plaintextPassword}}"/>
                       </span>
 
                       <span ng-show="!pw.passwordVisible"
@@ -243,6 +242,7 @@
                             ng-click="pw.passwordVisible=!pw.passwordVisible">
                         **************
                       </span>
+                      <clippy bg-color="FFFFFF" text="{{pw.plaintextPassword}}"/>
                     </div>
                   </div>
                   <div ng-show="pw.editing">
