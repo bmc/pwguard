@@ -33,10 +33,6 @@ configApp = ($routeSegmentProvider,
 
   window.setRoutes $routeSegmentProvider, $routeProvider
 
-# Initialize the application by storing some data and functions into the
-# root scope. Invoked when the app is defined, below.
-
-
 # The app itself.
 pwguardApp = angular.module('PWGuardApp', requiredModules)
 pwguardApp.config ['$routeSegmentProvider',
@@ -111,6 +107,7 @@ MainCtrl = ($scope,
   $scope.flashAfterRouteChange = null
 
   pwgFlash.init() # initialize the flash service
+
   pwgAjax.on401 ->
     $scope.loggedInUser = null
     $scope.redirectToSegment "login"
