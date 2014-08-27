@@ -96,6 +96,10 @@ MainCtrl = ($scope,
             pwgLogging,
             $q) ->
 
+  $scope.debugMessages = []
+  $scope.debug = (msg) ->
+    $scope.debugMessages.push msg
+
   log = pwgLogging.logger "MainCtrl"
 
   $scope.dialogConfirmTitle    = null
@@ -312,6 +316,7 @@ pwguardApp.controller 'NavbarCtrl', ['$scope', 'pwgAjax', NavbarCtrl]
 # ---------------------------------------------------------------------------
 
 LoginCtrl = ($scope, pwgAjax, pwgFlash) ->
+  $scope.debug "LoginCtrl"
   $scope.email     = null
   $scope.password  = null
   $scope.canSubmit = false
@@ -349,7 +354,6 @@ LoginCtrl = ($scope, pwgAjax, pwgFlash) ->
 
   checkSubmit = ->
     $scope.canSubmit = nonEmpty($scope.email) and nonEmpty($scope.password)
-
 
   nonEmpty = (s) ->
     s? and s.trim().length > 0
@@ -512,6 +516,9 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
       pw.notesPreview     = ellipsize pw.notes
       pw.previewAvailable = pw.notes isnt pw.notesPreview
       pw.showPreview      = pw.previewAvailable
+      pw.passwordVisible  = false
+      pw.toggleVisibility = ->
+        pw.passwordVisible = not pw.passwordVisible
 
       originalEntries[pw.id] = pw
 

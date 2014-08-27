@@ -171,14 +171,17 @@
         <div ng-show="searchResults.length == 0">No results.</div>
         <div ng-show="searchResults.length == 1">One result.</div>
         <div ng-show="searchResults.length > 1">{{searchResults.length}} results</div>
-      </div>
 
-      <div ng-show="(searchResults.length > 0)">
-        <div ng-show="!isMobile">
+        <div ng-show="(searchResults.length > 0) && !isMobile">
           <span class="hint" ng-hide="newPasswordEntry">
             You can click on a password to show it or hide it. You
             can click on a long note to expand it.
           </span>
+        </div>
+      </div>
+
+      <div ng-show="(searchResults.length > 0)">
+        <div ng-show="!isMobile">
 
           <!-- List of results -->
 
@@ -229,19 +232,29 @@
                 <td class="password">
                   <div ng-hide="pw.editing">
                     <div ng-show="pw.plaintextPassword">
+
+                      <span class="show-hide-password">
+                        <a href="" ng-click="pw.toggleVisibility()"
+                           class="toggle-password">
+                            <span class="fa fa-toggle-on"
+                                  ng-show="pw.passwordVisible"></span>
+                            <span class="fa fa-toggle-off"
+                                  ng-hide="pw.passwordVisible"></span>
+                        </a>
+                      </span>
+
                       <span ng-show="pw.passwordVisible">
                         <input type="text" readonly="readonly"
                                class="shown-password clickable"
                                ng-show="pw.passwordVisible"
-                               ng-model="pw.plaintextPassword"
-                               ng-click="pw.passwordVisible=!pw.passwordVisible"/>
+                               ng-model="pw.plaintextPassword"/>
                       </span>
 
                       <span ng-show="!pw.passwordVisible"
-                            class="hidden-password clickable"
-                            ng-click="pw.passwordVisible=!pw.passwordVisible">
+                            class="hidden-password clickable">
                         **************
                       </span>
+
                     </div>
                   </div>
                   <div ng-show="pw.editing">

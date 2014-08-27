@@ -114,6 +114,16 @@
         <div app-view-segment="0" id="segment-level-0"></div>
 
       </div>
+
+      <div id="debug" ng-show="debugMessages.length > 0">
+        <div class="grid">
+          <div class="unit whole header">Debug</div>
+          <div class="unit whole body">
+            <pre ng-repeat="line in debugMessages track by $index">{{line}}</pre>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <div ng-hide="true" id="config"
