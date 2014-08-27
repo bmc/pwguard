@@ -52,6 +52,22 @@ class UserDAO(_dal: DAL, _logger: Logger) extends BaseDAO[User](_dal, _logger) {
     }
   }
 
+  /** Create a user instance, erroring out if it already exists.
+    *
+    * @param user  the user object to create
+    *
+    * @return `Right(user)`, with a possibly changed model object,
+    *         on success. `Left(error)` on error.
+    */
+  def create(user: User): Either[String, User] = {
+    withTransaction { implicit session: SlickSession =>
+      findByEmail(user.email).right.flatMap { userOpt =>
+        userOpt.map { user => Left(s"Email ${user.email} is taken.") }.
+                getOrElse { save(user) }
+      }
+    }
+  }
+
   // --------------------------------------------------------------------------
   // Protected methods
   // ------------------------------------------------------------------------

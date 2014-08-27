@@ -316,7 +316,6 @@ pwguardApp.controller 'NavbarCtrl', ['$scope', 'pwgAjax', NavbarCtrl]
 # ---------------------------------------------------------------------------
 
 LoginCtrl = ($scope, pwgAjax, pwgFlash) ->
-  $scope.debug "LoginCtrl"
   $scope.email     = null
   $scope.password  = null
   $scope.canSubmit = false
@@ -641,13 +640,20 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
         pwgAjax.delete url, ->
           loadUsers()
 
-  createUser = (u) ->
-    if normalizeValue(u.email) == ""
-      pwgFlash.error "Missing email address."
+  checkSave = (u) ->
+    msg = if normalizeValue(u.email) == ""
+      "Missing email address."
     else if normalizeValue(u.password1) == ""
-      pwgFlash.error "Missing password."
+      "Missing password."
     else if (not passwordsOkay(u.password1, u.password2))
-      pwgFlash.error "Passwords don't match."
+      "Passwords don't match."
+    else
+      null
+
+  createUser = (u) ->
+    msg = checkSave u
+    if msg?
+      pwgFlash.error msg
     else
       url = $("#config").data("create-user-url")
 
@@ -655,8 +661,8 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
         loadUsers()
         $scope.addingUser = null
 
-      onFailure = ->
-        pwgFlash.error "Save failed."
+      onFailure = (data) ->
+        pwgFlash.error data.error.message
 
       pwgAjax.post url, $scope.addingUser, onSuccess, onFailure
 
@@ -680,10 +686,19 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
       editing:        true
       isNew:          true
       passwordsMatch: true
-      cancel: ->
-        $scope.addingUser = null
-      save: ->
-        createUser this
+      cancel:         -> $scope.addingUser = null
+      save:           -> createUser this
+      clear:          ->
+        $scope.addingUser.email     = null
+        $scope.addingUser.password1 = null
+        $scope.addingUser.password2 = null
+        $scope.addingUser.firstName = null
+        $scope.addingUser.lastName  = null
+        $scope.addingUser.active    = true
+        $scope.addingUser.admin     = false
+
+  canSave = (u) ->
+    checkSave(u) isnt null
 
   loadUsers = ->
     originalUsers = {}
@@ -705,9 +720,9 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
         u2.save      = -> saveUser this
         u2.cancel    = -> cancelEdit this
         u2.delete    = -> deleteUser this
+        u2.canSave   = -> canSave this
 
         u2.passwordsMatch = true
-
         u2
 
   $scope.$watch 'segmentIsActive("admin-users")', (visible) ->

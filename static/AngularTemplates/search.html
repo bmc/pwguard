@@ -53,7 +53,7 @@
         <!-- non-mobile -->
 
         <div class="search-options mobile" ng-hide="isMobile">
-          <span class="all-button">
+          <span class="button">
             <button class="btn btn-small" ng-click="showAll()">
               All
             </button>
@@ -149,14 +149,14 @@
           </div>
         </div>
 
-        <div class="button-bar">
+        <div class="button-bar left">
           <div class="buttons">
-            <button class="btn btn-primary btn-large"
+            <button class="btn btn-primary"
                     ng-disabled="!newPasswordEntry.name"
                     ng-click="newPasswordEntry.save()">
               Save
             </button>
-            <button class="btn btn-large" ng-click="newPasswordEntry.cancel()">
+            <button class="btn" ng-click="newPasswordEntry.cancel()">
               Cancel
             </button>
           </div>
@@ -164,6 +164,8 @@
       </form>
     </div>
   </div>
+
+  <!-- search results -->
 
   <div class="grid">
     <div class="unit whole" ng-show="searchResults != null" id="search-results">

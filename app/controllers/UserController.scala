@@ -48,7 +48,7 @@ object UserController extends BaseController {
 
     Future {
       val res = for { user  <- decodeUserJSON(None, request.body).right
-                      saved <- userDAO.save(user).right }
+                      saved <- userDAO.create(user).right }
                 yield saved
 
       res match {

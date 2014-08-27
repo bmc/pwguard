@@ -3,66 +3,109 @@
      ng-show="segmentIsActive('admin-users')">
 
   <div class="grid">
-    <div class="unit whole" ng-show="users" id="users-list">
-      <div class="users-header">
-        <div ng-show="users.length == 0">Impossible! No users!</div>
-        <div ng-show="users.length == 1">One user.</div>
-        <div ng-show="users.length > 1">{{users.length}} users.</div>
-      </div>
-
-      <div ng-show="users.length > 0">
+    <div class="unit" ng-class="{half: !isMobile, whole: isMobile}">
+      <div ng-show="addingUser">
 
         <!-- For creating a new user. -->
 
         <form name="newUser" ng-submit="addingUser.save()">
-          <table class="new-user-table" ng-show="addingUser">
-            <tbody>
-              <tr>
-                <td>
-                  <input class="standalone" ng-model="addingUser.email"
-                         type="email" placeholder="Email" required/>
-                </td>
-                <td>
-                  <input class="standalone" ng-model="addingUser.password1"
-                         type="password" placeholder="Password" required/>
-                </td>
-                <td>
-                  <input class="standalone" ng-model="addingUser.password2"
-                         type="password" placeholder="Password (again)" required/>
-                </td>
-                <td>
-                  <input class="standalone" ng-model="addingUser.firstName"
-                         type="text" placeholder="First name"/>
-                </td>
-                <td>
-                  <input class="standalone" ng-model="addingUser.lastName"
-                         type="text" placeholder="Last name"/>
-                </td>
-                <td>
-                  <input class="standalone" type="checkbox"
-                         ng-model="addingUser.active"/>
-                  <label>Active</label>
-                </td>
-                <td>
-                  <input class="standalone" type="checkbox"
-                         ng-model="addingUser.admin"/>
-                  <label>Admin</label>
-                </td>
-                <td>
-                  <button type="submit" class="btn btn-borderless save">
-                    <i class="fa fa-save"></i>
-                  </button>
-                  <a href="javascript:void(0)"
-                     class="btn btn-borderless cancel"
-                     ng-click="addingUser.cancel()">
-                    <i class="fa fa-times"></i>
-                  </a>
-                </td>
-              </tr>
-            </tbody>
+          <div class="form-field">
+            <div class="label">
+              <label for="email">Email:</label>
+            </div>
+            <div class="input">
+              <input class="standalone" ng-model="addingUser.email"
+                     type="email" placeholder="Email" required/>
+            </div>
+          </div>
 
-          </table>
+          <div class="form-field">
+            <div class="label">
+              <label for="password1">Password:</label>
+            </div>
+            <div class="input">
+              <input class="standalone" ng-model="addingUser.password1"
+                     name="password1" type="password" placeholder="Password"
+                     required/>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <div class="label">
+              <label for="password2">Password (again):</label>
+            </div>
+            <div class="input">
+              <input class="standalone" ng-model="addingUser.password2"
+                     name="password2" type="password"
+                     placeholder="Password (again)" required/>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <div class="label">
+              <label for="first-name">First name:</label>
+            </div>
+            <div class="input">
+              <input class="standalone" ng-model="addingUser.firstName"
+                     name="first-name" type="text" placeholder="First name"/>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <div class="label">
+              <label for="last-name">Last name:</label>
+            </div>
+            <div class="input">
+              <input class="standalone" ng-model="addingUser.lastName"
+                     name="last-name" type="text" placeholder="Last name"/>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <div class="input">
+              <input class="standalone" type="checkbox" name="active"
+                     ng-model="addingUser.active"/>
+              <span class="label">
+                <label for="active">Active:</label>
+              </span>
+            </div>
+          </div>
+          <div class="form-field">
+            <div class="input">
+              <input class="standalone" type="checkbox" name="admin"
+                     ng-model="addingUser.admin"/>
+              <span class="label">
+                <label for="admin">Admin</label>
+              </span>
+            </div>
+          </div>
+
+          <div class="button-bar left">
+            <div class="buttons">
+              <button class="btn btn-primary"
+                      ng-disabled="addingUser.canSave()"
+                      ng-click="addingUser.save()">
+                Save
+              </button>
+              <button class="btn" ng-click="addingUser.cancel()">
+                Cancel
+              </button>
+              <button class="btn" ng-click="addingUser.clear()">
+                Clear
+              </button>
+            </div>
+          </div>
         </form>
+      </div>
+    </div>
+
+    <div class="unit whole" ng-show="users && !addingUser" id="users-list">
+      <div ng-show="users.length > 0">
+        <div class="users-header">
+          <div ng-show="users.length == 0">Impossible! No users!</div>
+          <div ng-show="users.length == 1">One user.</div>
+          <div ng-show="users.length > 1">{{users.length}} users.</div>
+        </div>
 
         <!-- List of existing users -->
 
@@ -83,7 +126,7 @@
                 Active
               </th>
               <th>
-                <a href="javascript:void(0)" ng-click="editNewUser()"
+                <a href="#" ng-click="editNewUser()"
                    class="btn btn-borderless" ng-hide="editingAny()">
                   <i class="fa fa-plus"></i>
                 </a>
@@ -91,7 +134,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr ng-repeat="user in users" ts-repeat
+            <tr ng-repeat="user in users track by $index" ts-repeat
                 ng-class="{admin: user.admin}">
               <td>
                 {{user.email}}

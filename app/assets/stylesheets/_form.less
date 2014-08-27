@@ -27,6 +27,30 @@ input[type="text"] {
   }
 }
 
+.label-common {
+  width:         100%;
+  text-align:    left;
+  padding-right: 5px;
+  font-weight:   bold;
+  color:         @formLabelTextColor !important;
+
+  @media @phone {
+    font-size: @phoneFontSize * 0.7; // smaller than regular font
+  }
+
+  @media @tablet {
+    font-size: @tabletFontSize * 0.8;
+  }
+
+  @media @desktop {
+    font-size: @desktopFontSize;
+  }
+
+  @media @wideDesktop {
+    font-size: @desktopFontSize;
+  }
+}
+
 form {
   display: block;
   width:   100%;
@@ -36,28 +60,12 @@ form {
     width:   100%;
 
     div.label {
-      display:       block;
-      width:         100%;
-      text-align:    left;
-      padding-right: 5px;
-      font-weight:   bold;
-      color:         @formLabelTextColor !important;
+      display: block;
+      .label-common;
+    }
 
-      @media @phone {
-        font-size: @phoneFontSize * 0.7; // smaller than regular font
-      }
-
-      @media @tablet {
-        font-size: @tabletFontSize * 0.8;
-      }
-
-      @media @desktop {
-        font-size: @desktopFontSize;
-      }
-
-      @media @wideDesktop {
-        font-size: @desktopFontSize;
-      }
+    span.label {
+      .label-common;
     }
 
     div.input {
@@ -138,11 +146,21 @@ form {
     display:    block;
     text-align: center;
     width:      100%;
+    margin-top: 20px;
 
     .buttons {
       width:      100%;
       display:    inline-block;
       text-align: center;
     }
+
+    &.left {
+      text-align: left !important;
+
+      .buttons {
+        text-align: left !important;
+      }
+    }
+
   }
 }
