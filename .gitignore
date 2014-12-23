@@ -13,6 +13,6 @@ dist
 /.project
 /RUNNING_PID
 /.settings
-activator*
 *.db
-static/bower
+/static/bower
+/project/activator*
