@@ -36,7 +36,8 @@ object SessionController extends BaseController {
               yield {
                 val payload = Json.obj("user" -> json)
                 val sessionPairs = Seq(
-                  SessionOps.SessionKey -> sessionData.sessionID
+                  SessionOps.SessionKey -> sessionData.sessionID,
+                  "email"               -> user.email
                 )
                 Ok(payload) withSession (sessionPairs: _*)
               }
@@ -68,7 +69,7 @@ object SessionController extends BaseController {
         for { optUser <- DAO.userDAO.findByEmail(email)
               user    <- optUser.toFuture("No such user")
               json    <- safeUserJSON(user) }
-        yield Ok(json)
+        yield Ok(Json.obj("loggedIn" -> true, "user" -> json))
       }.
       getOrElse(Future.successful(Ok(NotLoggedIn)))
     }
@@ -80,7 +81,9 @@ object SessionController extends BaseController {
 
   /** Log the current user out of the system.
     */
-  def logout = SecuredAction { (user: User, request: Request[Any]) =>
+  def logout = AuthenticatedAction.async { authReq =>
+    implicit val request = authReq.request
+    val user = authReq.user
     val json = request.body
     SessionOps.currentSessionData(request) map { optData =>
       for (data <- optData)

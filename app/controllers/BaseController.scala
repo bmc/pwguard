@@ -10,9 +10,41 @@ import play.api.libs.json.{ JsString, Json, JsValue }
 
 import pwguard.global.Globals.ExecutionContexts.Default._
 import util.EitherOptionHelpers.Implicits._
+import util.FutureHelpers._
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
+
+class AuthenticatedRequest[T](val user: User, val request: Request[T])
+
+// See https://www.playframework.com/documentation/2.3.x/ScalaActionsComposition
+object AuthenticatedAction
+  extends ActionBuilder[AuthenticatedRequest]
+  with ActionRefiner[Request, AuthenticatedRequest] {
+
+  def refine[T](request: Request[T]):
+    Future[Either[Result, AuthenticatedRequest[T]]] = {
+
+    import DAO.userDAO
+
+    def NoUserAction = Redirect(routes.SessionController.login())
+
+    request.session.get("email").map { email =>
+Logger.error(s"*** email in session: $email")
+      val f = for { optUser <- userDAO.findByEmail(email)
+                    user    <- optUser.toFuture("Invalid user in session") }
+              yield user
+
+      f map { user =>
+        Right(new AuthenticatedRequest(user, request))
+      } recover {
+        case NonFatal(e) => Left(NoUserAction)
+      }
+    }.
+    getOrElse(Future.successful(Left(NoUserAction)))
+  }
+}
+
 
 /** Base class for all controllers.
   */

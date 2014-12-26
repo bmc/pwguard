@@ -78,7 +78,6 @@ object SessionOps {
                     data    <- dataOpt.toFuture("No session for request")
                     userOpt <- DAO.userDAO.findByEmail(data.userIdentifier) }
               yield userOpt
-
     res map { userOpt => userOpt.map(_.email) }
   }
 
@@ -98,7 +97,6 @@ object SessionOps {
     Future[Option[SessionData]] = {
 
     request.session.get(SessionKey).map { sessionID =>
-logger.error(s"sessionID=$sessionID")
       for { dataOpt        <- sessionStore.getSessionData(sessionID)
             data           <- dataOpt.toFuture("No session.")
             checkedDataOpt <- checkSession(request, data) }
