@@ -45,14 +45,6 @@ pwguardApp.config ['$routeSegmentProvider',
 ###############################################################################
 
 # Instantiating the module this way, rather than via "ng-app", provides
-# better browser console errors.
-###
-try
-  angular.bootstrap document, ['PWGuardApp', requiredModules]
-catch e
-  console.error e.stack or e.message or e
-  throw e
-###
 
 fieldsMatch = (v1, v2) ->
   normalizeValue(v1) is normalizeValue(v2)
@@ -305,7 +297,7 @@ NavbarCtrl = ($scope, pwgAjax) ->
           console.log "WARNING: Server logout error. #{response.status}"
           always()
 
-        url = $("#config").data("logout-url")
+        url = routes.controllers.SessionController.logout().url
 
         pwgAjax.post(url, {}, onSuccess, onFailure)
 
@@ -340,7 +332,7 @@ LoginCtrl = ($scope, pwgAjax, pwgFlash) ->
         # Nothing to do.
         return
 
-      url = $("#config").data("login-url")
+      url = routes.controllers.SessionController.login().url
       data =
         email: $scope.email
         password: $scope.password
@@ -420,7 +412,7 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
       includeDescription: $scope.searchDescription
       wordMatch:          $scope.matchFullWord
 
-    url = $("#config").data('search-url')
+    url = routes.controllers.PasswordEntryController.searchPasswordEntries().url
     pwgAjax.post url, params, onSuccess, onFailure
 
   $scope.showAll = ->
@@ -433,11 +425,11 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
       pwgFlash.error "Server error. We're looking into it."
 
     $scope.searchTerm = null
-    url = $("#config").data("all-pw-url")
+    url = routes.controllers.PasswordEntryController.all().url
     pwgAjax.get url, onSuccess, onFailure
 
   saveEntry = (pw) ->
-    url = $("#config").data("save-pwentry-url").replace("0", pw.id)
+    url = routes.controllers.PasswordEntryController.save(pw.id).url
     data =
       name:        pw.name
       description: pw.description
@@ -460,7 +452,7 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
 
   deleteEntry = (pw) ->
     $scope.confirm("Really delete #{pw.name}?", "Confirm deletion").then (result) ->
-      url = $("#config").data("delete-pwentry-url").replace("0", pw.id)
+      url = routes.controllers.PasswordEntryController.delete(pw.id).url
       pwgAjax.delete url, ->
         reissueLastSearch()
 
@@ -473,7 +465,7 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
     if normalizeValue(pw.name) == ""
       pwgFlash.error "Missing name."
     else
-      url = $("#config").data("create-pwentry-url")
+      url = routes.controllers.PasswordEntryController.create().url
 
       onSuccess = ->
         $scope.showAll()
@@ -577,7 +569,7 @@ ProfileCtrl = ($scope, pwgLogging, pwgAjax) ->
       password1: $scope.password1
       password2: $scope.password2
 
-    url = $("#config").data("save-user-url").replace("0", $scope.loggedInUser.id)
+    url = routes.controllers.UserController.save($scope.loggedInUser.id).url
 
     pwgAjax.post url, data, (response) ->
       log.debug "Save complete."
@@ -611,7 +603,7 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
   saveUser = (u) ->
     u.passwordsMatch = passwordsOkay u.password1, u.password2
     if u.passwordsMatch
-      url = $("#config").data('save-user-url').replace("0", u.id)
+      url = routes.controllers.UserController.save(u.id).url
 
       onFailure = ->
         pwgFlash.error "Save failed."
@@ -634,9 +626,8 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
       pwgFlash.error "You can't delete yourself!"
 
     else
-      $scope.confirm("Really delete #{u.email}?",
-                     "Confirm deletion").then (result) ->
-        url = $("#config").data("delete-user-url").replace("0", u.id)
+      $scope.confirm("Really delete #{u.email}?", "Confirm deletion").then (result) ->
+        url = routes.controllers.UserController.delete(u.id).url
         pwgAjax.delete url, ->
           loadUsers()
 
@@ -655,7 +646,7 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
     if msg?
       pwgFlash.error msg
     else
-      url = $("#config").data("create-user-url")
+      url = routes.controllers.UserController.create().url
 
       onSuccess = ->
         loadUsers()
@@ -703,7 +694,7 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
   loadUsers = ->
     originalUsers = {}
     $scope.users = null
-    url = $("#config").data("all-users-url")
+    url = routes.controllers.UserController.getAll().url
     pwgAjax.get url, (result) ->
       $scope.users = for u in result.users
         if u.id is $scope.loggedInUser?.id

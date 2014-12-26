@@ -45,11 +45,24 @@ pwgLogging = ->
 pwgServices.factory 'pwgLogging', [pwgLogging]
 
 # ----------------------------------------------------------------------------
+# Error service
+# ----------------------------------------------------------------------------
+
+pwgError = ->
+
+  showStackTrace: (prefix = "") ->
+    console.log prefix if prefix?
+    console.log (new Error()).stack
+
+pwgServices.factory 'pwgError', [pwgError]
+
+
+# ----------------------------------------------------------------------------
 # Front-end service for AJAX calls. Handles errors in a consistent way, and
 # fires up a spinner.
 # ----------------------------------------------------------------------------
 
-pwgAjax = ($http, $rootScope, pwgSpinner, pwgFlash) ->
+pwgAjax = ($http, $rootScope, pwgSpinner, pwgFlash, pwgError) ->
 
   callOn401 = null
 
@@ -84,7 +97,6 @@ pwgAjax = ($http, $rootScope, pwgSpinner, pwgFlash) ->
   http = (config, onSuccess, onFailure)->
     failed = (data, status, headers, config) ->
       pwgSpinner.stop()
-      console.log typeof(status)
       handleFailure data, status, onFailure
 
     succeeded = (data, status, headers, config) ->
@@ -106,7 +118,12 @@ pwgAjax = ($http, $rootScope, pwgSpinner, pwgFlash) ->
       method: 'POST'
       url:    url
       data:   data
-    http(params, onSuccess, onFailure)
+
+    if url?
+      http(params, onSuccess, onFailure)
+    else
+      pwgError.showStackTrace("No URL to pwgAjax.post()")
+
 
   # Get a URL.
   #
@@ -120,7 +137,11 @@ pwgAjax = ($http, $rootScope, pwgSpinner, pwgFlash) ->
       method: 'GET'
       url:    url
 
-    http(params, onSuccess, onFailure)
+    if url?
+      http(params, onSuccess, onFailure)
+    else
+      pwgError.showStackTrace("No URL to pwgAjax.get()")
+
 
   # Issue an HTTP DELETE to a URL
   #
@@ -143,8 +164,8 @@ pwgServices.factory 'pwgAjax', ['$http',
                                 '$rootScope',
                                 'pwgSpinner',
                                 'pwgFlash',
+                                'pwgError',
                                 pwgAjax]
-
 # ----------------------------------------------------------------------------
 # Simple spinner service. Assumes the existence of an element that's monitoring
 # the root scope's "showSpinner" variable.
@@ -288,7 +309,7 @@ pwgCheckUser = ($q, pwgAjax) ->
 
   checkUser: ->
     deferred = $q.defer()
-    url = $("#config").data("logged-in-user-url")
+    url = routes.controllers.SessionController.getLoggedInUser().url
     pwgAjax.post url, {}, onSuccess, onFailure
     deferred.promise
 
@@ -311,7 +332,7 @@ pwgGetBrowserInfo = ($q, pwgAjax) ->
 
   getBrowserInfo: ->
     deferred = $q.defer()
-    url = $("#config").data("user-agent-info-url")
+    url = routes.controllers.MainController.getUserAgentInfo().url
     pwgAjax.get url, onSuccess, onFailure
     deferred.promise
 
