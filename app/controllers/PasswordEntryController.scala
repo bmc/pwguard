@@ -8,11 +8,14 @@ import play.api._
 import play.api.libs.json.{JsString, Json, JsValue}
 import play.api.mvc.Request
 import play.api.mvc.Results._
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+
 import util.JsonHelpers
 import util.EitherOptionHelpers.Implicits._
+import util.EitherOptionHelpers._
+import pwguard.global.Globals.ExecutionContexts.Default._
 
 import scala.concurrent.Future
+import scala.util.control.NonFatal
 import scala.util.{Success, Try}
 
 /** Controller for search operations.
@@ -30,78 +33,67 @@ object PasswordEntryController extends BaseController {
   def save(id: Int) = SecuredJSONAction {
     (user: User, request: Request[JsValue]) =>
 
-    Future {
-      val res = for { pweOpt <- passwordEntryDAO.findByID(id).right
-                      pwe    <- pweOpt.toEither("Password entry not found").right
-                      pwe2   <- decodeJSON(Some(pwe), user, request.body).right
-                      saved  <- passwordEntryDAO.save(pwe2).right
-                      json   <- jsonPasswordEntry(user, saved).right }
-                yield json
+    val f = for { pweOpt <- passwordEntryDAO.findByID(id)
+                  pwe    <- pweOpt.toFuture("Password entry not found")
+                  pwe2   <- decodeJSON(Some(pwe), user, request.body)
+                  saved  <- passwordEntryDAO.save(pwe2)
+                  json   <- jsonPasswordEntry(user, saved) }
+            yield json
 
-      res match {
-        case Left(error) => Ok(jsonError(error))
-        case Right(json) => Ok(json)
-      }
-    }
+    f.map { json => Ok(json) }
+     .recover { case NonFatal(e) => Ok(jsonError(e.getMessage)) }
   }
 
   def create = SecuredJSONAction { (user: User, request: Request[JsValue]) =>
-    Future {
-      val res = for { pwe   <- decodeJSON(None, user, request.body).right
-                      saved <- passwordEntryDAO.save(pwe).right
-                      json   <- jsonPasswordEntry(user, saved).right }
-                yield json
+    val f = for { pwe   <- decodeJSON(None, user, request.body)
+                  saved <- passwordEntryDAO.save(pwe)
+                  json  <- jsonPasswordEntry(user, saved) }
+            yield json
 
-      res match {
-        case Left(error) => Ok(jsonError(error))
-        case Right(json) => Ok(json)
-      }
-    }
+    f.map { json => Ok(json) }
+     .recover { case NonFatal(e) => Ok(jsonError(e.getMessage)) }
   }
 
   def delete(id: Int) = SecuredAction { (user: User, request: Request[Any]) =>
-    Future {
-      passwordEntryDAO.delete(id) match {
-        case Left(error) => Ok(jsonError(error))
-        case Right(_)    => Ok(Json.obj("ok" -> true))
-      }
+    passwordEntryDAO.delete(id) map { status =>
+      Ok(Json.obj("ok" -> true))
+    } recover { case NonFatal(e) =>
+      Ok(jsonError(e.getMessage))
     }
   }
 
   def searchPasswordEntries = SecuredJSONAction {
     (user: User, request: Request[JsValue]) =>
 
-    Future {
-      val json               = request.body
-      val searchTerm         = (json \ "searchTerm").asOpt[String]
-      val includeDescription = (json \ "includeDescription").asOpt[Boolean]
-                                                            .getOrElse(false)
-      val wordMatch          = (json \ "wordMatch").asOpt[Boolean]
-                                                   .getOrElse(false)
+    val json               = request.body
+    val searchTerm         = (json \ "searchTerm").asOpt[String]
+    val includeDescription = (json \ "includeDescription").asOpt[Boolean]
+                                                          .getOrElse(false)
+    val wordMatch          = (json \ "wordMatch").asOpt[Boolean]
+                                                 .getOrElse(false)
 
-      def searchDB(term: String): Either[String, Set[PasswordEntry]] = {
-        user.id.map { id =>
-          passwordEntryDAO.search(id, term, wordMatch, includeDescription)
-        }.
-        getOrElse(Right(Set.empty[PasswordEntry]))
-      }
-
-      searchTerm.map { term =>
-        entriesToJSON(user) { searchDB(term) } match {
-          case Left(error) => Ok(jsonError(s"Search failed for $user: $error"))
-          case Right(json) => Ok(json)
-        }
+    def searchDB(term: String): Future[Set[PasswordEntry]] = {
+      user.id.map { id =>
+        passwordEntryDAO.search(id, term, wordMatch, includeDescription)
       }.
-      getOrElse(BadRequest(jsonError("Missing search term")))
+      getOrElse(Future.successful(Set.empty[PasswordEntry]))
     }
+
+    searchTerm.map { term =>
+      entriesToJSON(user) { searchDB(term) } map { json =>
+        Ok(json)
+      } recover {
+        case NonFatal(e) => Ok(jsonError(s"Search failed for $user:", e))
+      }
+    }.
+    getOrElse(Future.successful(BadRequest(jsonError("Missing search term"))))
   }
 
   def all = SecuredAction { (user: User, request: Request[Any]) =>
-    Future {
-      entriesToJSON(user) { passwordEntryDAO.allForUser(user) } match {
-        case Left(error) => Ok(jsonError(s"Failed for $user: $error"))
-        case Right(json) => Ok(json)
-      }
+    entriesToJSON(user) { passwordEntryDAO.allForUser(user) } map { json =>
+      Ok(json)
+    } recover {
+      case NonFatal(e) => Ok(jsonError(s"Failed for $user", e))
     }
   }
 
@@ -112,7 +104,7 @@ object PasswordEntryController extends BaseController {
   private def decodeJSON(pwOpt: Option[PasswordEntry],
                          owner: User,
                          json: JsValue):
-    Either[String, PasswordEntry] = {
+    Future[PasswordEntry] = {
 
     val nameOpt        = blankToNone((json \ "name").asOpt[String])
     val descriptionOpt = blankToNone((json \ "description").asOpt[String])
@@ -120,91 +112,92 @@ object PasswordEntryController extends BaseController {
     val notesOpt       = blankToNone((json \ "notes").asOpt[String])
     val loginIDOpt     = blankToNone((json \ "login_id").asOpt[String])
 
-    def maybeEncryptPassword(pwEntry: PasswordEntry):
-      Either[String, PasswordEntry] = {
-
+    def maybeEncryptPassword(pwEntry: PasswordEntry): Future[PasswordEntry] = {
       passwordOpt.map { pw =>
-        UserHelpers.encryptStoredPassword(owner, pw).right.map { epw =>
+        UserHelpers.encryptStoredPassword(owner, pw).map { epw =>
           pwEntry.copy(encryptedPassword = Some(epw))
         }
       }
-      .getOrElse(Right(pwEntry))
+      .getOrElse(Future.successful(pwEntry))
     }
 
-    def handleExisting(pw: PasswordEntry): Either[String, PasswordEntry] = {
+    def handleExisting(pw: PasswordEntry): Future[PasswordEntry] = {
       val pw2 = pw.copy(name        = nameOpt.getOrElse(pw.name),
                         description = descriptionOpt.orElse(pw.description),
                         notes       = notesOpt.orElse(pw.notes))
       maybeEncryptPassword(pw2)
     }
 
-    def makeNew: Either[String, PasswordEntry] = {
+    def makeNew: Future[PasswordEntry] = {
 
-      def create(name: String, userID: Int): Either[String, PasswordEntry] = {
-        Right(PasswordEntry(id                = None,
-                            userID            = userID,
-                            name              = name,
-                            description       = descriptionOpt,
-                            loginID           = loginIDOpt,
-                            encryptedPassword = None,
-                            notes             = notesOpt))
+      def create(name: String, userID: Int): Future[PasswordEntry] = {
+        Future.successful(PasswordEntry(id                = None,
+                                        userID            = userID,
+                                        name              = name,
+                                        description       = descriptionOpt,
+                                        loginID           = loginIDOpt,
+                                        encryptedPassword = None,
+                                        notes             = notesOpt))
       }
 
-      for { name     <- nameOpt.toRight("Missing required name field").right
-            userID   <- owner.id.toRight("Missing owner user ID").right
-            pwEntry  <- create(name, userID).right
-            pwEntry2 <- maybeEncryptPassword(pwEntry).right
-            saved    <- passwordEntryDAO.save(pwEntry2).right }
+      for { name     <- nameOpt.toFuture("Missing required name field")
+            userID   <- owner.id.toFuture("Missing owner user ID")
+            pwEntry  <- create(name, userID)
+            pwEntry2 <- maybeEncryptPassword(pwEntry)
+            saved    <- passwordEntryDAO.save(pwEntry2) }
       yield saved
     }
 
     Seq(nameOpt, descriptionOpt, passwordOpt, notesOpt).flatMap {o => o} match {
-      case Nil => Left("No posted password fields.")
+      case Nil => Future.failed(new Exception("No posted password fields."))
       case _   => pwOpt map { handleExisting(_) } getOrElse { makeNew }
 
     }
   }
 
   private def entriesToJSON(user: User)
-                           (getEntries: => Either[String, Set[PasswordEntry]]):
-    Either[String, JsValue] = {
+                           (getEntries: => Future[Set[PasswordEntry]]):
+    Future[JsValue] = {
 
-    for { entries   <- getEntries.right
-          jsEntries <- jsonPasswordEntries(user, entries).right }
+    for { entries   <- getEntries
+          jsEntries <- jsonPasswordEntries(user, entries) }
     yield Json.obj("results" -> jsEntries)
   }
 
   // Decrypt the encrypted passwords and produce the final JSON.
   private def jsonPasswordEntries(user:            User,
                                   passwordEntries: Set[PasswordEntry]):
-    Either[String, JsValue] = {
+    Future[JsValue] = {
 
-    val mapped = passwordEntries.toList
-                                .map { jsonPasswordEntry(user, _) }
+    val mapped: Seq[Future[JsValue]] = passwordEntries.toSeq.map { jsonPasswordEntry(user, _) }
 
-    mapped.filter { _.isLeft } match {
-      case anything :: rest => {
-        anything
-      }
+    // We now have a sequence of futures. Map it to a future of a sequence.
+    val fSeq = Future.sequence(mapped)
 
-      case Nil => {
-        // All succeeded. Everything is a Right. Yank the JSON out into a
-        // JSON array.
-        Right(Json.toJson(mapped.map { either => either.right.get }))
-      }
+    // If any future is a failure, the future-sequence will be a failure.
+
+    fSeq.map { seq =>
+      // This is a sequence of JsValue objects.
+      Json.toJson(seq)
+    }.
+    recover {
+      case NonFatal(e) =>
+        Json.obj("error" -> "Unableto decrypt one or more passwords.")
     }
   }
 
   private def jsonPasswordEntry(user: User, pwEntry: PasswordEntry):
-    Either[String, JsValue] = {
+    Future[JsValue] = {
 
     val json = Json.toJson(pwEntry)
     pwEntry.encryptedPassword.map { password =>
-      UserHelpers.decryptStoredPassword(user, password).right.map { plaintext =>
+      UserHelpers.decryptStoredPassword(user, password).map { plaintext =>
         JsonHelpers.addFields(json, "plaintextPassword" -> JsString(plaintext))
       }
     }.
-    getOrElse(Right(json))
+    getOrElse {
+      Future.successful(json)
+    }
   }
 
 }

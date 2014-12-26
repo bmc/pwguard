@@ -4,9 +4,9 @@ import play.api._
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.mvc.Results._
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.Play.current
 import pwguard.global.Globals
+import pwguard.global.Globals.ExecutionContexts.Default._
 import util.UserAgent.UserAgent
 
 import scala.concurrent.Future

@@ -4,6 +4,7 @@ import play.api.{Logger, GlobalSettings, Application}
 import play.api.libs.concurrent.Akka
 import play.api.Play.current
 import services.UserAgentDecoder
+import scala.concurrent.ExecutionContext
 import scala.language.postfixOps;
 import scala.slick.driver.{
   MySQLDriver,
@@ -96,4 +97,17 @@ object Globals {
   lazy val DAL                     = Global._dal.get
   lazy val DB                      = Global._db.get
   lazy val UserAgentDecoderService = Global._uaService.get
+
+  object ExecutionContexts {
+    import play.api.libs.concurrent.Execution.{Implicits ⇒ PlayImplicits}
+
+    object Default {
+      implicit val default: ExecutionContext = PlayImplicits.defaultContext
+    }
+
+    object DB {
+      implicit val dbContext: ExecutionContext =
+        Akka.system.dispatchers.lookup("contexts.db")
+    }
+  }
 }

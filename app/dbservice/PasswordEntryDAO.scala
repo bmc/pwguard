@@ -2,7 +2,10 @@ package dbservice
 
 import models.{PasswordEntry, User}
 import play.api.Logger
+import pwguard.global.Globals.ExecutionContexts.DB._
 import util.RegexHelpers.Implicits._
+
+import scala.concurrent.Future
 
 /** DAO for interacting with User objects.
   */
@@ -22,14 +25,14 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
     *
     * @return `Right(Set[PasswordEntry])` on success, `Left(error)` on failure.
     */
-  def allForUser(user: User): Either[String, Set[PasswordEntry]] = {
+  def allForUser(user: User): Future[Set[PasswordEntry]] = {
     withTransaction { implicit session =>
       user.id.map { userID =>
         val q = for { pwe <- PasswordEntries if pwe.userID === user.id }
                 yield pwe
         loadMany(q)
       }.
-      getOrElse(Right(Set.empty[PasswordEntry]))
+      getOrElse(Future.successful(Set.empty[PasswordEntry]))
     }
   }
 
@@ -39,7 +42,7 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
     *
     * @return `Right(Set[model])` on success, `Left(error)` on error.
     */
-  def findByIDs(idSet: Set[Int]): Either[String, Set[PasswordEntry]] = {
+  def findByIDs(idSet: Set[Int]): Future[Set[PasswordEntry]] = {
     withTransaction { implicit session =>
       val q = for { pwe <- PasswordEntries if pwe.id inSet idSet } yield pwe
       loadMany(q)
@@ -54,8 +57,7 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
     * @return `Left(error)` on error; `Right(None)` if no such entry exists;
     *         `Right(Some(entry))` if the entry is found.
     */
-  def findByName(user: User, name: String):
-    Either[String, Option[PasswordEntry]] = {
+  def findByName(user: User, name: String): Future[Option[PasswordEntry]] = {
 
     withTransaction { implicit session =>
       user.id.map { userID =>
@@ -64,7 +66,7 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
                 yield pwe
         loadOneModel(q)
       }.
-      getOrElse(Right(None))
+      getOrElse(Future.successful(None))
     }
   }
 
@@ -83,7 +85,7 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
              term:         String,
              fullWordOnly: Boolean = false,
              includeDesc:  Boolean = false):
-    Either[String, Set[PasswordEntry]] = {
+    Future[Set[PasswordEntry]] = {
 
     withTransaction { implicit session =>
       val lcTerm  = term.toLowerCase
@@ -103,13 +105,13 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
 
       // Can't do word-only matches in the database in a database-agnostic
       // fashion. So, we need to filter here.
-      val matches = loadMany(qFinal)
-
-      if (fullWordOnly) {
-        matches.right.map { filterFullWordMatches(_, lcTerm, includeDesc) }
-      }
-      else {
-        matches
+      loadMany(qFinal) map { matches =>
+        if (fullWordOnly) {
+          filterFullWordMatches(matches, lcTerm, includeDesc)
+        }
+        else {
+          matches
+        }
       }
     }
   }
@@ -123,24 +125,28 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
   }
 
   protected def insert(pwEntry: PasswordEntry)(implicit session: SlickSession):
-    Either[String, PasswordEntry] = {
+    Future[PasswordEntry] = {
 
-    val id = (PasswordEntries returning PasswordEntries.map(_.id)) += pwEntry
-    Right(pwEntry.copy(id = Some(id)))
+    Future {
+      val id = (PasswordEntries returning PasswordEntries.map(_.id)) += pwEntry
+      pwEntry.copy(id = Some(id))
+    }
   }
 
   protected def update(pwEntry: PasswordEntry)(implicit session: SlickSession):
-    Either[String, PasswordEntry] = {
+    Future[PasswordEntry] = {
 
-    val q = for { pwe <- PasswordEntries if pwe.id === pwEntry.id.get }
-            yield (pwe.userID, pwe.name, pwe.description,
-                   pwe.encryptedPassword, pwe.notes)
-    q.update((pwEntry.userID,
-              pwEntry.name,
-              pwEntry.description,
-              pwEntry.encryptedPassword,
-              pwEntry.notes))
-    Right(pwEntry)
+    Future {
+      val q = for { pwe <- PasswordEntries if pwe.id === pwEntry.id.get }
+              yield (pwe.userID, pwe.name, pwe.description,
+                     pwe.encryptedPassword, pwe.notes)
+      q.update((pwEntry.userID,
+                pwEntry.name,
+                pwEntry.description,
+                pwEntry.encryptedPassword,
+                pwEntry.notes))
+      pwEntry
+    }
   }
 
   // --------------------------------------------------------------------------
@@ -165,8 +171,8 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
   }
 
   private def loadMany(query: PWEntryQuery)(implicit session: SlickSession):
-    Either[String, Set[PasswordEntry]] = {
+    Future[Set[PasswordEntry]] = {
 
-    Right(query.sorted { _.name }.list.toSet)
+    Future { query.sorted { _.name }.list.toSet }
   }
 }

@@ -2,7 +2,11 @@ package dbservice
 
 import play.api.Logger
 
+import pwguard.global.Globals.ExecutionContexts.DB._
+
 import models.User
+
+import scala.concurrent.Future
 
 /** DAO for interacting with User objects.
   */
@@ -19,9 +23,9 @@ class UserDAO(_dal: DAL, _logger: Logger) extends BaseDAO[User](_dal, _logger) {
 
   /** Get all users.
     *
-    * @return `Right(Set[User])` on success, `Left(error)` on failure.
+    * @return `Future(Set[User])`
     */
-  def all: Either[String, Set[User]] = {
+  def all: Future[Set[User]] = {
     withTransaction { implicit session =>
       loadMany( for { u <- Users } yield u )
     }
@@ -31,9 +35,9 @@ class UserDAO(_dal: DAL, _logger: Logger) extends BaseDAO[User](_dal, _logger) {
 
     * @param idSet the IDs
     *
-    * @return `Right(Set[model])` on success, `Left(error)` on error.
+    * @return `Future(Set[model])`
     */
-  def findByIDs(idSet: Set[Int]): Either[String, Set[User]] = {
+  def findByIDs(idSet: Set[Int]): Future[Set[User]] = {
     withTransaction { implicit session =>
       loadMany( for { u <- Users if u.id inSet idSet } yield u  )
     }
@@ -43,10 +47,10 @@ class UserDAO(_dal: DAL, _logger: Logger) extends BaseDAO[User](_dal, _logger) {
     *
     * @param email  the email address
     *
-    * @return `Left(error)` on error; `Right(None)` if no such user exists;
-    *         `Right(Some(user))` if the user is found.
+    * @return `Future(None)` if no such user exists;
+    *         `Future(Some(user))` if the user is found.
     */
-  def findByEmail(email: String): Either[String, Option[User]] = {
+  def findByEmail(email: String): Future[Option[User]] = {
     withTransaction { implicit session =>
       loadOneModel( for {u <- Users if u.email === email } yield u )
     }
@@ -56,14 +60,13 @@ class UserDAO(_dal: DAL, _logger: Logger) extends BaseDAO[User](_dal, _logger) {
     *
     * @param user  the user object to create
     *
-    * @return `Right(user)`, with a possibly changed model object,
-    *         on success. `Left(error)` on error.
+    * @return `Future(user)`, with a possibly changed model object
     */
-  def create(user: User): Either[String, User] = {
+  def create(user: User): Future[User] = {
     withTransaction { implicit session: SlickSession =>
-      findByEmail(user.email).right.flatMap { userOpt =>
-        userOpt.map { user => Left(s"Email ${user.email} is taken.") }.
-                getOrElse { save(user) }
+      findByEmail(user.email).flatMap { userOpt =>
+        userOpt.map { u => daoError(s"Email ${u.email} is taken.") }
+               .getOrElse { save(user) }
       }
     }
   }
@@ -77,39 +80,43 @@ class UserDAO(_dal: DAL, _logger: Logger) extends BaseDAO[User](_dal, _logger) {
   }
 
   protected def insert(user: User)(implicit session: SlickSession):
-    Either[String, User] = {
+    Future[ User] = {
 
-    val id = (Users returning Users.map(_.id)) += user
-    Right(user.copy(id = Some(id)))
+    Future {
+      val id = (Users returning Users.map(_.id)) += user
+      user.copy(id = Some(id))
+    }
   }
 
   protected def update(user: User)(implicit session: SlickSession):
-    Either[String, User] = {
+    Future[User] = {
 
-    val q = for { u <- Users if u.id === user.id.get }
-            yield (u.email, u.encryptedPassword, u.pwEntryEncryptionKey,
-                   u.firstName, u.lastName, u.active, u.admin)
-    q.update((user.email,
-              user.encryptedPassword,
-              user.pwEntryEncryptionKeyString,
-              user.firstName,
-              user.lastName,
-              user.active,
-              user.admin))
-    Right(user)
+    Future {
+      val q = for { u <- Users if u.id === user.id.get }
+              yield (u.email, u.encryptedPassword, u.pwEntryEncryptionKey,
+                     u.firstName, u.lastName, u.active, u.admin)
+      q.update((user.email,
+                user.encryptedPassword,
+                user.pwEntryEncryptionKeyString,
+                user.firstName,
+                user.lastName,
+                user.active,
+                user.admin))
+      user
+    }
   }
 
   // --------------------------------------------------------------------------
   // Private methods
   // ------------------------------------------------------------------------
 
-  private def checkUser(user: User): Either[String, User] = {
-    Right(user)
+  private def checkUser(user: User): Future[User] = {
+    Future.successful(user)
   }
 
   private def loadMany(query: UserQuery)(implicit session: SlickSession):
-    Either[String, Set[User]] = {
+    Future[Set[User]] = {
 
-    Right(query.list.toSet)
+    Future { query.list.toSet }
   }
 }

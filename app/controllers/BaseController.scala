@@ -7,9 +7,12 @@ import play.api.mvc._
 import play.api.mvc.Results._
 import play.api.Play.current
 import play.api.libs.json.{ JsString, Json, JsValue }
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+
+import pwguard.global.Globals.ExecutionContexts.Default._
+import util.EitherOptionHelpers.Implicits._
 
 import scala.concurrent.Future
+import scala.util.control.NonFatal
 
 /** Base class for all controllers.
   */
@@ -119,17 +122,25 @@ trait BaseController {
                                   noUser:       Request[T] => Future[Result]): Action[T] = {
 
     Action.async(bodyParser) { implicit request =>
-      SessionOps.loggedInEmail(request).map { email =>
-        DAO.userDAO.findByEmail(email) match {
-          case Left(_)           => logAndHandleRequest(noUser, request)
-          case Right(None)       => logAndHandleRequest(noUser, request)
-          case Right(Some(user)) => {
-            def fwd(r: Request[T]): Future[Result] = whenLoggedIn(user, r)
+
+      SessionOps.loggedInEmail(request).flatMap { emailOpt =>
+        emailOpt.map { email =>
+          def handle(user: User): Future[Result] = {
+            def fwd(req: Request[T]): Future[Result] = whenLoggedIn(user, req)
             logAndHandleRequest(fwd, request)
           }
-        }
-      }.
-      getOrElse(logAndHandleRequest(noUser, request))
+
+          val f = for { optUser <- DAO.userDAO.findByEmail(email)
+                        user    <- optUser.toFuture(s"No user with email $email")
+                        res     <- handle(user) }
+                  yield res
+
+          f recoverWith {
+            case NonFatal(e) => logAndHandleRequest(noUser, request)
+          }
+        }.
+        getOrElse { logAndHandleRequest(noUser, request) }
+      }
     }
   }
 
@@ -209,14 +220,24 @@ trait BaseController {
     jsonError(Some(error), None, fieldErrors: _*)
   }
 
-  /** Check a string option and convert it to `None` if it's empty or blank.
+  /** Alternate version of `jsonError` taking an exception.
     *
-    * @param opt  the option
+    * @param message     A message prefix
+    * @param exception   The exception
+    * @param status      HTTP status
     *
-    * @return `Some(string)` or `None`
+    * @return the JSON result
     */
-  protected def blankToNone(opt: Option[String]): Option[String] = {
-    opt.flatMap { s => if (s.trim().length == 0 ) None else Some(s) }
+  protected def jsonError(message:   String,
+                          exception: Throwable,
+                          status:    Option[Int] = None): JsValue = {
+    val clsName = exception.getClass.getName.split("""\.""").last
+    val msg = Option(exception.getMessage).map {
+      s => s"$clsName: $message ($s)"
+    }.
+    getOrElse(clsName)
+
+    jsonError(Some(msg), status)
   }
 
   // --------------------------------------------------------------------------

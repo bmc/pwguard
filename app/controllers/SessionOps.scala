@@ -7,8 +7,11 @@ import play.api.Play.current
 import play.api.Logger
 import play.api.mvc.Request
 import util.session._
-import util.DateHelpers.Implicits._
+import util.FutureHelpers._
 import util.EitherOptionHelpers.Implicits._
+import scala.concurrent.Future
+import scala.util.control.NonFatal
+import pwguard.global.Globals.ExecutionContexts.Default._
 
 /** Session-related stuff.
   */
@@ -38,7 +41,7 @@ object SessionOps {
     * @return `Left(error)` or `Right(sessionData)`
     */
   def newSessionDataFor[T](request: Request[T], user: User):
-    Either[String, SessionData] = {
+    Future[SessionData] = {
 
     val sessionData = SessionUtil.newSessionData(
       userIdentifier = user.email,
@@ -46,7 +49,7 @@ object SessionOps {
       duration       = SessionTimeout
     )
 
-    sessionStore.storeSessionData(sessionData).right.map { _ =>
+    sessionStore.storeSessionData(sessionData).map { _ =>
       sessionData
     }
   }
@@ -58,12 +61,8 @@ object SessionOps {
     *
     * @return `Some(SessionData)` or `None`
     */
-  def currentSessionData[T](request: Request[T]): Option[SessionData] = {
-    val res = for { dataOpt   <- getSession(request).right
-                    data      <- dataOpt.toEither("No existing session").right }
-              yield data
-
-    res.toOption
+  def currentSessionData[T](request: Request[T]): Future[Option[SessionData]] = {
+    getSession(request)
   }
 
   /** Determine who's logged in, taking session expiry, IP addresses, etc.,
@@ -74,24 +73,20 @@ object SessionOps {
     *
     * @return `Some(email)` or `None`
     */
-  def loggedInEmail[T](request: Request[T]): Option[String] = {
-    val res =
-      for {
-        dataOpt <- getSession(request).right
-        data    <- dataOpt.toEither("").right
-        userOpt <- DAO.userDAO.findByEmail(data.userIdentifier).right
-        user    <- userOpt.toEither("User ${data.userIdentifier} not found").right
-      }
-      yield user
+  def loggedInEmail[T](request: Request[T]): Future[Option[String]] = {
+    val res = for { dataOpt <- getSession(request)
+                    data    <- dataOpt.toFuture("No session for request")
+                    userOpt <- DAO.userDAO.findByEmail(data.userIdentifier) }
+              yield userOpt
 
-    toOpt(res) map { user => user.email }
+    res map { userOpt => userOpt.map(_.email) }
   }
 
   /** Clear session data.
     *
     * @param sessionID  the session ID
     */
-  def clearSessionData(sessionID: String) {
+  def clearSessionData(sessionID: String): Future[Boolean] = {
     sessionStore.clearSessionData(sessionID)
   }
 
@@ -100,61 +95,48 @@ object SessionOps {
   // --------------------------------------------------------------------------
 
   private def getSession[T](request: Request[T]):
-    Either[String, Option[SessionData]] = {
+    Future[Option[SessionData]] = {
 
     request.session.get(SessionKey).map { sessionID =>
-
-      for { dataOpt   <- sessionStore.getSessionData(sessionID).right
-            data      <- dataOpt.toEither("No session.").right
-            validData <- checkSession(request, data).right }
-        yield Some(validData)
+logger.error(s"sessionID=$sessionID")
+      for { dataOpt        <- sessionStore.getSessionData(sessionID)
+            data           <- dataOpt.toFuture("No session.")
+            checkedDataOpt <- checkSession(request, data) }
+        yield checkedDataOpt
     }
-    .getOrElse(Right(None))
+    .getOrElse(Future.successful(None))
   }
 
   // Determine if a session is valid.
   private def checkSession[T](request: Request[T], sessionData: SessionData):
-    Either[String, SessionData] = {
+    Future[Option[SessionData]] = {
 
     val now = DateTime.now
     val res = if (DateTime.now isAfter sessionData.validUntil) {
-      Left(s"Session ${sessionData.sessionID} " +
-           s"(${sessionData.userIdentifier}) has expired.")
+      failedFuture(s"Session ${sessionData.sessionID} " +
+                   s"(${sessionData.userIdentifier}) has expired.")
     }
     else if (request.remoteAddress != sessionData.ipAddress) {
-      Left(s"Session IP address ${sessionData.ipAddress} doesn't match " +
-           s"request IP address ${request.remoteAddress}")
+      failedFuture(s"Session IP address ${sessionData.ipAddress} doesn't " +
+                   s"match request IP address ${request.remoteAddress}")
     }
     else {
       logger.debug { s"Refreshing session ${sessionData.sessionID} for " +
-                     s"${sessionData.userIdentifier}" }
+                     s"${sessionData.userIdentifier}. Session now expires " +
+                     s"at ${sessionData.validUntil}" }
       sessionStore.refresh(sessionData)
     }
 
-    res match {
-      case Left(error) => {
+    res map { data =>
+      Some(data)
+    } recoverWith {
+      case NonFatal(e) => {
         logger.error(s"Error with session ${sessionData.sessionID} for " +
-                     s"(${sessionData.userIdentifier}): $error")
+                     s"(${sessionData.userIdentifier})", e)
         logger.debug { s"Clearing session ${sessionData.sessionID}" }
         clearSessionData(sessionData.sessionID)
-      }
-
-      case Right(newData) => {
-        logger.debug {
-          s"Session ${newData.sessionID} now expires at ${newData.validUntil}"
-        }
+        Future.successful(None)
       }
     }
-
-    res
-  }
-
-  private def toOpt[T](e: Either[String, T]): Option[T] = {
-
-    e.left.map {
-      error => if (error != "") logger.warn(error)
-      error
-    }.
-    toOption
   }
 }

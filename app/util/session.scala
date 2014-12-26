@@ -6,6 +6,9 @@ package util.session
 import org.joda.time.{Duration, DateTime}
 import org.apache.commons.math3.random.RandomDataGenerator
 import util.EitherOptionHelpers.Implicits._
+import pwguard.global.Globals.ExecutionContexts.Default._
+
+import scala.concurrent.Future
 
 /** Session cookie information.
   *
@@ -65,7 +68,7 @@ trait SessionStore {
     * @return `Right(Some(data))` if found. `Right(None)` if not found.
     *         `Left(error)` on error.
     */
-  def getSessionData(sessionID: String): Either[String, Option[SessionData]]
+  def getSessionData(sessionID: String): Future[Option[SessionData]]
 
   /** Store session data for a session ID. Any existing data for the
     * associated session ID is overwritten.
@@ -74,13 +77,13 @@ trait SessionStore {
     *
     * @return `Right(true)` on successful store, `Left(error)` on error.
     */
-  def storeSessionData(sessionData: SessionData): Either[String, Boolean]
+  def storeSessionData(sessionData: SessionData): Future[Boolean]
 
   /** Clear or invalidate session data for a particular session ID.
     *
     * @param sessionID
     */
-  def clearSessionData(sessionID: String): Unit
+  def clearSessionData(sessionID: String): Future[Boolean]
 
   /** Refresh a session, updating its timestamp.
     *
@@ -88,12 +91,10 @@ trait SessionStore {
     *
     * @return `Right(SessionData)` on successful refresh, `Left(error)` on error.
     */
-  def refresh(sessionID: String): Either[String, SessionData] = {
-    for {
-      dataOpt   <- getSessionData(sessionID).right
-      data      <- dataOpt.toEither("Can't refresh nonexistent session $sessionID").right
-      refreshed <- refresh(data).right
-    }
+  def refresh(sessionID: String): Future[SessionData] = {
+    for { dataOpt   <- getSessionData(sessionID)
+          data      <- dataOpt.toFuture("Nonexistent session $sessionID")
+          refreshed <- refresh(data) }
     yield refreshed
   }
 
@@ -103,9 +104,9 @@ trait SessionStore {
     *
     * @return `Right(SessionData)` on successful refresh, `Left(error)` on error.
     */
-  def refresh(data: SessionData): Either[String, SessionData] = {
+  def refresh(data: SessionData): Future[SessionData] = {
     val newData = data.copy(validUntil = DateTime.now.plus(data.duration))
-    storeSessionData(newData).right.map { _ => newData }
+    storeSessionData(newData).map { _ => newData }
   }
 }
 
@@ -118,16 +119,21 @@ class MemorySessionStore extends SessionStore {
   private val data: MutableMap[String, SessionData] =
     new MutableHashMap[String, SessionData]
 
-  def getSessionData(sessionID: String): Either[String, Option[SessionData]] = {
-    Right(data.get(sessionID))
+  def getSessionData(sessionID: String): Future[Option[SessionData]] = {
+    Future { data.get(sessionID) }
   }
 
-  def storeSessionData(sessionData: SessionData): Either[String, Boolean] = {
-    data += (sessionData.sessionID -> sessionData)
-    Right(true)
+  def storeSessionData(sessionData: SessionData): Future[Boolean] = {
+    Future {
+      data += (sessionData.sessionID -> sessionData)
+      true
+    }
   }
 
-  def clearSessionData(sessionID: String) {
-    data -= sessionID
+  def clearSessionData(sessionID: String): Future[Boolean] = {
+    Future {
+      data -= sessionID
+      true
+    }
   }
 }

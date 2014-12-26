@@ -2,14 +2,16 @@ package models
 
 import java.security.SecureRandom
 import grizzled.string.{util => GrizzledStringUtil}
-import _root_.util.JsonHelpers
-import _root_.util.EitherOptionHelpers.Implicits._
 import org.mindrot.jbcrypt.BCrypt
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 
-import scala.util.Try
+import scala.concurrent.Future
+
+import _root_.util.JsonHelpers
+import _root_.util.EitherOptionHelpers.Implicits._
+import pwguard.global.Globals.ExecutionContexts.Default._
 
 /** Basic user model
   */
@@ -36,15 +38,20 @@ case class User(id:                         Option[Int],
     *
     * @return `Right(key)` or `Left(error)`
     */
-  def passwordEncryptionKey: Either[String, Option[Array[Byte]]] = {
-    pwEntryEncryptionKeyString.map { s: String =>
-      GrizzledStringUtil.hexStringToBytes(s)
-                        .map { bytes => Right(Some(bytes)) }
-                        .getOrElse(Left("Cannot decode password encryption " +
-                                        s"string $pwEntryEncryptionKeyString " +
-                                        s"for user $email"))
-    }.
-    getOrElse(Right(None))
+  def passwordEncryptionKey: Future[Option[Array[Byte]]] = {
+    Future {
+      pwEntryEncryptionKeyString.map { s: String =>
+        GrizzledStringUtil.hexStringToBytes(s)
+                          .map { bytes => Some(bytes) }
+                          .getOrElse {
+                            val msg = s"Can't decode password encryption " +
+                                      s"$s for user $email"
+                            Logger.error(msg)
+                            throw new Exception(msg)
+                          }
+      }.
+      getOrElse(None)
+    }
   }
 
   /** Implementation of `equals()`, based on the email address, which must be
@@ -93,19 +100,20 @@ object UserHelpers {
                  firstName: Option[String] = None,
                  lastName:  Option[String] = None,
                  admin:     Boolean = false):
-    Either[String, User] = {
+    Future[User] = {
 
-    val encryptedPassword = UserHelpers.encryptLoginPassword(password)
-    val user              = User(id                         = None,
-                                 email                      = email,
-                                 encryptedPassword          = encryptedPassword,
-                                 pwEntryEncryptionKeyString = None,
-                                 firstName                  = firstName,
-                                 lastName                   = lastName,
-                                 active                     = true,
-                                 admin                      = admin)
+    UserHelpers.encryptLoginPassword(password).flatMap { encryptedPassword =>
+      val user              = User(id                         = None,
+                                   email                      = email,
+                                   encryptedPassword          = encryptedPassword,
+                                   pwEntryEncryptionKeyString = None,
+                                   firstName                  = firstName,
+                                   lastName                   = lastName,
+                                   active                     = true,
+                                   admin                      = admin)
 
-    UserHelpers.createPasswordEncryptionKey(user)
+      UserHelpers.createPasswordEncryptionKey(user)
+    }
   }
 
   /** Encrypt a user password.
@@ -114,8 +122,10 @@ object UserHelpers {
     *
     * @return encrypted version
     */
-  def encryptLoginPassword(password: String): String = {
-    BCrypt.hashpw(password, BCrypt.gensalt())
+  def encryptLoginPassword(password: String): Future[String] = {
+    Future {
+      BCrypt.hashpw(password, BCrypt.gensalt())
+    }
   }
 
   /** Determine whether a plaintext password matches a previously encrypted
@@ -126,8 +136,10 @@ object UserHelpers {
     *
     * @return `true` on match, `false` on mismatch
     */
-  def passwordMatches(plaintext: String, encrypted: String): Boolean = {
-    BCrypt.checkpw(plaintext, encrypted)
+  def passwordMatches(plaintext: String, encrypted: String): Future[Boolean] = {
+    Future {
+      BCrypt.checkpw(plaintext, encrypted)
+    }
   }
 
   /** Create an encryption key for a user's passwords and update the supplied
@@ -137,21 +149,20 @@ object UserHelpers {
     *
     * @return `Right(user)` on success; `Left(error)` on error
     */
-  def createPasswordEncryptionKey(user: User): Either[String, User] = {
-    Try {
+  def createPasswordEncryptionKey(user: User): Future[User] = {
+    Future {
       import javax.crypto.KeyGenerator
 
       val keyGenerator = KeyGenerator.getInstance(KeyAlgorithm)
       val key          = keyGenerator.generateKey()
       val keyString    = GrizzledStringUtil.bytesToHexString(key.getEncoded)
 
-      Right(user.copy(pwEntryEncryptionKeyString = Some(keyString)))
+      user.copy(pwEntryEncryptionKeyString = Some(keyString))
     }.
     recover { case e: Exception =>
       logger.error(s"Can't create password encryption key for ${user.email}", e)
-      Left(e.getMessage)
-    }.
-    get
+      throw e
+    }
   }
 
   /** Decrypt an encrypted (stored) password for a user.
@@ -159,24 +170,27 @@ object UserHelpers {
     * @param user              the user
     * @param encryptedPassword the encrypted password string
     *
-    * @return `Right(plaintextPassword)` or `Left(error)
+    * @return `Future(plaintextPassword)`
     */
   def decryptStoredPassword(user: User, encryptedPassword: String):
-    Either[String, String] = {
+    Future[String] = {
 
     withPasswordKey(user) { key =>
-      val cipher = Cipher.getInstance(KeyAlgorithm)
-      cipher.init(Cipher.DECRYPT_MODE, key)
-      GrizzledStringUtil.hexStringToBytes(encryptedPassword).map { bytes =>
-        val res = cipher.doFinal(bytes)
-                        .map { _.asInstanceOf[Char] }
-                        .mkString("")
-        Right(res)
-      }.
-      getOrElse {
-        logger.error(s"Can't decrypt encrypted password $encryptedPassword " +
-                     s"for user ${user.email}")
-        Left(s"Unable to decode encrypted password for ${user.email}")
+      Future {
+        val cipher = Cipher.getInstance(KeyAlgorithm)
+        cipher.init(Cipher.DECRYPT_MODE, key)
+        GrizzledStringUtil.hexStringToBytes(encryptedPassword).map { bytes =>
+          val res = cipher.doFinal(bytes)
+                          .map { _.asInstanceOf[Char] }
+                          .mkString
+          res
+        }.
+        getOrElse {
+          val msg = s"Can't decrypt encrypted password $encryptedPassword " +
+                    s"for user ${user.email}"
+          logger.error(msg)
+          throw new Exception(msg)
+        }
       }
     }
   }
@@ -189,35 +203,35 @@ object UserHelpers {
     * @return `Right(encryptedPassword)` or `Left(error)`
     */
   def encryptStoredPassword(user: User, plaintextPassword: String):
-    Either[String, String] = {
+    Future[String] = {
 
     withPasswordKey(user) { key =>
-      val cipher = Cipher.getInstance(KeyAlgorithm)
-      cipher.init(Cipher.ENCRYPT_MODE, key)
-      val result = cipher.doFinal(plaintextPassword.getBytes)
-      Right(GrizzledStringUtil.bytesToHexString(result))
+      Future {
+        val cipher = Cipher.getInstance(KeyAlgorithm)
+        cipher.init(Cipher.ENCRYPT_MODE, key)
+        val result = cipher.doFinal(plaintextPassword.getBytes)
+        GrizzledStringUtil.bytesToHexString(result)
+      }
     }
   }
 
-  private def withPasswordKey[T](user: User)
-                                (code: SecretKey => Either[String, T]):
-    Either[String, T] = {
+  private def withPasswordKey[T](user: User)(code: SecretKey => Future[T]):
+    Future[T] = {
 
-    def makeKey(keyBytes: Array[Byte]): Either[String, SecretKey] = {
-      Right(new SecretKeySpec(keyBytes, KeyAlgorithm))
+    def makeKey(keyBytes: Array[Byte]): Future[SecretKey] = {
+      Future.successful(new SecretKeySpec(keyBytes, KeyAlgorithm))
     }
-    Try {
-      for { keyOpt   <- user.passwordEncryptionKey.right
-            keyBytes <- keyOpt.toRight("Unable to decode password key").right
-            key      <- makeKey(keyBytes).right
-            result   <- code(key).right }
-      yield result
-    }.
-    recover { case e: Exception =>
+
+    val f = for { keyOpt   <- user.passwordEncryptionKey
+                  keyBytes <- keyOpt.toFuture("Unable to decode password key")
+                  key      <- makeKey(keyBytes)
+                  result   <- code(key) }
+            yield result
+
+    f recoverWith { case e: Exception =>
       logger.error(s"Error while using password key for user ${user.email}", e)
-      Left(e.getMessage)
-    }.
-    get
+      Future.failed(e)
+    }
   }
 
   /** Various implicits, including JSON implicits.
@@ -226,16 +240,29 @@ object UserHelpers {
 
     // Call this method to fix up the User JSON (i.e., remove sensitive
     // fields
-    def safeUserJSON(user: User): JsValue = {
+    def safeUserJSON(user: User): Future[JsValue] = {
       import implicits._
 
-      JsonHelpers.addFields(
-        JsonHelpers.removeFields(Json.toJson(user), UnsafeUserFields: _*),
-        "displayName" -> Json.toJson(user.displayName)
-      )
+      Future {
+        JsonHelpers.addFields(
+          JsonHelpers.removeFields(Json.toJson(user), UnsafeUserFields: _*),
+          "displayName" -> Json.toJson(user.displayName)
+        )
+      }
     }
 
     object implicits {
+
+      implicit val userReads: Reads[User] = (
+        (JsPath \ "id").read[Option[Int]] and
+        (JsPath \ "email").read[String] and
+        (JsPath \ "encryptedPassword").read[String] and
+        (JsPath \ "passwordEncryptionKey").read[Option[String]] and
+        (JsPath \ "firstName").read[Option[String]] and
+        (JsPath \ "lastName").read[Option[String]] and
+        (JsPath \ "active").read[Boolean] and
+        (JsPath \ "admin").read[Boolean]
+      )(User.apply _)
 
       implicit val userWrites: Writes[User] = (
         (JsPath \ "id").write[Option[Int]] and

@@ -1,9 +1,16 @@
 package dbservice
 
-import play.api.Logger
 import models.BaseModel
 
+import play.api.Logger
+
+import pwguard.global.Globals.ExecutionContexts.DB._
+
 import scala.reflect.runtime.{universe => ru}
+import scala.concurrent.Future
+import scala.util.control.NonFatal
+
+class DAOException(msg: String) extends Exception(msg)
 
 /** Base data access object. All DAOs should extend this class.
   *
@@ -26,9 +33,9 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     *
     * @param id  the ID
     *
-    * @return `Right(model)` if found, `Left(error)` on error
+    * @return `Future(Some(model))` if found, `Future(None)` if not
     */
-  def findByID(id: Int): Either[String, Option[M]] = {
+  def findByID(id: Int): Future[Option[M]] = {
     withTransaction { implicit session =>
       loadOneModel(queryByID(id))
     }
@@ -39,18 +46,17 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     *
     * @param idSet the IDs
     *
-    * @return `Right(Set[model])` on success, `Left(error)` on error.
+    * @return `Future(Set[model])`
     */
-  def findByIDs(idSet: Set[Int]): Either[String, Set[M]]
+  def findByIDs(idSet: Set[Int]): Future[Set[M]]
 
   /** Save an instance of this model to the database.
     *
     * @param model  the model object to save
     *
-    * @return `Right(model)`, with a possibly changed model object,
-    *         on success. `Left(error)` on error.
+    * @return `Future(model)`, with a possibly changed model object
     */
-  def save(model: M): Either[String, M] = {
+  def save(model: M): Future[M] = {
     withTransaction { implicit session: SlickSession =>
       model.id.map { _ => update(model) }.getOrElse { insert(model) }
     }
@@ -61,12 +67,14 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     *
     * @param id  the ID
     *
-    * @return `Right(true)` on success, `Left(error)` on error
+    * @return `Future(true)`
     */
-  def delete(id: Int): Either[String, Boolean] = {
+  def delete(id: Int): Future[Boolean] = {
     withTransaction { implicit session =>
-      queryByID(id).delete
-      Right(true)
+      Future {
+        queryByID(id).delete
+        true
+      }
     }
   }
 
@@ -90,8 +98,7 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     * @return `Left(error)` on error, `Right(model)` (with a possibly-updated
     *         model) on success.
     */
-  protected def insert(model: M)(implicit session: SlickSession):
-    Either[String, M]
+  protected def insert(model: M)(implicit session: SlickSession): Future[M]
 
   /** Update an instance of the model. Must be supplied by subclasses.
     *
@@ -101,8 +108,7 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     * @return `Left(error)` on error, `Right(model)` (with a possibly-updated
     *         model) on success.
     */
-  protected def update(model: M)(implicit session: SlickSession):
-    Either[String, M]
+  protected def update(model: M)(implicit session: SlickSession): Future[M]
 
   /** Run the specified code within a session.
     *
@@ -110,10 +116,19 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     * @tparam T    The type parameter
     * @return      Whatever the code block returns
     */
-  protected def withSession[T](code: SlickSession => T): T = {
+  protected def withSession[T](code: SlickSession => Future[T]): Future[T] = {
     import pwguard.global.Globals.DB
 
-    DB withSession { implicit session => code(session) }
+    val session = DB.createSession()
+    code(session) map { result =>
+      session.close()
+      result
+    } recoverWith {
+      case NonFatal(e) => {
+        session.close()
+        Future.failed(e)
+      }
+    }
   }
 
   /** Execute a block of code within a Slick transaction, committing the
@@ -127,21 +142,17 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     * @return      `Left(error)` if an exception occurs or if the code block
     *               returns a `Left`; `Right` otherwise.
     */
-  protected def withTransaction[T](code: SlickSession => Either[String, T]):
-    Either[String, T] = {
+  protected def withTransaction[T](code: SlickSession => Future[T]):
+    Future[T] = {
 
     withSession { implicit session =>
       session.withTransaction {
-        try {
-          code(session)
-        }
-
-        catch {
-          case t: Throwable => {
-            logger.error("Error during transaction", t)
-            session.rollback()
-            Left(t.getMessage)
-          }
+        code(session)
+      } recoverWith {
+        case NonFatal(e) => {
+          logger.error("Error during transaction", e)
+          session.rollback()
+          Future.failed(e)
         }
       }
     }
@@ -159,13 +170,15 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     */
   protected def loadOneModel[T, D](query: Query[T, D])
                                   (implicit session: SlickSession):
-    Either[String, Option[D]] = {
+    Future[Option[D]] = {
 
-    val results = query.list
-    results.length match {
-      case 0 => Right(None)
-      case 1 => Right(Some(results(0)))
-      case _ => Left(s"Got ${results.length} objects for query. Expected 1")
+    Future {
+      val results = query.list
+      results.length match {
+        case 0 => None
+        case 1 => Some(results(0))
+        case _ => daoError(s"Got ${results.length} objects for query. Expected 1")
+      }
     }
   }
 
@@ -182,12 +195,13 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     */
   protected def loadDependentIDs[M <: BaseModel: ru.TypeTag]
     (idSet: Set[Int], dao: BaseDAO[M])(implicit session: SlickSession):
-    Either[String, Map[Int, M]] = {
+    Future[Map[Int, M]] = {
 
     if (idSet.isEmpty)
-      Right(Map.empty[Int, M])
+      Future.successful(Map.empty[Int, M])
+
     else {
-      dao.findByIDs(idSet).right.flatMap { loaded =>
+      dao.findByIDs(idSet).flatMap { loaded =>
         val loadedIDs = loaded.map {_.id.get}
         if (loadedIDs != idSet) {
           val name = typeName(ru.typeTag[M])
@@ -195,14 +209,18 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
             s"Missing some ${name} results in loaded appointments. " +
             s"Expected: $idSet, got: $loadedIDs"
           }
-          Left(s"Missing some ${name} results in loaded appointments.")
+          daoError(s"Missing some ${name} results in loaded appointments.")
         }
         else {
-          Right(Map(loaded.toSeq.map { m => m.id.get -> m}: _* ))
+          Future {
+            (Map(loaded.toSeq.map { m => m.id.get -> m}: _* ))
+          }
         }
       }
     }
   }
+
+  protected def daoError(msg: String): Nothing = throw new DAOException(msg)
 
   // --------------------------------------------------------------------------
   // Private methods

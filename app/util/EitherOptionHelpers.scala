@@ -1,8 +1,32 @@
 package util
 
+import scala.concurrent.Future
+
 /** Some helpful Option and Either conversions
   */
 object EitherOptionHelpers {
+
+  /** Create a `None` of a specific type.
+    *
+    * @tparam T  the type
+    *
+    * @return an appropriate `None`
+    */
+  def noneT[T] = {
+    val n: Option[T] = None
+    n
+  }
+
+  /** Take an `Option[String]` and, if it contains a string, strip the white
+    * space, mapping an empty string to a `None`.
+    *
+    * @param opt  The option
+    *
+    * @return the mapped option
+    */
+  def blankToNone(opt: Option[String]): Option[String] = {
+    opt.flatMap { s => if (s.trim().length == 0 ) None else Some(s) }
+  }
 
   object Implicits {
 
@@ -25,6 +49,17 @@ object EitherOptionHelpers {
         */
       def toEither[L](leftValue: L): Either[L, T] = {
         opt map { value => Right(value) } getOrElse Left(leftValue)
+      }
+
+      /** Convert an option to a Future. If the option has a value,
+        * it's converted to a successful future. Otherwise, it's converted
+        * to a failed future.
+        *
+        * @param error message to use for an empty option
+        */
+      def toFuture(error: String): Future[T] = {
+        opt.map { Future.successful(_) }
+           .getOrElse { Future.failed(new Exception(error)) }
       }
     }
 
