@@ -2,8 +2,8 @@
      ng-controller="SearchCtrl"
      ng-show="segmentIsActive('search')">
   <div class="search-box">
-    <div class="grid no-gutters">
-      <div class="unit">
+    <div class="row">
+      <div class="col-md-12">
         <form id="search-form" class="inline">
           <div class="form-field">
             <label for="searchTerm">
@@ -19,8 +19,8 @@
       </div>
     </div>
 
-    <div class="grid no-gutters">
-      <div class="unit" ng-class="{half: !isMobile, whole: isMobile}">
+    <div class="row">
+      <div class="col-md-8">
 
         <!-- mobile -->
 
@@ -84,8 +84,8 @@
 
   <!-- Box for creating new entry -->
 
-  <div class="grid" ng-show="newPasswordEntry" id="new-password-entry">
-    <div class="unit whole">
+  <div class="row" ng-show="newPasswordEntry" id="new-password-entry">
+    <div class="col-md-12">
       <header>New Password Entry</header>
       <form name="newEntry" ng-submit="newPasswordEntry.save()"
             id="new-password-entry-form">
@@ -167,8 +167,8 @@
 
   <!-- search results -->
 
-  <div class="grid">
-    <div class="unit whole" ng-show="searchResults != null" id="search-results">
+  <div class="row">
+    <div class="col-md-12" ng-show="searchResults != null" id="search-results">
       <div class="search-results-header">
         <div ng-show="searchResults.length == 0">No results.</div>
         <div ng-show="searchResults.length == 1">One result.</div>
