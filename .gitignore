@@ -17,3 +17,4 @@ dist
 /static/bower
 /project/activator*
 npm-debug.log
+/sources
