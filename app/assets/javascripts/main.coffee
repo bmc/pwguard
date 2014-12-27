@@ -300,7 +300,7 @@ pwguardApp.controller 'LoginCtrl', ['$scope', 'pwgAjax', 'pwgFlash', LoginCtrl]
 # Search controller
 # ---------------------------------------------------------------------------
 
-SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
+SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
   $scope.searchTerm        = null
   $scope.searchResults     = null
   $scope.searchDescription = true
@@ -396,7 +396,7 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout) ->
         doSearch()
 
   deleteEntry = (pw) ->
-    $scope.confirm("Really delete #{pw.name}?", "Confirm deletion").then (result) ->
+    pwgModal.confirm("Really delete #{pw.name}", "Confirm deletion").then ->
       url = routes.controllers.PasswordEntryController.delete(pw.id).url
       pwgAjax.delete url, ->
         reissueLastSearch()
@@ -468,6 +468,7 @@ pwguardApp.controller 'SearchCtrl', ['$scope',
                                      'pwgAjax',
                                      'pwgFlash',
                                      'pwgTimeout',
+                                     'pwgModal',
                                      SearchCtrl]
 
 # ---------------------------------------------------------------------------
@@ -539,7 +540,7 @@ pwguardApp.controller 'ProfileCtrl', ['$scope',
 # Admin users controller
 # ---------------------------------------------------------------------------
 
-AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
+AdminUsersCtrl = ($scope, pwgAjax, pwgFlash, pwgModal) ->
   $scope.users = null
   $scope.addingUser = null
 
@@ -571,7 +572,7 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
       pwgFlash.error "You can't delete yourself!"
 
     else
-      $scope.confirm("Really delete #{u.email}?", "Confirm deletion").then (result) ->
+      pwgModal.confirm("Really delete #{u.email}?", "Confirm deletion").then ->
         url = routes.controllers.UserController.delete(u.id).url
         pwgAjax.delete url, ->
           loadUsers()
@@ -667,4 +668,5 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash) ->
 pwguardApp.controller 'AdminUsersCtrl', ['$scope',
                                          'pwgAjax',
                                          'pwgFlash',
+                                         'pwgModal',
                                          AdminUsersCtrl]
