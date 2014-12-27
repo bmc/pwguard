@@ -41,7 +41,12 @@ object PasswordEntryController extends BaseController {
             yield json
 
     f.map { json => Ok(json) }
-     .recover { case NonFatal(e) => Ok(jsonError(e.getMessage)) }
+     .recover {
+      case NonFatal(e) => {
+        logger.error("Save error", e)
+        Ok(jsonError(e.getMessage))
+      }
+    }
   }
 
   def create = SecuredJSONAction { (user: User, request: Request[JsValue]) =>
@@ -51,7 +56,12 @@ object PasswordEntryController extends BaseController {
             yield json
 
     f.map { json => Ok(json) }
-     .recover { case NonFatal(e) => Ok(jsonError(e.getMessage)) }
+     .recover {
+      case NonFatal(e) => {
+        logger.error("Create error", e)
+        Ok(jsonError(e.getMessage))
+      }
+    }
   }
 
   def delete(id: Int) = SecuredAction { (user: User, request: Request[Any]) =>
