@@ -88,7 +88,7 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     *
     * @return the query
     */
-  protected def queryByID(id: Int): Query[Table[M], M]
+  protected def queryByID(id: Int): Query[Table[M], M, Seq]
 
   /** Insert an instance of the model. Must be supplied by subclasses.
     *
@@ -168,7 +168,7 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     *
     * @return `Right[Option(model)]` on success, `Left(error)` on error.
     */
-  protected def loadOneModel[T, D](query: Query[T, D])
+  protected def loadOneModel[T, D](query: Query[T, D, Seq])
                                   (implicit session: SlickSession):
     Future[Option[D]] = {
 

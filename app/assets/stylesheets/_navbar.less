@@ -1,6 +1,5 @@
 
 #navbar {
-  height:           @navbarHeight;
   background-color: @navbarBackground;
   width:            100%;
   margin:           0;
@@ -8,90 +7,21 @@
   position:         relative; // Allow for absolute positioning of children
 }
 
-#brand {
-  vertical-align: bottom;
-  display:        inline-block;
+.navbar {
+  height:           @navbarHeight;
+}
 
+.navbar-brand {
   .logo {
-    display:     inline-block;
     font-family: 'Asset', cursive;
     color:       @logoColor;
     float:       left;
-
-    @media @phone {
-      font-size: 18px;
-    }
-
-    @media @tablet {
-      font-size: 24px;
-    }
-
-    @media @desktop {
-      font-size: 32px;
-    }
-
-    @media @wideDesktop {
-      font-size: 40px;
-    }
   }
 
   .qualifier {
-    display:     inline-block;
     font-style:  italic;
     font-family: Verdana, Arial, Helvetica, sans-serif;
     color:       @logoColor;
-
-    @media @phone {
-      font-size: 10px;
-    }
-
-    @media @tablet {
-      font-size: 12px;
-    }
-
-    @media @desktop {
-      font-size: 14px;
-    }
-
-    @media @wideDesktop {
-      font-size: 18px;
-    }
-  }
-}
-
-#navbar-menu-bar {
-  @media @phone {
-    font-size: @phoneFontSize - 2px;
-  }
-
-  @media @tablet {
-    font-size: @tabletFontSize - 2px;
-  }
-
-  @media @desktop {
-    font-size: @desktopFontSize - 2px;
-  }
-
-  @media @wideDesktop {
-    font-size: @desktopFontSize - 2px;
-  }
-
-  #user-menu-link {
-    text-decoration:  none;
-    color:            #444444;
-/*
-    background-color: @menuBackgroundColor;
-*/
-    padding-bottom:   10px;
-    padding-left:     0;
-    padding-right:    5px;
-    padding-top:      0;
-/*
-    border-top:       1px solid @menuBorderColor;
-    border-right:     1px solid @menuBorderColor;
-    border-left:      1px solid @menuBorderColor;
-    border-radius:    3px 3px 3px 3px;
-*/
   }
 }
 

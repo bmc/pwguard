@@ -56,7 +56,6 @@ pwgError = ->
 
 pwgServices.factory 'pwgError', [pwgError]
 
-
 # ----------------------------------------------------------------------------
 # Front-end service for AJAX calls. Handles errors in a consistent way, and
 # fires up a spinner.
@@ -316,24 +315,52 @@ pwgCheckUser = ($q, pwgAjax) ->
 pwgServices.factory 'pwgCheckUser', ['$q', 'pwgAjax', pwgCheckUser]
 
 # ----------------------------------------------------------------------------
-# Get decoded info about the browser
+# Modal service. Hides underlying implementation(s).
 # ----------------------------------------------------------------------------
 
-pwgGetBrowserInfo = ($q, pwgAjax) ->
-  deferred = null
+pwgModal = ($q, $modal, $rootScope) ->
 
-  onSuccess = (response) ->
-    deferred.resolve response.userAgentInfo
-    deferred = null
+  mobile = window.browserIsMobile
 
-  onFailure = (response) ->
-    deferred.reject response
-    deferred = null
+  # Shows an appropriate confirmation dialog, depending on whether the user
+  # is mobile or not. Returns a promise (via $q) that resolves on confirmation
+  # and rejects on cancel.
+  #
+  # Parameters:
+  #   message - the confirmation message
+  #   title   - optional title for the dialog, if supported
+  #
+  # NOTE: Only one of these can be active at one time!
 
-  getBrowserInfo: ->
+  confirm: (message, title) ->
     deferred = $q.defer()
-    url = routes.controllers.MainController.getUserAgentInfo().url
-    pwgAjax.get url, onSuccess, onFailure
+
+    if mobile
+      if confirm(message)
+        deferred.resolve()
+      else
+        deferred.reject()
+
+    else
+      modalOpts =
+        title:    "Really log out?"
+        template: routes.staticAsset("AngularTemplates/confirmModal.html")
+        backdrop: 'static'
+        show:     false
+
+      modal = $modal(modalOpts)
+
+      $rootScope.modalConfirmOK = ->
+        deferred.resolve()
+        modal.hide()
+
+      $rootScope.modalConfirmCancel = ->
+        console.log "cancel"
+        deferred.reject()
+        modal.hide()
+
+      modal.$promise.then(modal.show)
+
     deferred.promise
 
-pwgServices.factory 'pwgGetBrowserInfo', ['$q', 'pwgAjax', pwgGetBrowserInfo]
+pwgServices.factory "pwgModal", ['$q', '$modal', '$rootScope', pwgModal]

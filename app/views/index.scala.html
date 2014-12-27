@@ -15,7 +15,7 @@
        JQuery
        ---------------------------------------------------------------------- *@
 
-    @scriptStatic("jquery/dist/jquery.min.js")
+    @scriptWebJar("jquery/jquery.min.js")
 
     @* ----------------------------------------------------------------------
        Fonts
@@ -28,42 +28,28 @@
        Angular.js
        ---------------------------------------------------------------------- *@
 
-    @script("static/angular/angular.js")
-    @script("static/angular-route/angular-route.js")
-    @script("static/angular-cookies/angular-cookies.js")
-    @script("static/angular-animate/angular-animate.js")
+    @scriptWebJar("angularjs/angular.min.js")
+    @scriptWebJar("angularjs/angular-route.min.js")
+    @scriptWebJar("angularjs/angular-cookies.min.js")
+    @scriptWebJar("angularjs/angular-animate.min.js")
 
     @* ----------------------------------------------------------------------
       Other third-party stuff
       ---------------------------------------------------------------------- *@
 
-    @scriptStatic("jquery-ui/jquery-ui.min.js")
-    @stylesheetStatic("jquery-ui/themes/ui-lightness/jquery-ui.min.css")
+    @scriptWebJar("jquery-ui/jquery-ui.min.js")
+    @stylesheetWebJar("jquery-ui-themes/ui-lightness/jquery-ui.min.css")
 
-    @scriptStatic("modernizr/modernizr.js")
-    @stylesheetStatic("gridism/gridism.css")
-    @scriptStatic("momentjs/min/moment.min.js")
-    @scriptStatic("chosen/chosen.jquery.min.js")
-    @stylesheetStatic("chosen/chosen.min.css")
+    @scriptWebJar("bootstrap/js/bootstrap.min.js")
+    @stylesheetWebJar("bootstrap/css/bootstrap.min.css")
 
-    @scriptStatic("angular-ui-utils/ui-utils.min.js")
-    @scriptStatic("angular-chosen/angular-chosen.js")
-    @scriptStatic("angular-route-segment/build/angular-route-segment.js")
-    @scriptStatic("angular-tablesort/js/angular-tablesort.js")
+    @scriptWebJar("angular-route-segment/angular-route-segment.min.js")
+    @scriptWebJar("angular-strap/angular-strap.min.js")
 
-    @stylesheetStatic("font-awesome/css/font-awesome.min.css")
+    @stylesheetWebJar("font-awesome/css/font-awesome.min.css")
 
-    @stylesheetStatic("angular-macgyver/lib/macgyver.css")
-    @scriptStatic("angular-macgyver/lib/macgyver.js")
-
-    @stylesheetStatic("angular-accordion/src/main/webapp/css/angular-accordion.css")
-    @scriptStatic("angular-accordion/src/main/webapp/js/lib/angular-accordion.js")
-
-    @stylesheetStatic("animate.css/animate.css")
-
-    @scriptStatic("log4javascript/js/log4javascript.js")
-
-    @scriptStatic("underscore/underscore.js")
+    @scriptWebJar("log4javascript/js/log4javascript.js")
+    @scriptWebJar("underscorejs/underscore-min.js")
 
     @* ----------------------------------------------------------------------
         Local
@@ -96,39 +82,44 @@
       routes.javascript.UserController.save,
       routes.javascript.UserController.getAll,
       routes.javascript.UserController.create,
-      routes.javascript.UserController.delete
-    )
+      routes.javascript.UserController.delete,
+      routes.javascript.Assets.at,
+      routes.javascript.MainController.static
+    );
+
 
     <script type="text/javascript">
+      routes.staticAsset = function(path) {
+        return routes.controllers.MainController.static(path).url;
+      }
+
+      routes.asset = function(path) {
+        return routes.controllers.Assets.at(path).url;
+      }
+
       var browserLogLevel = "@browserLoggingLevel";
+
+      var browserIsMobile = @mobile;
     </script>
   </head>
 
-  <body ng-app="PWGuardApp" ng-cloak>
+  <body ng-app="PWGuardApp" ng-cloak class="container">
     <div ng-controller="MainCtrl">
 
       @navbar()
 
-      <mac-modal id="confirm-dialog" class="confirm-modal">
-        <header ng-show="dialogConfirmTitle">{{dialogConfirmTitle}}</header>
-        <div class="modal-message">{{dialogConfirmMessage}}</div>
-        <div class="button-bar">
-          <button class="btn btn-primary" ng-click="ok()">Yes</button>
-          <button class="btn" ng-click="cancel()">No</button>
-        </div>
-      </mac-modal>
+      <div id="content" ng-hide="initializing">
 
-      <div ng-show="initializing" id="initializing">
-        <div class="grid">
-          <div class="unit whole">
-            <div class="message">
-              Loading. Please wait...
+        <div ng-show="initializing">
+          <div class="row">
+            <div class="col-md-4">
+              <div class="message">
+                Loading. Please wait...
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div id="content" ng-hide="initializing">
         @flash()
 
         <div app-view-segment="0" id="segment-level-0"></div>
@@ -136,9 +127,11 @@
       </div>
 
       <div id="debug" ng-show="debugMessages.length > 0">
-        <div class="grid">
-          <div class="unit whole header">Debug</div>
-          <div class="unit whole body">
+        <div class="row">
+          <div class="col-md-12">Debug</div>
+        </div>
+        <div class="row">
+          <div class="col-md-12">
             <pre ng-repeat="line in debugMessages track by $index">{{line}}</pre>
           </div>
         </div>

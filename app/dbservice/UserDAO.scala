@@ -15,7 +15,7 @@ class UserDAO(_dal: DAL, _logger: Logger) extends BaseDAO[User](_dal, _logger) {
   import dal.profile.simple._
   import dal.{UsersTable, Users}
 
-  private type UserQuery = Query[UsersTable, User]
+  private type UserQuery = Query[UsersTable, User, Seq]
 
   // --------------------------------------------------------------------------
   // Public methods
@@ -75,7 +75,7 @@ class UserDAO(_dal: DAL, _logger: Logger) extends BaseDAO[User](_dal, _logger) {
   // Protected methods
   // ------------------------------------------------------------------------
 
-  protected def queryByID(id: Int): Query[UsersTable, User] = {
+  protected def queryByID(id: Int): UserQuery = {
     for {u <- Users if u.id === id } yield u
   }
 

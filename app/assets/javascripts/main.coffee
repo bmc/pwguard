@@ -10,11 +10,8 @@ requiredModules = ['ngRoute',
                    'ngAnimate',
                    'route-segment',
                    'view-segment',
-                   'angular-accordion',
                    'ngCookies',
-                   'ui.utils',
-                   'tableSort',
-                   'Mac',
+                   'mgcrea.ngStrap',
                    'pwguard-services',
                    'pwguard-filters',
                    'pwguard-directives']
@@ -79,14 +76,11 @@ ellipsize = (input, max=30) ->
 MainCtrl = ($scope,
             $routeSegment,
             $location,
-            macModal,
             pwgTimeout,
             pwgAjax,
             pwgFlash,
             pwgCheckUser,
-            pwgGetBrowserInfo,
-            pwgLogging,
-            $q) ->
+            pwgLogging) ->
 
   $scope.debugMessages = []
   $scope.debug = (msg) ->
@@ -182,94 +176,40 @@ MainCtrl = ($scope,
 
     useSegment
 
-  userPromise        = pwgCheckUser.checkUser()
-  browserInfoPromise = pwgGetBrowserInfo.getBrowserInfo()
-  combinedPromise    = $q.all [userPromise, browserInfoPromise]
+  userPromise = pwgCheckUser.checkUser()
+  $scope.initializing = false
 
-  combinedPromise.then ->
-    $scope.initializing = false
-
-    # Check each of the completed promises.
-
-    userInfoSuccess = (response) ->
-      if response.loggedIn
-        $scope.setLoggedInUser response.user
-      else
-        $scope.setLoggedInUser null
-
-      useSegment = validateLocationChange $scope.segmentOnLoad
-      $scope.redirectToSegment useSegment
-      $scope.segmentOnLoad = false
-
-    userInfoFailure = (response) ->
-      $scope.setLoggedInUser null
-      $scope.redirectToSegment "login"
-
-    userPromise.then userInfoSuccess, userInfoFailure
-
-    browserInfoSuccess = (userAgentInfo) ->
-      $scope.isMobile = userAgentInfo.isMobile
-
-    browserInfoFailure = (response) ->
-      $scope.isMobile = false
-
-    browserInfoPromise.then browserInfoSuccess
-
-  # Modal handler
-  modalDeferred = null
-
-  $scope.ok = ->
-    macModal.hide ->
-      modalDeferred.resolve()
-      modalDeferred = null
-
-  $scope.cancel = ->
-    macModal.hide ->
-      modalDeferred.reject()
-      modalDeferred = null
-
-  # Shows an appropriate confirmation dialog, depending on whether the user
-  # is mobile or not. Returns a promise (via $q) that resolves on confirmation
-  # and rejects on cancel.
-  #
-  # Parameters:
-  #   message - the confirmation message
-  #   title   - optional title for the dialog, if supported
-  $scope.confirm = (message, title) ->
-    modalDeferred = $q.defer()
-
-    if $scope.isMobile
-      if confirm message
-        modalDeferred.resolve()
-      else
-        modalDeferred.reject()
-
+  userInfoSuccess = (response) ->
+    if response.loggedIn
+      $scope.setLoggedInUser response.user
     else
-      $scope.dialogConfirmTitle   = title
-      $scope.dialogConfirmMessage = message
+      $scope.setLoggedInUser null
 
-      macModal.show 'confirm-dialog'
+    useSegment = validateLocationChange $scope.segmentOnLoad
+    $scope.redirectToSegment useSegment
+    $scope.segmentOnLoad = false
 
-    modalDeferred.promise
+  userInfoFailure = (response) ->
+    $scope.setLoggedInUser null
+    $scope.redirectToSegment "login"
+
+  userPromise.then userInfoSuccess, userInfoFailure
 
 pwguardApp.controller 'MainCtrl', ['$scope',
                                    '$routeSegment',
                                    '$location',
-                                   'modal',
                                    'pwgTimeout',
                                    'pwgAjax',
                                    'pwgFlash',
                                    'pwgCheckUser',
-                                   'pwgGetBrowserInfo'
                                    'pwgLogging',
-                                   '$q',
                                    MainCtrl]
 
 # ---------------------------------------------------------------------------
 # Navigation bar controller
 # ---------------------------------------------------------------------------
 
-NavbarCtrl = ($scope, pwgAjax) ->
+NavbarCtrl = ($scope, pwgAjax, pwgModal) ->
   $scope.logout = () ->
     # NOTE: See https://groups.google.com/forum/#!msg/angular/bsTbZ86WAY4/gdpKwc4f7ToJ
     #
@@ -285,7 +225,7 @@ NavbarCtrl = ($scope, pwgAjax) ->
     # function.
 
     if $scope.loggedIn()
-      $scope.confirm("Really log out?", "Confirm log out").then (result) ->
+      confirmed = ->
         always = () ->
           $scope.setLoggedInUser null
           $scope.redirectToSegment 'login'
@@ -301,7 +241,12 @@ NavbarCtrl = ($scope, pwgAjax) ->
 
         pwgAjax.post(url, {}, onSuccess, onFailure)
 
-pwguardApp.controller 'NavbarCtrl', ['$scope', 'pwgAjax', NavbarCtrl]
+      rejected = (reason) ->
+        return
+
+      pwgModal.confirm("Really log out?", "Confirm log out").then(confirmed, rejected)
+
+pwguardApp.controller 'NavbarCtrl', ['$scope', 'pwgAjax', 'pwgModal', NavbarCtrl]
 
 # ---------------------------------------------------------------------------
 # Login controller

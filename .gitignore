@@ -16,3 +16,4 @@ dist
 *.db
 /static/bower
 /project/activator*
+npm-debug.log

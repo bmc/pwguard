@@ -1,0 +1,6 @@
+@*
+  Simplifies loading of a webjar stylesheet.
+*@
+@(path: String, media: String = "screen")
+
+<link rel="stylesheet" media="@media" href="@routes.Assets.at(s"lib/$path")"/>

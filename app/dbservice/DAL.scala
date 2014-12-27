@@ -1,8 +1,6 @@
 package dbservice
 
 import scala.slick.driver.JdbcProfile
-import scala.math.BigDecimal
-import scala.slick.model.ForeignKeyAction
 import java.sql.{ ResultSet, Timestamp }
 
 /** Allows dynamic selection of database type.

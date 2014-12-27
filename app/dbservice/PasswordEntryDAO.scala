@@ -15,7 +15,7 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
   import dal.profile.simple._
   import dal.{PasswordEntriesTable, PasswordEntries}
 
-  private type PWEntryQuery = Query[PasswordEntriesTable, PasswordEntry]
+  private type PWEntryQuery = Query[PasswordEntriesTable, PasswordEntry, Seq]
 
   // --------------------------------------------------------------------------
   // Public methods
@@ -120,7 +120,7 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
   // Protected methods
   // ------------------------------------------------------------------------
 
-  protected def queryByID(id: Int): Query[PasswordEntriesTable, PasswordEntry] = {
+  protected def queryByID(id: Int): PWEntryQuery = {
     for {p <- PasswordEntries if p.id === id } yield p
   }
 

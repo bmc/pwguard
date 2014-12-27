@@ -1,0 +1,7 @@
+@*
+  Simplifies loading of a webjar script.
+*@
+
+@(path: String, mimeType: String = "text/javascript")
+
+<script type="@mimeType" src="@routes.Assets.at(s"lib/$path")"></script>
