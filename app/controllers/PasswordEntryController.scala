@@ -8,6 +8,7 @@ import play.api._
 import play.api.libs.json.{JsString, Json, JsValue}
 import play.api.mvc.Request
 import play.api.mvc.Results._
+import play.api.mvc.BodyParsers._
 
 import util.JsonHelpers
 import util.EitherOptionHelpers.Implicits._
@@ -16,13 +17,12 @@ import pwguard.global.Globals.ExecutionContexts.Default._
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
-import scala.util.{Success, Try}
 
 /** Controller for search operations.
   */
 object PasswordEntryController extends BaseController {
 
-  override protected val logger = Logger("pwguard.controllers.PasswordEntryController")
+  override val logger = Logger("pwguard.controllers.PasswordEntryController")
 
   import DAO.passwordEntryDAO
 
@@ -30,8 +30,10 @@ object PasswordEntryController extends BaseController {
   // Public methods
   // -------------------------------------------------------------------------
 
-  def save(id: Int) = SecuredJSONAction {
-    (user: User, request: Request[JsValue]) =>
+  def save(id: Int) = SecuredJSONAction { authReq =>
+
+    implicit val request = authReq.request
+    val user = authReq.user
 
     val f = for { pweOpt <- passwordEntryDAO.findByID(id)
                   pwe    <- pweOpt.toFuture("Password entry not found")
@@ -49,7 +51,10 @@ object PasswordEntryController extends BaseController {
     }
   }
 
-  def create = SecuredJSONAction { (user: User, request: Request[JsValue]) =>
+  def create = SecuredJSONAction { authReq =>
+
+    implicit val request = authReq.request
+    val user = authReq.user
     val f = for { pwe   <- decodeJSON(None, user, request.body)
                   saved <- passwordEntryDAO.save(pwe)
                   json  <- jsonPasswordEntry(user, saved) }
@@ -64,7 +69,7 @@ object PasswordEntryController extends BaseController {
     }
   }
 
-  def delete(id: Int) = SecuredAction { (user: User, request: Request[Any]) =>
+  def delete(id: Int) = SecuredAction { authReq =>
     passwordEntryDAO.delete(id) map { status =>
       Ok(Json.obj("ok" -> true))
     } recover { case NonFatal(e) =>
@@ -72,8 +77,10 @@ object PasswordEntryController extends BaseController {
     }
   }
 
-  def searchPasswordEntries = SecuredJSONAction {
-    (user: User, request: Request[JsValue]) =>
+  def searchPasswordEntries = SecuredJSONAction { authReq =>
+
+    implicit val request = authReq.request
+    val user = authReq.user
 
     val json               = request.body
     val searchTerm         = (json \ "searchTerm").asOpt[String]
@@ -99,7 +106,11 @@ object PasswordEntryController extends BaseController {
     getOrElse(Future.successful(BadRequest(jsonError("Missing search term"))))
   }
 
-  def all = SecuredAction { (user: User, request: Request[Any]) =>
+  def all = SecuredAction { authReq =>
+
+    implicit val request = authReq.request
+    val user = authReq.user
+
     entriesToJSON(user) { passwordEntryDAO.allForUser(user) } map { json =>
       Ok(json)
     } recover {

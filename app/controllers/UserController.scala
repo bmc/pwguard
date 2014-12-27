@@ -7,7 +7,8 @@ import models.UserHelpers.json.implicits._
 
 import play.api._
 import play.api.libs.json._
-import play.api.mvc.Request
+import play.api.mvc.{AnyContent, Action, Request}
+import play.api.mvc.BodyParsers._
 import play.api.mvc.Results._
 
 import pwguard.global.Globals.ExecutionContexts.Default._
@@ -17,21 +18,20 @@ import _root_.util.EitherOptionHelpers._
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
-import scala.util.{Success, Try}
 
 /** Controller for reading and saving users.
   */
 object UserController extends BaseController {
 
-  override protected val logger = Logger("pwguard.controllers.UserController")
+  override val logger = Logger("pwguard.controllers.UserController")
 
   // -------------------------------------------------------------------------
   // Public methods
   // -------------------------------------------------------------------------
 
-  def save(id: Int) = SecuredJSONAction {
-    (currentUser: User, request: Request[JsValue]) =>
+  def save(id: Int) = SecuredJSONAction { authReq =>
 
+    implicit val request = authReq.request
     val res = for { userOpt <- userDAO.findByID(id)
                     user    <- userOpt.toFuture("User not found.")
                     user2   <- decodeUserJSON(Some(user), request.body)
@@ -46,8 +46,9 @@ object UserController extends BaseController {
     }
   }
 
-  def create = SecuredJSONAction {
-    (currentUser: User, request: Request[JsValue]) =>
+  def create = SecuredJSONAction { authReq =>
+
+    implicit val request = authReq.request
 
     val res = for { user  <- decodeUserJSON(None, request.body)
                     saved <- userDAO.create(user)
@@ -61,8 +62,9 @@ object UserController extends BaseController {
     }
   }
 
-  def getAll = SecuredAction { (user: User, request: Request[Any]) =>
-    if (! user.admin) {
+  def getAll = SecuredJSONAction { authReq =>
+
+    if (! authReq.user.admin) {
       Future.successful(Forbidden("You are not an administrator"))
     }
 
@@ -79,7 +81,8 @@ object UserController extends BaseController {
     }
   }
 
-  def delete(id: Int) = SecuredAction { (user: User, request: Request[Any]) =>
+  def delete(id: Int) = SecuredJSONAction { authReq =>
+
     userDAO.delete(id) map { ok =>
       Ok(Json.obj("ok" -> ok))
     } recover {

@@ -7,6 +7,7 @@ import models.UserHelpers.json.implicits._
 import play.api.libs.json.{Json, JsValue}
 import play.api.mvc._
 import play.api.mvc.Results._
+import play.api.Logger
 
 import pwguard.global.Globals.ExecutionContexts.Default._
 import util.EitherOptionHelpers.Implicits._
@@ -19,6 +20,8 @@ import scala.util.control.NonFatal
   */
 object SessionController extends BaseController {
 
+  override val logger = Logger("pwguard.controllers.SessionController")
+
   // --------------------------------------------------------------------------
   // Public methods
   // --------------------------------------------------------------------------
@@ -27,8 +30,7 @@ object SessionController extends BaseController {
     *
     * @return Play HTTP result
     */
-  def login = UnsecuredAction(BodyParsers.parse.json) {
-    implicit request: Request[JsValue] =>
+  def login = UnsecuredJSONAction { implicit request: Request[JsValue] =>
 
     def resultWithSession(user: User): Future[Result] = {
       val f = for { sessionData <- SessionOps.newSessionDataFor(request, user)
@@ -59,7 +61,7 @@ object SessionController extends BaseController {
 
   /** Get the current logged-in user, if any.
     */
-  def getLoggedInUser = UnsecuredAction(BodyParsers.parse.json) {
+  def getLoggedInUser = UnsecuredJSONAction {
     implicit request: Request[JsValue] =>
 
     val NotLoggedIn = Json.obj("loggedIn" -> false)
@@ -81,7 +83,7 @@ object SessionController extends BaseController {
 
   /** Log the current user out of the system.
     */
-  def logout = AuthenticatedAction.async { authReq =>
+  def logout = SecuredJSONAction { authReq =>
     implicit val request = authReq.request
     val user = authReq.user
     val json = request.body

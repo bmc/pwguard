@@ -4,53 +4,20 @@ import dbservice.DAO
 import models.User
 import play.api._
 import play.api.mvc._
+import play.api.mvc.BodyParsers._
 import play.api.mvc.Results._
 import play.api.Play.current
 import play.api.libs.json.{ JsString, Json, JsValue }
 
-import pwguard.global.Globals.ExecutionContexts.Default._
-import util.EitherOptionHelpers.Implicits._
-import util.FutureHelpers._
+import services.Logging
 
 import scala.concurrent.Future
-import scala.util.control.NonFatal
-
-class AuthenticatedRequest[T](val user: User, val request: Request[T])
-
-// See https://www.playframework.com/documentation/2.3.x/ScalaActionsComposition
-object AuthenticatedAction
-  extends ActionBuilder[AuthenticatedRequest]
-  with ActionRefiner[Request, AuthenticatedRequest] {
-
-  def refine[T](request: Request[T]):
-    Future[Either[Result, AuthenticatedRequest[T]]] = {
-
-    import DAO.userDAO
-
-    def NoUserAction = Redirect(routes.SessionController.login())
-
-    request.session.get("email").map { email =>
-Logger.error(s"*** email in session: $email")
-      val f = for { optUser <- userDAO.findByEmail(email)
-                    user    <- optUser.toFuture("Invalid user in session") }
-              yield user
-
-      f map { user =>
-        Right(new AuthenticatedRequest(user, request))
-      } recover {
-        case NonFatal(e) => Left(NoUserAction)
-      }
-    }.
-    getOrElse(Future.successful(Left(NoUserAction)))
-  }
-}
-
 
 /** Base class for all controllers.
   */
-trait BaseController {
+trait BaseController extends Logging {
 
-  protected val logger = pwguard.global.Globals.mainLogger
+  val logger = pwguard.global.Globals.mainLogger
 
   // --------------------------------------------------------------------------
   // Protected methods
@@ -76,103 +43,32 @@ trait BaseController {
     val cache = current.configuration
                        .getBoolean("http.cacheStaticResources")
                        .getOrElse(false)
-
-    if (cache)
-      result
-    else
-      noCache(result)
+    if (cache) result else noCache(result)
   }
 
-  /** `Action` wrapper for actions that do not require a logged-in user.
-    * Play infers the body parser to use from the incoming HTTP headers.
+  /** Convenience method to process incoming secured JSON request, sending
+    * back a consistent error when no user is logged in. Built on top of
+    * `ActionWithUser`.
     *
-    * @param f  the caller's block of action code
+    * @param f   The handler returning the JSON result, wrapped in a Future
+    * @return    The actual action
     */
-  protected def UnsecuredAction(f: Request[AnyContent] => Future[Result]) = {
-    Action.async { implicit request =>
-      logAndHandleRequest(f, request)
+  def UnsecuredJSONAction(f: (Request[JsValue]) => Future[Result]) = {
+    (Action andThen LoggedAction).async(parse.json) { req =>
+      f(req)
     }
   }
 
-  /** `Action` wrapper for actions that do not require a logged-in user.
-    * Caller specifies the desired body parser type; requests that don't
-    * adhere to that type are rejected by Play.
+  /** Convenience method to processing incoming secured request, sending
+    * back a consistent error when no user is logged in. Built on top of
+    * `ActionWithUser`.
     *
-    * @param bodyParser specific body parser to use
-    * @tparam T         body parser type
-    * @return           the Action
+    * @param f   The handler returning the result, wrapped in a Future
+    * @return    The actual action
     */
-  protected def UnsecuredAction[T](bodyParser: BodyParser[T])
-                                  (f: Request[T] => Future[Result]) = {
-    Action.async(bodyParser) { implicit request =>
-      logAndHandleRequest(f, request)
-    }
-  }
-
-  /** `Action` wrapper for actions that require a logged-in user. Play infers
-    * the parser to use from the incoming content type. Example use:
-    *
-    * {{{
-    * def doAmazingAction = ActionWithUser(
-    *   { (user, request) => Future(amazing(user, request)) },
-    *   { request         => Future(Redirect(routes.Application.login())) }
-    * )
-    * }}}
-    *
-    * @param whenLoggedIn function to call if a user is logged in; must return
-    *               a `Future[SimpleResult]`
-    * @param noUser       function to call if there isn't a logged-in user;
-    *               must return a `Future[SimpleResult]`
-    * @return the actual action
-    */
-  def ActionWithUser(whenLoggedIn: (User, Request[AnyContent]) => Future[Result],
-                     noUser:       Request[AnyContent] => Future[Result]):
-    Action[AnyContent] = {
-
-    ActionWithUser(BodyParsers.parse.anyContent)(whenLoggedIn, noUser)
-  }
-
-  /** `Action` wrapper for actions that require a logged-in user. Uses an
-    * explicit body parser. Example use:
-    *
-    * {{{
-    * def doAmazingAction = ActionWithUser(parse.json) {
-    * { (user, request) => Future(amazingJson(user, request)) },
-    * { request         => Future(errorJson("not logged in) }
-    * )
-    * }}}
-    *
-    * @param bodyParser   the body parser to use
-    * @param whenLoggedIn function to call if a user is logged in; must return
-    *               a `Future[SimpleResult]`
-    * @param noUser       function to call if there isn't a logged-in user;
-    *               must return a `Future[SimpleResult]`
-    * @return the actual action
-    */
-  protected def ActionWithUser[T](bodyParser: BodyParser[T])
-                                 (whenLoggedIn: (User, Request[T]) => Future[Result],
-                                  noUser:       Request[T] => Future[Result]): Action[T] = {
-
-    Action.async(bodyParser) { implicit request =>
-
-      SessionOps.loggedInEmail(request).flatMap { emailOpt =>
-        emailOpt.map { email =>
-          def handle(user: User): Future[Result] = {
-            def fwd(req: Request[T]): Future[Result] = whenLoggedIn(user, req)
-            logAndHandleRequest(fwd, request)
-          }
-
-          val f = for { optUser <- DAO.userDAO.findByEmail(email)
-                        user    <- optUser.toFuture(s"No user with email $email")
-                        res     <- handle(user) }
-                  yield res
-
-          f recoverWith {
-            case NonFatal(e) => logAndHandleRequest(noUser, request)
-          }
-        }.
-        getOrElse { logAndHandleRequest(noUser, request) }
-      }
+  def UnsecuredAction(f: (Request[AnyContent]) => Future[Result]) = {
+    (Action andThen LoggedAction).async { req =>
+      f(req)
     }
   }
 
@@ -183,12 +79,10 @@ trait BaseController {
     * @param f   The handler returning the JSON result, wrapped in a Future
     * @return    The actual action
     */
-  def SecuredJSONAction(f: (User, Request[JsValue]) => Future[Result]) = {
-    ActionWithUser(BodyParsers.parse.json)(
-      f,
-
-      { request => Future { Unauthorized } }
-    )
+  def SecuredJSONAction(f: (AuthenticatedRequest[JsValue]) => Future[Result]) = {
+    (LoggedAction andThen AuthenticatedAction).async(parse.json) { authReq =>
+      f(authReq)
+    }
   }
 
   /** Convenience method to processing incoming secured request, sending
@@ -198,12 +92,10 @@ trait BaseController {
     * @param f   The handler returning the result, wrapped in a Future
     * @return    The actual action
     */
-  def SecuredAction(f: (User, Request[AnyContent]) => Future[Result]) = {
-    ActionWithUser(
-      f,
-
-      { request => Future { Unauthorized } }
-    )
+  def SecuredAction(f: (AuthenticatedRequest[AnyContent]) => Future[Result]) = {
+    (LoggedAction andThen AuthenticatedAction).async { authReq =>
+      f(authReq)
+    }
   }
 
   /** Parameters to pass back in a new session.
@@ -270,22 +162,5 @@ trait BaseController {
     getOrElse(clsName)
 
     jsonError(Some(msg), status)
-  }
-
-  // --------------------------------------------------------------------------
-  // Protected methods
-  // ------------------------------------------------------------------------
-
-  private def logAndHandleRequest[T](handler: Request[T] => Future[Result],
-                                     request: Request[T]): Future[Result] = {
-    def futureLog(msg: => String): Future[Unit] = {
-      Future { logger.debug(msg) }
-    }
-
-    // Chained futures ensure that the logging occurs in the right order.
-    for { f1 <- futureLog { s"Received request ${request}" }
-          res <- handler(request)
-          f2  <- futureLog { s"Finished processing request ${request}" } }
-    yield res
   }
 }
