@@ -1,5 +1,7 @@
 package dbservice
 
+import java.sql.Connection
+
 import models.BaseModel
 
 import play.api.Logger
@@ -8,6 +10,7 @@ import pwguard.global.Globals.ExecutionContexts.DB._
 
 import scala.reflect.runtime.{universe => ru}
 import scala.concurrent.Future
+import scala.util.{Success, Failure}
 import scala.util.control.NonFatal
 
 class DAOException(msg: String) extends Exception(msg)
@@ -145,16 +148,39 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
   protected def withTransaction[T](code: SlickSession => Future[T]):
     Future[T] = {
 
-    withSession { implicit session =>
-      session.withTransaction {
-        code(session)
-      } recoverWith {
-        case NonFatal(e) => {
-          logger.error("Error during transaction", e)
-          session.rollback()
-          Future.failed(e)
-        }
+    // We manage this ourselves, because a glance at the Slick session
+    // source shows that it most likely doesn't handle futures properly.
+    // It could commit the transaction, or roll it back, before the
+    // future completes.
+    import pwguard.global.Globals.DB
+    implicit val session = DB.createSession()
+
+    val conn = session.conn
+    conn.setAutoCommit(false)
+    code(session) andThen {
+      case Failure(e) => {
+        logger.error("Error during transaction", e)
+        conn.rollback()
       }
+    } andThen {
+      case _ => {
+        conn.setAutoCommit(true)
+        session.close()
+      }
+    }
+  }
+
+  /** Execute a block of code within a Slick connection, ensuring that the
+    * connection is closed.
+    *
+    * @param code  the code to run. The connection is passed.
+    * @tparam T    what the code returns (wrapped in a Future)
+    *
+    * @return the result of code, or a failed future
+    */
+  protected def withConnection[T](code: Connection => Future[T]): Future[T] = {
+    withSession { implicit session =>
+      code(session.conn)
     }
   }
 
