@@ -343,21 +343,30 @@ pwgModal = ($q, $modal, $rootScope) ->
 
     else
       modalOpts =
-        title:    "Really log out?"
+        title:    title
         template: routes.staticAsset("AngularTemplates/confirmModal.html")
         backdrop: 'static'
+        content:  message
         show:     false
 
       modal = $modal(modalOpts)
-
-      $rootScope.modalConfirmOK = ->
+      confirmed = ->
         deferred.resolve()
         modal.hide()
 
-      $rootScope.modalConfirmCancel = ->
-        console.log "cancel"
+      canceled = ->
         deferred.reject()
         modal.hide()
+
+      $rootScope.modalConfirmOK = ->
+        confirmed()
+
+      $rootScope.modalConfirmCancel = ->
+        canceled()
+
+      $rootScope.modalConfirmKeyPressed = ($event) ->
+        if $event.keyCode is 13 # ENTER
+          canceled()
 
       modal.$promise.then(modal.show)
 
