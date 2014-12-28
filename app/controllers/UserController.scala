@@ -62,7 +62,7 @@ object UserController extends BaseController {
     }
   }
 
-  def getAll = SecuredJSONAction { authReq =>
+  def getAll = SecuredAction { authReq =>
 
     if (! authReq.user.admin) {
       Future.successful(Forbidden("You are not an administrator"))
@@ -72,6 +72,7 @@ object UserController extends BaseController {
       val res = for { users <- userDAO.all
                       json  <- Future.sequence(users.map { safeUserJSON _ }) }
                 yield json
+
       res map { json =>
         Ok(Json.obj("users" -> json))
       } recover {
