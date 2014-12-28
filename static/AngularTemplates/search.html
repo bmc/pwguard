@@ -187,24 +187,42 @@
 
           <!-- List of results -->
 
-          <table class="data-table" ts-wrapper>
+          <table class="data-table">
             <thead>
               <tr>
-                <th class="sortable-column" ts-criteria="name|lowercase" ts-default>
-                  Name
+                <th>
+                  <a href="" ng-click="sortBy('name')">Name</a>
+                  <pwg-sort-indicator reverse="reverse"
+                                      column="name"
+                                      sort-column="sortColumn">
+                  </pwg-sort-indicator>
                 </th>
-                <th class="sortable-column" ts-criteria="description|lowercase">
-                  Description
+                <th>
+                  <a href="" ng-click="sortBy('description')">Description</a>
+                  <pwg-sort-indicator reverse="reverse"
+                                      column="description"
+                                      sort-column="sortColumn">
+                  </pwg-sort-indicator>
                 </th>
-                <th>ID</th>
-                <th>Password</th>
-                <th>Notes</th>
+                <th>
+                  <a href="" ng-click="sortBy('loginID')">Login</a>
+                  <pwg-sort-indicator reverse="reverse"
+                                      column="loginID"
+                                      sort-column="sortColumn">
+                  </pwg-sort-indicator>
+                </th>
+                <th>
+                  Password
+                </th>
+                <th>
+                  Notes
+                </th>
                 <th></th>
               </tr>
             </thead>
 
             <tbody>
-              <tr ng-repeat="pw in searchResults" ts-repeat
+              <tr ng-repeat="pw in searchResults | orderBy:sortColumn:reverse"
                   ng-class-odd="'odd'" ng-class-even="'even'">
 
                 <td>
@@ -224,7 +242,10 @@
                 </td>
 
                 <td>
-                  <span ng-hide="pw.editing">{{pw.loginID}}</span>
+                  <span ng-hide="pw.editing">
+                    <input type="text" readonly="readonly" class="clickable"
+                           ng-model="pw.loginID"/>
+                  </span>
                   <span ng-show="pw.editing">
                     <input class="standalone" ng-model="pw.loginID"
                            type="text" placeholder="ID"/>
@@ -278,7 +299,7 @@
                   </span>
                 </td>
 
-                <td>
+                <td class="pw-buttons">
                   <a href="javascript:void(0)"
                      class="btn btn-borderless"
                      ng-click="pw.edit()"

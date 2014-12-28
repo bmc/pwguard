@@ -374,6 +374,15 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
     url = routes.controllers.PasswordEntryController.all().url
     pwgAjax.get url, onSuccess, onFailure
 
+  $scope.sortColumn = "name"
+  $scope.reverse = false
+  $scope.sortBy = (column) ->
+    if column is $scope.sortColumn
+      $scope.reverse = !$scope.reverse
+    else
+      $scope.sortColumn = column
+      $scope.reverse = false
+
   saveEntry = (pw) ->
     url = routes.controllers.PasswordEntryController.save(pw.id).url
     data =
@@ -447,7 +456,7 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
 
   adjustResults = (results) ->
     originalEntries = {}
-    for pw in results
+    results.map (pw) ->
       pw.showPassword     = false
       pw.editing          = false
       pw.notesPreview     = ellipsize pw.notes
@@ -455,7 +464,8 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
       pw.showPreview      = pw.previewAvailable
       pw.passwordVisible  = false
       pw.toggleVisibility = ->
-        pw.passwordVisible = not pw.passwordVisible
+        pw.passwordVisible = !pw.passwordVisible
+        console.log "toggleVis #{pw.name} -> #{pw.passwordVisible}"
 
       originalEntries[pw.id] = pw
 
@@ -464,6 +474,7 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
       pw.save             = -> saveEntry this
       pw.delete           = -> deleteEntry this
       pw
+
 
 pwguardApp.controller 'SearchCtrl', ['$scope',
                                      'pwgAjax',

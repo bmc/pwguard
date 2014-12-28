@@ -46,6 +46,22 @@ pwgDirectives.directive 'pwgFlash', ['$compile',
                                      pwgFlash]
 
 # -----------------------------------------------------------------------------
+# Sort indicator
+# -----------------------------------------------------------------------------
+
+pwgSortIndicator = ->
+  restrict:    'E'
+  transclude:  false
+  replace:     true
+  templateUrl: templateURL('directives/pwgSortIndicator.html')
+  scope:
+    reverse:    "="
+    column:     "@"
+    sortColumn: "="
+
+pwgDirectives.directive 'pwgSortIndicator', [pwgSortIndicator]
+
+# -----------------------------------------------------------------------------
 # Fake checkbox, useful when you want to support clicking outside the checkbox
 # itself
 # -----------------------------------------------------------------------------
@@ -57,8 +73,5 @@ pwgFakeCheckbox = ->
   templateUrl: templateURL('directives/pwgFakeCheckbox.html')
   scope:
     ngModel: "=ngModel"
-
-  link: (scope, element, attrs) ->
-    return
 
 pwgDirectives.directive 'pwgFakeCheckbox', [pwgFakeCheckbox]
