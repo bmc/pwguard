@@ -20,6 +20,10 @@ POST          /user                          controllers.UserController.create
 GET           /users                         controllers.UserController.getAll
 DELETE        /user/:id                      controllers.UserController.delete(id: Int)
 
+GET           /export                        controllers.ImportExportController.exportData(filename: String)
+POST          /import                        controllers.ImportExportController.importDataUpload
+POST          /complete-import               controllers.ImportExportController.completeImport
+
 GET           /user-agent-info               controllers.MainController.getUserAgentInfo
 
 GET           /angular/template/*path        controllers.MainController.getAngularTemplate(path: String)

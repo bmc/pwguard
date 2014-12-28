@@ -45,6 +45,7 @@
 
     @scriptWebJar("angular-route-segment/angular-route-segment.min.js")
     @scriptWebJar("angular-strap/angular-strap.min.js")
+    @scriptWebJar("nervgh-angular-file-upload/angular-file-upload.min.js")
 
     @stylesheetWebJar("font-awesome/css/font-awesome.min.css")
 
@@ -83,6 +84,9 @@
       routes.javascript.UserController.getAll,
       routes.javascript.UserController.create,
       routes.javascript.UserController.delete,
+      routes.javascript.ImportExportController.exportData,
+      routes.javascript.ImportExportController.importDataUpload,
+      routes.javascript.ImportExportController.completeImport,
       routes.javascript.Assets.at,
       routes.javascript.MainController.static
     );

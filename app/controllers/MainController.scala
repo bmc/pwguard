@@ -16,7 +16,7 @@ import scala.util.{Success, Try}
   */
 object MainController extends BaseController {
 
-  override protected val logger = Logger("pwguard.controllers.MainController")
+  override val logger = Logger("pwguard.controllers.MainController")
 
   private val UserAgentService = Globals.UserAgentDecoderService
 
@@ -43,6 +43,7 @@ object MainController extends BaseController {
     * development.
     */
   def static(path: String) = UnsecuredAction { implicit request =>
+
     // Search both "static" and "bower_components".
     Future {
       val files = Seq(s"static/bower/$path",
@@ -104,6 +105,7 @@ object MainController extends BaseController {
   /** Get decoded information about the user agent.
     */
   def getUserAgentInfo = UnsecuredAction { implicit request =>
+
     getUserAgent(request).map { userAgent: UserAgent =>
       Ok(Json.obj("userAgentInfo" -> Json.obj("isMobile" -> userAgent.isMobile)))
     }

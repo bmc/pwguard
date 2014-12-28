@@ -43,6 +43,13 @@
               <i class="fa fa-wrench"></i> Profile
             </a>
           </li>
+          <li ng-class="{active: segmentIsActive('import-export')}">
+            <a href="#/import-export">
+              <i class="fa fa-folder-o" ng-hide="segmentIsActive('import-export')"></i>
+              <i class="fa fa-folder-open-o" ng-show="segmentIsActive('import-export')"></i>
+              Import &amp; Export
+            </a>
+          </li>
           <li ng-class="{active: segmentIsActive('admin-users')}"
               ng-show="loggedInUser.admin">
             <a ng-href="#/admin/users">

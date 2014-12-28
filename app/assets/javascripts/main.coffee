@@ -12,6 +12,7 @@ requiredModules = ['ngRoute',
                    'view-segment',
                    'ngCookies',
                    'mgcrea.ngStrap',
+                   'angularFileUpload',
                    'pwguard-services',
                    'pwguard-filters',
                    'pwguard-directives']
@@ -535,6 +536,185 @@ pwguardApp.controller 'ProfileCtrl', ['$scope',
                                       'pwgLogging',
                                       'pwgAjax',
                                       ProfileCtrl]
+
+# ---------------------------------------------------------------------------
+# Import/Export controllers
+# ---------------------------------------------------------------------------
+
+ImportExportCtrl = ($scope,
+                    $timeout,
+                    FileUploader,
+                    pwgAjax,
+                    pwgFlash,
+                    $rootScope,
+                    $location) ->
+  $scope.downloading = false
+  $scope.state = 'new'
+
+  # ------------------- #
+  # when state == 'new' #
+  # ------------------- #
+
+  $scope.startDownload = ->
+    $scope.downloading = true
+    hide = ->
+      $scope.downloading = false
+    $timeout hide, 3000
+
+  uploader = new FileUploader()
+
+  fileNamePattern = /\.csv$/
+  validFilename = (f) ->
+    (f.type is "text/csv") or (fileNamePattern.exec(f.name)?)
+
+  # Make sure the CSV filter is first. The queue limit is also implemented
+  # as a filter, and we want it to fire *after* the queue limit filter.
+  # Otherwise, the attempt to add an invalid item when the queue has one element
+  # will inadvertently clear the queue.
+  uploader.filters.unshift {name: 'CSV', fn: validFilename}
+  uploader.queueLimit = 1
+  uploader.removeAfterUpload = true
+  uploader.url = routes.controllers.ImportExportController.importDataUpload().url
+  uploader.onWhenAddingFileFailed = (item, filter, options) ->
+    if filter.name is "queueLimit"
+      # We're replacing an existing file.
+      uploader.clearQueue()
+      uploader.addToQueue([item])
+
+  $scope.fileSelected = ->
+    uploader.getNotUploadedItems().length > 0
+
+  $scope.progress = 0
+  uploader.onProgressAll = (prog) ->
+    $scope.progress = prog
+
+  uploader.onCompleteAll = ->
+    uploader.clearQueue()
+
+  uploader.onAfterAddingFile = ->
+    $scope.progress = 0
+
+  uploader.onSuccessItem = (item, response, status, headers) ->
+    # The response is JSON.
+    pwgAjax.checkResponse response, status, (data) ->
+      prepareMappingData data
+      $scope.state = 'mapping'
+
+  uploader.onErrorItem = (item, response, status, headers) ->
+    pwgAjax.checkResponse response, status
+
+  $scope.uploader = uploader
+
+  # ------------------------ #
+  # when state == 'mapping'  #
+  # ------------------------ #
+
+  checkForMatch = ->
+    i = $scope.header.filter (h) -> h.selected
+    selectedHeader = i[0]
+    if selectedHeader?
+      i = $scope.fields.filter (f) -> f.selected
+      selectedField = i[0]
+
+      if selectedField?
+        selectedHeader.matchedTo = selectedField
+        selectedField.matchedTo = selectedHeader
+        selectedHeader.selected = false
+        selectedField.selected = false
+
+  toggleSelection = (item, list) ->
+    v = ! item.selected
+    for other in list
+      other.selected = false
+    item.selected = v
+    checkForMatch()
+
+  unmatch = (item) ->
+    item.matchedTo?.matchedTo = null
+    item.matchedTo = null
+
+  prepareMappingData = (data) ->
+    $scope.header = data.header.map (h) ->
+      obj =
+        name:      h
+        matchedTo: null
+        selected:  false
+
+      obj.select = ->
+        toggleSelection obj, $scope.header
+
+      obj.unmatch = ->
+        unmatch obj
+
+      obj
+
+    $scope.fields = data.fields.map (f) ->
+      obj =
+        name:      f
+        matchedTo: null
+        selected:  false
+
+      obj.select = ->
+        toggleSelection obj, $scope.fields
+
+      obj.unmatch = ->
+        unmatch obj
+
+      obj
+
+    # Pre-match on name.
+    fields = {}
+    for f in $scope.fields
+      fields[f.name] = f
+    for h in $scope.header
+      matchedField = fields[h.name]
+      if matchedField?
+        matchedField.matchedTo = h
+        h.matchedTo = matchedField
+
+  $scope.availableItem = (item) ->
+    ! (item.matchedTo?)
+
+  $scope.matchedItem = (item) ->
+    item.matchedTo?
+
+  $scope.allMatched = ->
+    m = $scope.header.filter (h) -> h.matchedTo?
+    m.length is $scope.header.length
+
+  $scope.completeImport = ->
+    data =
+      mappings: {}
+
+    for k in $scope.fields
+      data.mappings[k.name] = k.matchedTo.name
+
+    url = routes.controllers.ImportExportController.completeImport().url
+    pwgAjax.post url, data, (response) ->
+      msg = switch response.total
+        when 0 then "no new entries"
+        when 1 then "1 new entry"
+        else "#{response.total} new entries"
+      pwgFlash.info "Imported #{msg}"
+      $scope.state = 'complete'
+
+  # ------------------------ #
+  # when state == 'complete' #
+  # ------------------------ #
+
+  $scope.reset = ->
+    $scope.state = 'new'
+    $scope.progress = 0
+    pwgFlash.clearAll()
+
+pwguardApp.controller 'ImportExportCtrl', ['$scope',
+                                           '$timeout',
+                                           'FileUploader',
+                                           'pwgAjax',
+                                           'pwgFlash',
+                                           '$rootScope',
+                                           '$location',
+                                           ImportExportCtrl]
 
 # ---------------------------------------------------------------------------
 # Admin users controller

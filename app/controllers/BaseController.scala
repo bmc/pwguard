@@ -98,6 +98,20 @@ trait BaseController extends Logging {
     }
   }
 
+  /** Convenience method to processing incoming secured request, sending
+    * back a consistent error when no user is logged in. Built on top of
+    * `ActionWithUser`.
+    *
+    * @param f   The handler returning the result, wrapped in a Future
+    * @return    The actual action
+    */
+  def SecuredAction[T](bodyParser: BodyParser[T])
+                   (f: (AuthenticatedRequest[T]) => Future[Result]) = {
+    (LoggedAction andThen AuthenticatedAction).async(bodyParser) { authReq =>
+      f(authReq)
+    }
+  }
+
   /** Parameters to pass back in a new session.
     *
     * @param user the current user
@@ -162,5 +176,22 @@ trait BaseController extends Logging {
     getOrElse(clsName)
 
     jsonError(Some(msg), status)
+  }
+
+  /** Alternate version of `jsonError` taking an exception.
+    *
+    * @param exception   The exception
+    * @param status      HTTP status
+    *
+    * @return the JSON result
+    */
+  protected def jsonError(exception: Throwable): JsValue = {
+    val clsName = exception.getClass.getName.split("""\.""").last
+    val msg = Option(exception.getMessage).map { message =>
+      s"$clsName: $message"
+    }.
+    getOrElse(clsName)
+
+    jsonError(msg)
   }
 }

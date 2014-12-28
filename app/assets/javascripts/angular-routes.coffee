@@ -7,11 +7,18 @@
 templateURL   = window.angularTemplateURL
 
 # This table allows easy mappings from route segment to URL.
+#
+# NOTE: Be sure to adjust POST_LOGIN_SEGMENTS and ADMIN_ONLY_SEGMENTS as needed.
 segments =
-  "login":       "/login"
-  "search":      "/search"
-  "profile":     "/profile"
-  "admin-users": "/admin/users"
+  "login":         "/login"
+  "search":        "/search"
+  "profile":       "/profile"
+  "import-export": "/import-export"
+  "admin-users":   "/admin/users"
+
+POST_LOGIN_SEGMENTS = ['search', 'profile', 'admin-users', 'import-export',
+                       'prep-import']
+ADMIN_ONLY_SEGMENTS = ['admin-users']
 
 # The routes themselves.
 window.setRoutes = ($routeSegmentProvider, $routeProvider) ->
@@ -37,13 +44,15 @@ window.setRoutes = ($routeSegmentProvider, $routeProvider) ->
     controller:  'ProfileCtrl'
 
   $routeSegmentProvider.segment "admin-users",
-    templateUrl: templateURL("admin-users.html")
+    templateUrl: templateURL("admin-users.html"),
+    controller:  'AdminUsersCtrl'
+
+  $routeSegmentProvider.segment "import-export",
+    templateUrl: templateURL("ImportExport.html"),
+    controller:  'ImportExportCtrl'
 
   $routeProvider.otherwise
     redirectTo: "/search"
-
-POST_LOGIN_SEGMENTS = ['search', 'profile', 'admin-users']
-ADMIN_ONLY_SEGMENTS = ['admin-users']
 
 # -----------------------------------------------------------------------------
 # Utility functions

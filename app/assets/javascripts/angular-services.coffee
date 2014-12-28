@@ -91,7 +91,7 @@ pwgAjax = ($http, $rootScope, pwgSpinner, pwgFlash, pwgError) ->
       pwgFlash.error response.error.message if response.error.message?
       onFailure(response) if onFailure?
     else
-      onSuccess(response)
+      onSuccess(response) if onSuccess?
 
   http = (config, onSuccess, onFailure)->
     failed = (data, status, headers, config) ->
@@ -141,7 +141,6 @@ pwgAjax = ($http, $rootScope, pwgSpinner, pwgFlash, pwgError) ->
     else
       pwgError.showStackTrace("No URL to pwgAjax.get()")
 
-
   # Issue an HTTP DELETE to a URL
   #
   # Parameters:
@@ -158,6 +157,19 @@ pwgAjax = ($http, $rootScope, pwgSpinner, pwgFlash, pwgError) ->
   # Specify a function to call when a 401 (Unauthorized) error occurs.
   on401: (callback) ->
     callOn401 = callback
+
+  # Check a JSON response received by other means (such as the AngularJS
+  # file uploader).
+  #
+  # response  - JSON response to check
+  # status    - HTTP status
+  # onSuccess - Callback to invoke, with the response, on success
+  # onFailure - Optional failure callback, invoked AFTER the regular one.
+  checkResponse: (response, status, onSuccess = null, onFailure = null) ->
+    if status < 400
+      handleSuccess response, status, onSuccess, onFailure
+    else
+      handleFailure response, status, onFailure
 
 pwgServices.factory 'pwgAjax', ['$http',
                                 '$rootScope',
@@ -288,6 +300,9 @@ pwgFlash = ($rootScope) ->
 
   clearWarning: ->
     $rootScope.flash.clearWarning()
+
+  clearAll: ->
+    $rootScope.flash.clearAll()
 
 pwgServices.factory 'pwgFlash', ['$rootScope', pwgFlash]
 

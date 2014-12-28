@@ -1,0 +1,97 @@
+@importExportWellMinHeight: 350px;
+
+#import-export {
+  #export {
+    .well {
+      min-height: @importExportWellMinHeight;
+    }
+
+    #downloading-notice {
+      margin-top: 20px;
+    }
+  }
+
+  #import {
+    .well {
+      min-height: @importExportWellMinHeight;
+    }
+
+    #drop-area {
+      //height: 30px;
+      margin-top: 10px;
+      padding: 20px;
+      border: 1px dashed black;
+      border-radius: 5px 5px 5px 5px;
+      background-color: #ffff99;
+      position: relative;
+      height: 100px;
+
+      .drop-label {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        height: 30px;
+        margin-top: -10px;
+        width: 100%;
+        text-align: center;
+        font-size: larger;
+      }
+
+      &.nv-file-over {
+        background-color: #ffcccc;
+        border: 1px solid black;
+      }
+    }
+
+    #queue {
+      margin-top: 10px;
+    }
+
+    #upload-progress {
+      margin-top: 10px;
+      border: 1px solid #cccccc;
+      background-color: #e0e0ff;
+      height: 20px;
+    }
+  }
+}
+
+@selectedColor: #ffcccc;
+@deselectedColor: white;
+
+#import-mapping {
+  h3 {
+    text-align: center;
+  }
+
+  .heading {
+    margin-top: 0;
+    margin-bottom: 20px;
+    width: 100%;
+    h2 {
+      text-align: center;
+      width: auto;
+    }
+  }
+
+  ul {
+    list-style-type: none;
+    li {
+      a {
+        background-color: @deselectedColor;
+
+        &.selected {
+          background-color: @selectedColor;
+        }
+      }
+    }
+  }
+
+  button.selected {
+    background-color: @selectedColor;
+  }
+}
+
+#import-complete {
+  margin-top: 30px;
+}
