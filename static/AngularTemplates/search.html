@@ -26,7 +26,7 @@
 
         <div class="search-options-mobile" ng-show="isMobile">
           <span class="all-button">
-            <button class="btn btn-normal" ng-click="showAll()">
+            <button class="btn btn-default" ng-click="showAll()">
               Get all passwords
             </button>
 
@@ -183,7 +183,7 @@
       </div>
 
       <div ng-show="(searchResults.length > 0)">
-        <div ng-show="!isMobile">
+        <div ng-if="!isMobile" id="desktop-results">
 
           <!-- List of results -->
 
@@ -331,23 +331,51 @@
           </table>
         </div>
 
-        <div ng-show="isMobile">
-          <angular-accordion ng-repeat="pw in searchResults">
-            <pane>
-              <pane-header>{{pw.name}}</pane-header>
-              <pane-content>
-                <div>{{pw.description}}</div>
-                <div>
-                  <input id="result-{$index}" type="text" readonly="readonly"
-                         ng-model="pw.plaintextPassword"
-                         ng-click="this.select()"/>
-                  <button class="btn btn-small" ng-click="mobileSelect($index)">
-                    Select
-                  </button>
+        <div ng-if="isMobile" id="mobile-results">
+          <div class="panel-group" ng-model="activePanel" bs-collapse>
+            <div class="panel panel-default"
+                 ng-repeat="pw in searchResults | orderBy:'name'">
+              <a class="panel-toggle" bs-collapse-toggle href="">
+                <div class="panel-heading">
+                  <h4 class="panel-title">{{pw.name}}</h4>
                 </div>
-              </pane-content>
-            </pane>
-          </angular-accordion>
+              </a>
+
+              <div class="panel-collapse" bs-collapse-target>
+                <div class="panel-body">
+                  <div class="mobile-field description" ng-show="pw.description">
+                    <span class="mobile-label">Description:</span>
+                    <span class="mobile-value">{{pw.description}}</span>
+                  </div>
+
+                  <div class="mobile-field login" ng-show="pw.loginID">
+                    <span class="mobile-label">Login:</span>
+                    <span class="mobile-value">{{pw.loginID}}</span>
+                  </div>
+
+                  <div class="mobile-field password" ng-show="pw.plaintextPassword">
+                    <span class="mobile-label">Password:</span>
+                    <span class="mobile-value">
+                      <input id="result-{$index}" type="text" readonly="readonly"
+                             ng-model="pw.plaintextPassword"
+                             pwg-select-on-click/>
+                    </span>
+                  </div>
+
+                  <div class="mobile-field notes" ng-show="pw.notes">
+                    <span class="mobile-label">Notes</span>
+                    <!--
+                      ng-bind-html sanitizes any HTML in the field. The
+                      linky filter then converts any links embedded in the
+                      text.
+                    -->
+                    <div class="mobile-value" ng-bind-html="pw.notes|linky">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

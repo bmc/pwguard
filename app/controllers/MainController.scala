@@ -8,8 +8,10 @@ import play.api.Play.current
 import pwguard.global.Globals
 import pwguard.global.Globals.ExecutionContexts.Default._
 import util.UserAgent.UserAgent
+import util.EitherOptionHelpers._
 
 import scala.concurrent.Future
+import scala.util.control.NonFatal
 import scala.util.{Success, Try}
 
 /** Main controller.
@@ -24,18 +26,41 @@ object MainController extends BaseController {
   // Public methods
   // -------------------------------------------------------------------------
 
-  def index = UnsecuredAction { implicit request =>
+  def index(isMobile: Option[String]) = UnsecuredAction { implicit request =>
       val browserLogLevel = current.configuration.getString("browserLoggingLevel")
                                                  .getOrElse("error")
-      getUserAgent(request).map { userAgent: UserAgent =>
-        userAgent.isMobile
+
+      def isMobileBrowser(): Future[Boolean] = {
+        // Did a parameter come in on the request? If so, use it to override
+        // the User-Agent setting.
+        val f = Future {
+          isMobile map { _.toBoolean }
+        } recover {
+          case NonFatal(e) => noneT[Boolean]
+        }
+
+        f flatMap { mobileParamOpt: Option[Boolean] =>
+          mobileParamOpt map { v =>
+            // Use the parameter.
+            Future.successful(v)
+          } getOrElse {
+            // Retrieve the user agent information.
+            getUserAgent(request).map { userAgent: UserAgent =>
+              userAgent.isMobile
+            }
+          }
+        }
       }
-      .recover { case _ =>
-        false
-      }
-      .map { isMobile =>
+
+      isMobileBrowser() map { isMobile =>
         Ok(views.html.index(browserLogLevel, isMobile))
+      } recover {
+      // If an error occurred, log it, but assume false.
+      case NonFatal(e) => {
+        logger.error("Error determining whether browser is mobile", e)
+        BadRequest(jsonError("Error determining whether browser is mobile", e))
       }
+    }
   }
 
   /** Static handler, for delivering static files during development. Should

@@ -107,65 +107,105 @@
   }
 
   #search-results {
-    .pw-buttons {
-      white-space: nowrap;
-    }
-
-    .hint {
-      float:          right;
-      padding-bottom: 10px;
-
-    }
 
     .search-results-header {
       margin-top:    20px;
       margin-bottom: 20px;
     }
 
-    td {
-      margin-right: 10px;
-    }
-
-    td.password {
-      min-width: 250px;
-
-      input.shown-password {
-        width: 60%;
-        max-width: 100px;
+    #desktop-results {
+      .pw-buttons {
+        white-space: nowrap;
       }
 
-      span.hidden-password {
-        width: 60%;
+      .hint {
+        float:          right;
+        padding-bottom: 10px;
+
       }
 
-      .show-hide-password {
-        a.toggle-password {
-          text-decoration: none;
-          border: none;
+      td {
+        margin-right: 10px;
+      }
+
+      td.password {
+        min-width: 250px;
+
+        input.shown-password {
+          width: 60%;
+          max-width: 100px;
+        }
+
+        span.hidden-password {
+          width: 60%;
+        }
+
+        .show-hide-password {
+          a.toggle-password {
+            text-decoration: none;
+            border: none;
+          }
+        }
+      }
+
+      .angular-accordion-container {
+
+        .angular-accordion-header {
+          background: @accordionHeaderBackgroundColor;
+          color:      black;
+          padding-top: 15px;
+          padding-bottom: 15px;
+
+          &:hover {
+            text-decoration: none !important;
+          }
+        }
+
+        .angular-accordion-pane-content {
+          border-left:   1px solid @accordionBorderColor;
+          border-right:  1px solid @accordionBorderColor;
+          border-bottom: 1px solid @accordionBorderColor;
+
+          div {
+            margin-top: 5px;
+          }
         }
       }
     }
+  }
 
-    .angular-accordion-container {
+  #mobile-results {
+    @labelMinWidth: 130px;
 
-      .angular-accordion-header {
-        background: @accordionHeaderBackgroundColor;
-        color:      black;
-        padding-top: 15px;
-        padding-bottom: 15px;
-
-        &:hover {
-          text-decoration: none !important;
-        }
+    a.panel-toggle {
+      background-color: #f7f3ed;
+      .panel-heading {
+        background-color: #f7f3ed;
       }
 
-      .angular-accordion-pane-content {
-        border-left:   1px solid @accordionBorderColor;
-        border-right:  1px solid @accordionBorderColor;
-        border-bottom: 1px solid @accordionBorderColor;
+      height: 100%;
+      color: black;
+      text-decoration: none !important;
 
-        div {
-          margin-top: 5px;
+      &:hover {
+        color: black;
+        text-decoration: none !important;
+      }
+    }
+
+    .panel-body {
+      .mobile-field {
+        margin-bottom: 10px;
+
+        .mobile-label {
+          min-width: @labelMinWidth;
+          color: black;
+          display: inline-block;
+          font-weight: bold;
+        }
+
+        .mobile-value {
+          display: inline-block;
         }
       }
     }

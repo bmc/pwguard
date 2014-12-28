@@ -11,6 +11,7 @@ requiredModules = ['ngRoute',
                    'route-segment',
                    'view-segment',
                    'ngCookies',
+                   'ngSanitize',
                    'mgcrea.ngStrap',
                    'angularFileUpload',
                    'pwguard-services',
@@ -73,7 +74,6 @@ ellipsize = (input, max=30) ->
 # Main controller
 # ---------------------------------------------------------------------------
 
-
 MainCtrl = ($scope,
             $routeSegment,
             $location,
@@ -96,6 +96,8 @@ MainCtrl = ($scope,
   $scope.segmentOnLoad         = window.segmentForURL($location.path())
   $scope.initializing          = true
   $scope.flashAfterRouteChange = null
+
+  $scope.isMobile              = window.browserIsMobile
 
   pwgFlash.init() # initialize the flash service
 
@@ -307,6 +309,7 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
   $scope.searchDescription = true
   $scope.matchFullWord     = false
   $scope.lastSearch        = null
+  $scope.activePanel       = -1 # mobile only
 
   SEARCH_ALL_MARKER = "-*-all-*-"
 

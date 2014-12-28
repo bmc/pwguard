@@ -75,3 +75,22 @@ pwgFakeCheckbox = ->
     ngModel: "=ngModel"
 
 pwgDirectives.directive 'pwgFakeCheckbox', [pwgFakeCheckbox]
+
+# ----------------------------------------------------------------------------
+# A button that selects a text input element's contents when clicked.
+#
+# Attributes:
+# input-id       - ID of the input element
+# text           - button label
+# button-classes - additional Bootstrap button classes
+pwgSelectOnClick = ->
+  restrict:   'A'
+  transclude: false
+  replace:    false
+  scope:      null
+
+  link: (scope, element, attrs) ->
+    element.click ->
+      this.select()
+
+pwgDirectives.directive 'pwgSelectOnClick', [pwgSelectOnClick]

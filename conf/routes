@@ -3,7 +3,7 @@
 # ~~~~
 
 # Home page
-GET           /                              controllers.MainController.index
+GET           /                              controllers.MainController.index(isMobile: Option[String])
 
 POST          /logged-in-user                controllers.SessionController.getLoggedInUser
 POST          /login                         controllers.SessionController.login
