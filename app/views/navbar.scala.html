@@ -20,6 +20,10 @@
             Mobile
           </span>
         </span>
+        <div id="login-status" ng-show="loggedIn()"
+             ng-class="{mobile: isMobile, desktop: !isMobile}">
+          {{loggedInUser.displayName}}
+        </div>
       </div>
 
       <div id="loading-spinner" ng-show="showSpinner">
@@ -56,13 +60,7 @@
               <i class="fa fa-users"></i> Edit Users
             </a>
           </li>
-          <li class="divider"></li>
         </ul>
-        <div class="navbar-right">
-          <div id="login-status" ng-show="loggedIn()">
-            {{loggedInUser.displayName}}
-          </div>
-        </div>
       </div>
     </div> <!-- container-fluid -->
   </div> <!-- navbar-fixed-top -->

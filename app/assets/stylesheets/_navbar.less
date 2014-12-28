@@ -5,60 +5,81 @@
   margin:           0;
   padding:          0;
   position:         relative; // Allow for absolute positioning of children
+
+  #login-status {
+    &.mobile {
+      margin-top: 10px;
+      color: gray;
+      margin-left: 20px;
+      font-size: @phoneFontSize / 2;
+    }
+
+    &.desktop {
+      color: @logoColor;
+      margin-left: 20px;
+      font-style: italic;
+    }
+  }
+
+  .navbar {
+    height:           @navbarHeight;
+    background-color: @navbarBackground;
+  }
+
+  .navbar-collapse {
+      background-color: @navbarBackground;
+  }
+
+  .navbar-brand {
+    .logo {
+      font-family: 'Asset', cursive;
+      color:       @logoColor;
+      float:       left;
+    }
+
+    .qualifier {
+      font-style:  italic;
+      font-family: Verdana, Arial, Helvetica, sans-serif;
+      color:       @logoColor;
+    }
+  }
+
+  #loading-spinner {
+    position:         absolute;
+    top:              5px;
+    color:            #dddddd;
+    background-color: #888888;
+    text-align:       center;
+    border-radius:    5px 5px 5px 5px;
+    float:            right;
+
+    @media @phone {
+      font-size: 20px;
+      height:    25px;
+      width:     25px;
+      right:     20px;
+    }
+
+    @media @tablet {
+      font-size: 20px;
+      height:    25px;
+      width:     25px;
+      right:     30px;
+    }
+
+    @media @desktop {
+      font-size: 40px;
+      height:    50px;
+      width:     50px;
+      right:     55px;
+    }
+
+    @media @wideDesktop {
+      font-size: 40px;
+      height:    50px;
+      width:     50px;
+      right:     55px;
+    }
+  }
 }
 
-.navbar {
-  height:           @navbarHeight;
-}
-
-.navbar-brand {
-  .logo {
-    font-family: 'Asset', cursive;
-    color:       @logoColor;
-    float:       left;
-  }
-
-  .qualifier {
-    font-style:  italic;
-    font-family: Verdana, Arial, Helvetica, sans-serif;
-    color:       @logoColor;
-  }
-}
-
-#loading-spinner {
-  position:         absolute;
-  top:              5px;
-  color:            #dddddd;
-  background-color: #888888;
-  text-align:       center;
-  border-radius:    5px 5px 5px 5px;
-  float:            right;
-
-  @media @phone {
-    font-size: 20px;
-    height:    25px;
-    width:     25px;
-    right:     20px;
-  }
-
-  @media @tablet {
-    font-size: 20px;
-    height:    25px;
-    width:     25px;
-    right:     30px;
-  }
-
-  @media @desktop {
-    font-size: 40px;
-    height:    50px;
-    width:     50px;
-    right:     55px;
-  }
-
-  @media @wideDesktop {
-    font-size: 40px;
-    height:    50px;
-    width:     50px;
-    right:     55px;
-  }
-}
