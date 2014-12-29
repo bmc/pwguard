@@ -1,0 +1,185 @@
+<div class="row" id="import-export">
+
+  <div class="col-md-6" id="export">
+    <div class="well">
+      <h2>Export your Data</h2>
+
+      <p>Click the Export button to download a CSV file with all your
+      password data.</p>
+
+      <div class="row">
+        <form name="exportForm" novalidate>
+          <div class="col-md-9">
+            <div ng-class="{'has-error': exportForm.$invalid}">
+              <input type="text"
+                     class="form-control"
+                     ng-model="exportFilename"
+                     placeholder="export filename"
+                     ng-trim="true"
+                     ng-pattern="/^[^/]+\.csv$/"
+                     ng-required="true"/>
+              <div class="error" ng-show="exportForm.$invalid">
+                The file name is required, must have a .CSV extension, and
+                cannot be a pathname.
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <a class="btn btn-default btn-lg"
+               type="submit"
+               ng-click="startDownload()"
+               ng-href="{{exportURL()}}"
+               ng-disabled="exportForm.$invalid">Export</a>
+          </div>
+        </form>
+      </div>
+
+      <div ng-show="downloading" class="alert alert-info"
+           id="downloading-notice">
+        Downloading to {{exportFilename}}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6" id="import" ng-if="state == 'new'">
+    <div class="well">
+      <h2>Import your Data</h2>
+
+      <p>Drag and drop a CSV file containing your data.</p>
+
+      <div id="drop-area" nv-file-over nv-file-drop uploader="uploader">
+        <span class="drop-label">Drag file here.</span>
+      </div>
+
+      <div id="upload-progress">
+        <div class="progress-bar" role="progressbar"
+             aria-valuenow="{{progress}}"
+             aria-valuemin="0"
+             aria-valuemax="100"
+             style="width: {{progress}}%">
+          {{progress}}%
+        </div>
+      </div>
+
+      <div ng-repeat="item in uploader.queue" id="queue">
+        Name: {{item.file.name}}
+        <button class="btn btn-default" ng-click="item.upload()">Upload</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- import mapping -->
+
+  <div id="import-mapping" ng-if="state == 'mapping'">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="heading">
+          <h2>Match Fields</h2>
+          <div class="help">
+            Match the fields and headers by clicking on them in turn.
+            Fields with red borders <i>must</i> be mapped.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-1"></div>
+
+      <div class="col-md-5">
+        <div class="well">
+          <h3>Fields</h3>
+
+          <ul ng-repeat="field in fields | filter:availableItem | orderBy:'name'">
+            <li>
+              <a href="" class="btn match-field" ng-click="field.select()"
+                 ng-class="{selected: field.selected, required: field.required}">
+                {{field.name}}
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col-md-5">
+        <div class="well">
+          <h3>File Columns</h3>
+
+          <ul ng-repeat="cell in headers | filter:availableItem | orderBy:'name'">
+            <li>
+              <a href="" class="btn match-field" ng-click="cell.select()"
+                 ng-class="{selected: cell.selected}">
+                {{cell.name}}
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col-md-1"></div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-3"></div>
+      <div class="col-md-5">
+        <div class="well">
+          <table class="table" id="matches-table">
+            <thead>
+              <tr>
+                <th colspan="4" class="heading">
+                  Matches
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr ng-repeat="hdr in headers | filter:matchedItem | orderBy:'name'">
+                <td>
+                  <button class="btn match-field selected">
+                    {{hdr.name}}
+                  </button>
+                </td>
+                <td>&#x2192;</td>
+                <td>
+                  <button class="btn match-field selected">
+                    {{hdr.matchedTo.name}}
+                  </button>
+                </td>
+                <td>
+                  <button class="btn btn-borderless" ng-click="hdr.unmatch()">
+                    <i class="fa fa-trash-o"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="4">
+                  <button ng-click="completeImport()" ng-disabled="!allMatched()"
+                  class="btn btn-primary pull-right">
+                    Complete Import
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="col-md-3"></div>
+    </div>
+  </div>
+
+  <!-- import complete -->
+
+  <div class="row" id="import-complete" ng-if="state == 'complete'">
+    <div class="col-md-3"></div>
+    <div class="col-md-6">
+      <div class="well">
+        <div class="completion-message">
+          <h2>Imported {{completionCount}}.</h2>
+          <button class="btn btn-primary btn-lg" ng-click="reset()">
+            Back
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

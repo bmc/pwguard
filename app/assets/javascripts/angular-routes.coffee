@@ -16,8 +16,7 @@ segments =
   "import-export": "/import-export"
   "admin-users":   "/admin/users"
 
-POST_LOGIN_SEGMENTS = ['search', 'profile', 'admin-users', 'import-export',
-                       'prep-import']
+POST_LOGIN_SEGMENTS = ['search', 'profile', 'admin-users', 'import-export']
 ADMIN_ONLY_SEGMENTS = ['admin-users']
 
 # The routes themselves.
@@ -44,11 +43,11 @@ window.setRoutes = ($routeSegmentProvider, $routeProvider) ->
     controller:  'ProfileCtrl'
 
   $routeSegmentProvider.segment "admin-users",
-    templateUrl: templateURL("admin-users.html"),
+    templateUrl: templateURL("admin-users.html")
     controller:  'AdminUsersCtrl'
 
   $routeSegmentProvider.segment "import-export",
-    templateUrl: templateURL("ImportExport.html"),
+    templateUrl: templateURL("ImportExport.html")
     controller:  'ImportExportCtrl'
 
   $routeProvider.otherwise

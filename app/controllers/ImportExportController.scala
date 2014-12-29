@@ -42,6 +42,8 @@ object ImportExportController extends BaseController {
     val Password    = Value
     val URL         = Value
     val Notes       = Value
+
+    val Required = Set(Name, Description)
   }
 
   val FileCacheKey = "uploaded-file"
@@ -77,11 +79,9 @@ object ImportExportController extends BaseController {
 
       } flatMap { out: File =>
 
-        Future.sequence {
-          for (entry <- seq) yield entryToList(user, entry)
-        } map {
-          seq => (out, seq)
-        }
+        val entryFutures = seq.map { entryToList(user, _) }
+        for { seqOfFutures <- Future.sequence(entryFutures) }
+        yield (out, seqOfFutures)
 
       } map { case (out, seq) =>
         withCloseable(new BufferedWriter(
@@ -90,7 +90,7 @@ object ImportExportController extends BaseController {
           withCloseable(CSVWriter.open(fOut)) { csv =>
             csv.writeRow(List(Field.Name.toString,
                               Field.Description.toString,
-                              Field.Description.toString,
+                              Field.Login.toString,
                               Field.Password.toString,
                               Field.URL.toString,
                               Field.Notes.toString))
@@ -125,8 +125,16 @@ object ImportExportController extends BaseController {
             throw new UploadFailed("Empty header row.")
 
           Cache.set(FileCacheKey, file)
-          Ok(Json.obj("header" -> nonEmpty,
-                      "fields" -> Field.values.map(_.toString)))
+          Ok(
+            Json.obj(
+              "headers" -> nonEmpty,
+              "fields" -> Field.values.map { field =>
+                Json.obj(
+                  "name" -> field.toString,
+                  "required" -> Field.Required.contains(field))
+              }
+            )
+          )
         }
 
       optRes.getOrElse {
@@ -162,15 +170,14 @@ object ImportExportController extends BaseController {
       }
     }
 
-    def mappingFor(key: Field.Value, mappings: Map[String, String]) = {
-      val sKey = key.toString
-      try {
-        mappings(sKey)
-      }
+    def mappingFor(key: Field.Value, mappings: Map[String, String]):
+      Option[String] = {
 
-      catch {
-        case NonFatal(e) => throw new ImportFailed(s"Mapping $sKey not found")
-      }
+      val sKey = key.toString
+      val opt = mappings.get(sKey)
+      if ((Field.Required contains key) && opt.isEmpty)
+        throw new ImportFailed(s"Required mapping $sKey not found")
+      opt
     }
 
     def maybeEncryptPW(password: Option[String]): Future[Option[String]] = {
@@ -241,15 +248,15 @@ object ImportExportController extends BaseController {
           // new entries.
           for { map <- reader.allWithHeaders() }
           yield {
-            val name = map.get(nameHeader).getOrElse {
-              throw new ImportFailed("Missing require name field.")
+            val name = map.get(nameHeader.get).getOrElse {
+              throw new ImportFailed("Missing required name field.")
             }
-            saveIfNew(name = name,
-                      password = map.get(pwHeader),
-                      desc     = map.get(descHeader),
-                      login    = map.get(loginHeader),
-                      urlOpt   = map.get(urlHeader),
-                      notes    = map.get(notesHeader))
+            saveIfNew(name     = name,
+                      password = pwHeader.flatMap(map.get(_)),
+                      desc     = descHeader.flatMap(map.get(_)),
+                      login    = loginHeader.flatMap(map.get(_)),
+                      urlOpt   = urlHeader.flatMap(map.get(_)),
+                      notes    = notesHeader.flatMap(map.get(_)))
 
           }
         }

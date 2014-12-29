@@ -9,6 +9,19 @@
     #downloading-notice {
       margin-top: 20px;
     }
+
+    form {
+      div.has-error {
+        input {
+          border: 1px solid red;
+        }
+      }
+
+      .error {
+        margin-top: 10px;
+        color: red;
+      }
+    }
   }
 
   #import {
@@ -72,6 +85,11 @@
       text-align: center;
       width: auto;
     }
+
+    .help {
+      width: 100%;
+      text-align: center;
+    }
   }
 
   ul {
@@ -87,11 +105,35 @@
     }
   }
 
-  button.selected {
-    background-color: @selectedColor;
+  button.match-field, a.match-field {
+    border: 1px solid gray;
+
+    &.selected {
+      background-color: @selectedColor;
+    }
+
+    &.required {
+      border: 1px solid red;
+    }
+
+    text-decoration: none;
+    color: black;
+  }
+
+  #matches-table {
+    thead {
+      th.heading {
+        text-align: center;
+      }
+    }
   }
 }
 
 #import-complete {
   margin-top: 30px;
+
+  .completion-message {
+    width: 100%;
+    text-align: center;
+  }
 }

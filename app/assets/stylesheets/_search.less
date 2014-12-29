@@ -19,7 +19,11 @@
     font-size: @tabletSearchFontSize;
   }
 
-  @media (@desktop) or (@wideDesktop) {
+  @media @desktop {
+    font-size: @desktopSearchFontSize;
+  }
+
+  @media @wideDesktop {
     font-size: @desktopSearchFontSize;
   }
 

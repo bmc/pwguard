@@ -550,18 +550,31 @@ ImportExportCtrl = ($scope,
                     pwgFlash,
                     $rootScope,
                     $location) ->
+
   $scope.downloading = false
   $scope.state = 'new'
 
-  # ------------------- #
-  # when state == 'new' #
-  # ------------------- #
+  #######################
+  # Export              #
+  #######################
+
+  $scope.exportFilename = "export.csv"
+  $scope.exportURL = ->
+    routes.controllers.ImportExportController.exportData($scope.exportFilename).url
 
   $scope.startDownload = ->
     $scope.downloading = true
     hide = ->
       $scope.downloading = false
     $timeout hide, 3000
+
+  #######################
+  # Import              #
+  #######################
+
+  # ------------------- #
+  # when state == 'new' #
+  # ------------------- #
 
   uploader = new FileUploader()
 
@@ -612,7 +625,7 @@ ImportExportCtrl = ($scope,
   # ------------------------ #
 
   checkForMatch = ->
-    i = $scope.header.filter (h) -> h.selected
+    i = $scope.headers.filter (h) -> h.selected
     selectedHeader = i[0]
     if selectedHeader?
       i = $scope.fields.filter (f) -> f.selected
@@ -636,14 +649,14 @@ ImportExportCtrl = ($scope,
     item.matchedTo = null
 
   prepareMappingData = (data) ->
-    $scope.header = data.header.map (h) ->
+    $scope.headers = data.headers.map (h) ->
       obj =
         name:      h
         matchedTo: null
         selected:  false
 
       obj.select = ->
-        toggleSelection obj, $scope.header
+        toggleSelection obj, $scope.headers
 
       obj.unmatch = ->
         unmatch obj
@@ -652,9 +665,10 @@ ImportExportCtrl = ($scope,
 
     $scope.fields = data.fields.map (f) ->
       obj =
-        name:      f
+        name:      f.name
         matchedTo: null
         selected:  false
+        required:  f.required
 
       obj.select = ->
         toggleSelection obj, $scope.fields
@@ -668,7 +682,7 @@ ImportExportCtrl = ($scope,
     fields = {}
     for f in $scope.fields
       fields[f.name] = f
-    for h in $scope.header
+    for h in $scope.headers
       matchedField = fields[h.name]
       if matchedField?
         matchedField.matchedTo = h
@@ -681,28 +695,36 @@ ImportExportCtrl = ($scope,
     item.matchedTo?
 
   $scope.allMatched = ->
-    m = $scope.header.filter (h) -> h.matchedTo?
-    m.length is $scope.header.length
+    totalRequired = $scope.fields.filter (f) -> f.required
+    console.log "totalRequired=#{totalRequired.length}"
+    matchedRequired = $scope.headers.filter (h) -> h.matchedTo?.required
+    console.log "matchedRequired=#{matchedRequired.length}"
+    totalRequired.length is matchedRequired.length
 
   $scope.completeImport = ->
     data =
       mappings: {}
 
     for k in $scope.fields
-      data.mappings[k.name] = k.matchedTo.name
+      if k.matchedTo?
+        data.mappings[k.name] = k.matchedTo.name
 
     url = routes.controllers.ImportExportController.completeImport().url
     pwgAjax.post url, data, (response) ->
-      msg = switch response.total
-        when 0 then "no new entries"
-        when 1 then "1 new entry"
-        else "#{response.total} new entries"
-      pwgFlash.info "Imported #{msg}"
       $scope.state = 'complete'
+      handleCompletion(response.total)
 
   # ------------------------ #
   # when state == 'complete' #
   # ------------------------ #
+
+  $scope.completionCount
+  handleCompletion = (total) ->
+    $scope.completionCount = switch total
+      when 0 then "no new entries"
+      when 1 then "1 new entry"
+      else "#{total} new entries"
+
 
   $scope.reset = ->
     $scope.state = 'new'
