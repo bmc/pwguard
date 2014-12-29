@@ -103,9 +103,12 @@ MainCtrl = ($scope,
 
 
   pwgAjax.on401 ->
-    $scope.loggedInUser = null
-    $scope.redirectToSegment "login"
-    $scope.flashAfterRouteChange = "Session timeout. Please log in again."
+    if $scope.loggedInUser
+      $scope.loggedInUser = null
+      $scope.redirectToSegment "login"
+      $scope.flashAfterRouteChange = "Session timeout. Please log in again."
+    else
+      pwgFlash.error "Login failure."
 
   $scope.templateURL = (path) ->
     window.angularTemplateURL(path)
@@ -269,6 +272,7 @@ LoginCtrl = ($scope, pwgAjax, pwgFlash) ->
       $scope.redirectToSegment 'search'
 
     handleFailure = (data) ->
+      console.log data
       # Nothing to do.
       return
 
