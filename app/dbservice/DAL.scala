@@ -2,6 +2,7 @@ package dbservice
 
 import scala.slick.driver.JdbcProfile
 import java.sql.{ ResultSet, Timestamp }
+import java.net.URL
 
 /** Allows dynamic selection of database type.
   */
@@ -47,13 +48,6 @@ trait PasswordEntriesComponent {
 
   import profile.simple._
   import models.PasswordEntry
-  import java.net.URL
-
-  implicit val JavaNetURLMapper =
-    MappedColumnType.base[java.net.URL, String] (
-      u => u.toString,
-      s => new URL(s)
-    )
 
   class PasswordEntriesTable(tag: Tag)
     extends Table[PasswordEntry](tag, "password_entries") {
@@ -64,7 +58,7 @@ trait PasswordEntriesComponent {
     def description          = column[Option[String]]("description")
     def loginID              = column[Option[String]]("login_id")
     def encryptedPassword    = column[Option[String]]("encrypted_password")
-    def url                  = column[Option[URL]]("url")
+    def url                  = column[Option[String]]("url")
     def notes                = column[Option[String]]("notes")
 
     def * = (id.?, userID, name, description, loginID, encryptedPassword,

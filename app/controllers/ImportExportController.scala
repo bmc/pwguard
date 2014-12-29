@@ -205,14 +205,13 @@ object ImportExportController extends BaseController {
             Future.successful(None)
           }
           else {
-            val url = urlOpt map { new URL(_) }
             val entry = PasswordEntry(id                = None,
                                       userID            = user.id.get,
                                       name              = name,
                                       description       = desc,
                                       loginID           = login,
                                       encryptedPassword = epwOpt,
-                                      url               = url,
+                                      url               = urlOpt,
                                       notes             = notes)
             passwordEntryDAO.save(entry) map { Some(_) }
           }

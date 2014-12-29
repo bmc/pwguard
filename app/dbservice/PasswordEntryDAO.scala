@@ -1,5 +1,7 @@
 package dbservice
 
+import java.net.URL
+
 import models.{PasswordEntry, User}
 import play.api.Logger
 import pwguard.global.Globals.ExecutionContexts.DB._
@@ -23,7 +25,7 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
 
   /** Get all entries for a particular user.
     *
-    * @return `Right(Set[PasswordEntry])` on success, `Left(error)` on failure.
+    * @return A future containing the results, or a failed future.
     */
   def allForUser(user: User): Future[Set[PasswordEntry]] = {
     withTransaction { implicit session =>
@@ -40,7 +42,7 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
 
     * @param idSet the IDs
     *
-    * @return `Right(Set[model])` on success, `Left(error)` on error.
+    * @return A future containing the results, or a failed future.
     */
   def findByIDs(idSet: Set[Int]): Future[Set[PasswordEntry]] = {
     withTransaction { implicit session =>
@@ -54,8 +56,9 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
     * @param user  the owner user
     * @param name  the password entry name
     *
-    * @return `Left(error)` on error; `Right(None)` if no such entry exists;
-    *         `Right(Some(entry))` if the entry is found.
+    * @return A future containing an option of `PasswordEntry`, or a failed
+    *         future on error. The option will be `None` if no matching
+    *         entry was found.
     */
   def findByName(user: User, name: String): Future[Option[PasswordEntry]] = {
 
@@ -74,34 +77,40 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
     *
     * @param userID       the user whose passwords are to be searched
     * @param term         the search term
-    * @param fullWordOnly match only full words
+    * @param fullWordOnly match only full words. Disabled by default.
     * @param includeDesc  whether to include the description field in the
-    *                     search
+    *                     search. Enabled by default.
+    * @param includeURL   whether to include the URL field in the search.
+    *                     Enabled by default.
     *
-    * @return `Left(error)` on error; `Right(Set(PasswordEntry))` on
-    *         success.
+    * @return A future of the results, or a failed future.
     */
   def search(userID:       Int,
              term:         String,
              fullWordOnly: Boolean = false,
-             includeDesc:  Boolean = false):
+             includeDesc:  Boolean = true,
+             includeURL:   Boolean = true):
     Future[Set[PasswordEntry]] = {
 
     withTransaction { implicit session =>
       val lcTerm  = term.toLowerCase
       val sqlTerm = s"%$lcTerm%"
 
-      val q = if (includeDesc) {
-        PasswordEntries.filter { pwe =>
-          (pwe.name.toLowerCase like sqlTerm) ||
-          (pwe.description.toLowerCase like sqlTerm)
-        }
+      val q1 = PasswordEntries.filter { _.name.toLowerCase like sqlTerm }
+      val q2 = if (includeDesc) {
+        q1 ++ PasswordEntries.filter { _.description.toLowerCase like sqlTerm }
       }
       else {
-        PasswordEntries.filter { pwe => (pwe.name.toLowerCase like sqlTerm) }
+        q1
+      }
+      val q3 = if (includeURL) {
+        q2 ++ PasswordEntries.filter { _.url like sqlTerm }
+      }
+      else {
+        q2
       }
 
-      val qFinal = q.filter { pwe => pwe.userID === userID }
+      val qFinal = q3.filter { pwe => pwe.userID === userID }
 
       // Can't do word-only matches in the database in a database-agnostic
       // fashion. So, we need to filter here.

@@ -146,8 +146,7 @@ object PasswordEntryController extends BaseController {
       .getOrElse(Future.successful(pwEntry))
     }
 
-    def handleExisting(pw: PasswordEntry,
-                       urlOpt: Option[URL]): Future[PasswordEntry] = {
+    def handleExisting(pw: PasswordEntry): Future[PasswordEntry] = {
 
       val pw2 = pw.copy(name        = nameOpt.getOrElse(pw.name),
                         description = descriptionOpt.orElse(pw.description),
@@ -156,7 +155,7 @@ object PasswordEntryController extends BaseController {
       maybeEncryptPassword(pw2)
     }
 
-    def makeNew(urlOpt: Option[URL]): Future[PasswordEntry] = {
+    def makeNew(): Future[PasswordEntry] = {
 
       def create(name: String, userID: Int): Future[PasswordEntry] = {
 
@@ -178,28 +177,10 @@ object PasswordEntryController extends BaseController {
       yield saved
     }
 
-    def makeURL(urlStringOpt: Option[String]): Future[Option[URL]] = {
-      Future { urlStringOpt map { new URL(_) } }
-    }
-
-    def makeEntry(): Future[PasswordEntry] = {
-      def make(url: Option[URL]) = {
-        pwOpt map { pw =>
-          handleExisting(pw, url)
-        } getOrElse {
-          makeNew(url)
-        }
-      }
-
-      for { netUrlOpt <- makeURL(urlOpt)
-            pwEntry   <- make(netUrlOpt) }
-      yield pwEntry
-    }
-
     Seq(nameOpt, descriptionOpt, passwordOpt,
         notesOpt, urlOpt).flatMap {o => o} match {
       case Nil => Future.failed(new Exception("No posted password fields."))
-      case _   => makeEntry()
+      case _   => pwOpt map { handleExisting(_) } getOrElse { makeNew() }
 
     }
   }

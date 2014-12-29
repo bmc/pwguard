@@ -16,7 +16,7 @@ case class PasswordEntry(id:                Option[Int],
                          description:       Option[String],
                          loginID:           Option[String],
                          encryptedPassword: Option[String],
-                         url:               Option[URL],
+                         url:               Option[String],
                          notes:             Option[String])
   extends BaseModel
 
@@ -34,7 +34,7 @@ object PasswordEntryHelper {
         (JsPath \ "description").write[Option[String]] and
         (JsPath \ "loginID").write[Option[String]] and
         (JsPath \ "encryptedPassword").write[Option[String]] and
-        (JsPath \ "url").write[Option[URL]] and
+        (JsPath \ "url").write[Option[String]] and
         (JsPath \ "notes").write[Option[String]]
       )(unlift(PasswordEntry.unapply))
     }
