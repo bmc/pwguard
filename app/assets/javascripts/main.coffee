@@ -478,7 +478,7 @@ pwguardApp.controller 'InnerSearchCtrl', ['$scope',
 # Profile controller
 # ---------------------------------------------------------------------------
 
-ProfileCtrl = ($scope, pwgLogging, pwgAjax) ->
+ProfileCtrl = ($scope, pwgLogging, pwgAjax, pwgFlash) ->
 
   log = pwgLogging.logger "ProfileCtrl"
 
@@ -488,30 +488,16 @@ ProfileCtrl = ($scope, pwgLogging, pwgAjax) ->
   $scope.password1      = null
   $scope.password2      = null
 
-  $scope.error =
-    password1: null
-    password2: null
-    firstName: null
-    lastName:  null
+  $scope.passwordsValid = (form) ->
+    if form.password1.$pristine and form.password2.$pristine
+      true
+    else
+      form.password1.$valid and form.password2.$valid and $scope.passwordsMatch()
 
-  $scope.dirty = ->
+  $scope.passwordsMatch = ->
+    $scope.password1 is $scope.password2
 
-    dirty = (not fieldsMatch($scope.email, $scope.loggedInUser?.email)) or
-            (not fieldsMatch($scope.firstName, $scope.loggedInUser?.firstName)) or
-            (not fieldsMatch($scope.lastName, $scope.loggedInUser?.lastName)) or
-            (normalizeValue($scope.password1) isnt "") or
-            (normalizeValue($scope.password2) isnt "")
-    dirty
-
-  $scope.canSubmit = ->
-    error = checkErrors()
-    (not error) and $scope.dirty()
-
-  $scope.fieldInError = (field) ->
-    checkErrors()
-    $scope.error[field]?
-
-  $scope.save = ->
+  $scope.save = (form) ->
     data =
       firstName: $scope.firstName
       lastName:  $scope.lastName
@@ -523,20 +509,14 @@ ProfileCtrl = ($scope, pwgLogging, pwgAjax) ->
     pwgAjax.post url, data, (response) ->
       log.debug "Save complete."
       $scope.setLoggedInUser response
+      pwgFlash.info "Saved."
+      form.$setPristine()
 
-  checkErrors = ->
-    for k of $scope.error
-      $scope.error[k] = null
-
-    if not passwordsOkay($scope.password1, $scope.password2)
-      $scope.error.password1 = "Passwords don't match."
-
-    errors = ($scope.error[k] for k of $scope.error).filter (e) -> e
-    errors.length > 0
 
 pwguardApp.controller 'ProfileCtrl', ['$scope',
                                       'pwgLogging',
                                       'pwgAjax',
+                                      'pwgFlash',
                                       ProfileCtrl]
 
 # ---------------------------------------------------------------------------
@@ -875,8 +855,7 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash, pwgModal) ->
         u2.passwordsMatch = true
         u2
 
-  $scope.$watch 'segmentIsActive("admin-users")', (visible) ->
-    loadUsers() if visible
+  loadUsers()
 
 pwguardApp.controller 'AdminUsersCtrl', ['$scope',
                                          'pwgAjax',

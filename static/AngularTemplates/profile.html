@@ -1,78 +1,60 @@
-<div id="profile-screen"
-     ng-controller="ProfileCtrl"
-     ng-show="segmentIsActive('profile')">
-  <div class="grid">
-    <div class="unit" ng-class="{whole: isMobile, half: !isMobile}">
+<div id="profile-screen">
+  <div class="row">
+    <div class="col-md-3" ng-if="!isMobile"></div>
+    <div ng-class="{'col-md-12': isMobile, 'col-md-6': !isMobile}">
       <header>Edit your profile information.</header>
-{{scope.errorPassword1}}
-      <form id="profile-form">
 
-        <div class="form-field">
-          <div class="label">
-            <label for="email">Email</label>
-          </div>
-          <div class="input">
-            <input type="email" name="email" ng-model="email"
-                   readonly="readonly"/>
+      <form id="profile-form" name="profileForm" novalidate
+            ng-submit="save(profileForm)">
+
+        <div class="form-group">
+          <label for="email" class="control-label">Email</label>
+          <input type="email" name="email" ng-model="email" id="email"
+                 readonly="readonly" class="form-control"/>
+        </div>
+
+        <div class="form-group"
+             ng-class="{'has-error' : !passwordsValid(profileForm)}">
+          <label for="password1" class="control-label">Password</label>
+          <input type="password" name="password1" ng-model="password1"
+                 id="password1" class="form-control"/>
+        </div>
+
+        <div class="form-group"
+             ng-class="{'has-error' : !passwordsValid(profileForm)}">
+          <label for="password2" class="control-label">Password (again)</label>
+          <input type="password" name="password2" ng-model="password2"
+                 id="password2" class="form-control"/>
+          <div class="help-block" ng-show="!passwordsMatch()">
+            Passwords do not match.
           </div>
         </div>
 
-        <div class="form-field">
-          <div class="label">
-            <label for="password1">Password</label>
-          </div>
-          <div class="input" ng-class="{error: fieldInError('password1')}">
-            <input type="password" name="password1" ng-model="password1"/>
-          </div>
-          <div class="error" ng-show="fieldInError('password1')">
-            {{error.password1}}
+        <div class="form-group" pwg-bootstrap-form-error="firstName">
+          <label for="first-name" class="control-label">First name</label>
+          <input type="text" name="firstName" ng-model="firstName"
+                 class="form-control" id="first-name"/>
+          <div class="help-block" ng-show="profileForm.firstName.$error.required">
+            First name is required.
           </div>
         </div>
 
-        <div class="form-field">
-          <div class="label">
-            <label for="password2">Password (again)</label>
-          </div>
-          <div class="input" ng-class="{error: fieldInError('password2')}">
-            <input type="password" name="password2" ng-model="password2"/>
-          </div>
-          <div class="error" ng-show="fieldInError('password2')">
-            {{error.password2}}
-          </div>
-        </div>
-
-        <div class="form-field">
-          <div class="label">
-            <label for="first-name">First name</label>
-          </div>
-          <div class="input" ng-class="{error: fieldInError('firstName')}">
-            <input type="text" name="first-name" ng-model="firstName"/>
-          </div>
-          <div class="error" ng-show="fieldInError('firstName')">
-            {{error.firstName}}
-          </div>
-        </div>
-
-        <div class="form-field">
-          <div class="label">
-            <label for="last-name">Last name</label>
-          </div>
-          <div class="input" ng-class="{error: fieldInError('lastName')}">
-            <input type="text" name="last-name" ng-model="lastName"/>
-          </div>
-          <div class="error" ng-show="fieldInError('lastName')">
-            {{error.lastName}}
+        <div class="form-group" pwg-bootstrap-form-error="lastName">
+          <label for="last-name" class="control-label">Last name</label>
+          <input type="text" name="lastName" ng-model="lastName"
+                 class="form-control" id="last-name"/>
+          <div class="help-block" ng-show="profileForm.lastName.$error.required">
+            Last name is required.
           </div>
         </div>
 
         <div class="button-bar">
           <div class="buttons">
-            <button class="btn btn-primary btn-large"
-                    ng-click="save()"
-                    ng-disabled="!canSubmit()">
+            <button class="btn btn-primary btn-lg"
+                    type="submit"
+                    ng-disabled="profileForm.$invalid || profileForm.$pristine">
               Save
             </button>
-            <button class="btn btn-large" ng-click="cancel()">Cancel</button>
           </div>
         </div>
 
