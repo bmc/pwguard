@@ -3,17 +3,16 @@
      ng-show="segmentIsActive('search')">
   <div class="search-box">
     <div class="row">
-      <div class="col-md-12">
+      <div ng-class="{'col-md-6': !isMobile, 'col-md-12': isMobile}">
         <form id="search-form" class="inline">
-          <div class="form-field">
-            <label for="searchTerm">
+          <div class="form-group">
+            <label for="searchTerm" class="control-label">
               <i class="fa fa-search"></i>&nbsp;
             </label>
-            <div class="input">
-              <input type="text" name="searchTerm" ng-model="searchTerm"
-                     ng-change="searchTermChanged()" class="search-term"
-                     placeholder="Enter at least two letters to search."/>
-            </div>
+            <input type="text" name="searchTerm" id="searchTerm"
+                   ng-model="searchTerm" class="form-control"
+                   ng-change="searchTermChanged()" class="search-term"
+                   placeholder="Enter at least two letters to search."/>
           </div>
         </form>
       </div>
@@ -26,7 +25,7 @@
 
         <div class="search-options-mobile" ng-show="isMobile">
           <span class="all-button">
-            <button class="btn btn-default" ng-click="showAll()">
+            <button class="btn btn-info" ng-click="showAll()">
               Get all passwords
             </button>
 
@@ -85,74 +84,85 @@
   <!-- Box for creating new entry -->
 
   <div class="row" ng-show="newPasswordEntry" id="new-password-entry">
-    <div class="col-md-12">
+    <div class="col-md-7">
       <header>New Password Entry</header>
       <form name="newEntry" ng-submit="newPasswordEntry.save()"
-            id="new-password-entry-form">
-        <div class="form-field">
-          <div class="label">
-            <label for="name">Name:</label>
-          </div>
-          <div class="input">
-            <input class="standalone" name="name"
-                   ng-model="newPasswordEntry.name"
-                   type="text"
-                   placeholder="Name"
-                   required/>
-          </div>
+            id="new-password-entry-form" novalidate class="">
+        <div class="form-group"
+             ng-class="{'has-error': newEntry.name.$invalid && newEntry.name.$dirty}">
+          <label for="name" class="control-label">Name:</label>
+          <input class="form-control"
+                 name="name"
+                 ng-model="newPasswordEntry.name"
+                 id="name"
+                 type="text"
+                 ng-trim="true"
+                 placeholder="Name"
+                 ng-required="true"/>
+          <p class="help-block"
+             ng-show="newEntry.name.$error.required && newEntry.name.$dirty">
+            Name is required.
+          </p>
         </div>
 
-        <div class="form-field">
-          <div class="label">
-            <label for="description">Description</label>
-          </div>
-          <div class="input">
-            <input class="standalone" name="description"
-                   ng-model="newPasswordEntry.description"
-                   type="text"
-                   placeholder="Description"/>
-          </div>
+        <div class="form-group" pwg-bootstrap-form-error="description">
+          <label for="description" class="control-label">Description</label>
+          <input class="form-control"
+                 name="description"
+                 id="description"
+                 ng-model="newPasswordEntry.description"
+                 type="text"
+                 placeholder="Description"/>
         </div>
 
-        <div class="form-field">
-          <div class="label">
-            <label for="password">Password</label>
-          </div>
-          <div class="input">
-            <input class="standalone" name="password"
-                   ng-model="newPasswordEntry.password"
-                   type="text"
-                   placeholder="Password"/>
-          </div>
+        <div class="form-group">
+          <label for="password" class="control-label">Password</label>
+          <input class="form-control"
+                 name="password"
+                 id="password"
+                 ng-model="newPasswordEntry.password"
+                 type="text"
+                 placeholder="Password"/>
         </div>
 
-        <div class="form-field">
-          <div class="label">
-            <label for="loginID">ID</label>
-          </div>
-          <div class="input">
-            <input class="standalone" name="loginID"
-                   ng-model="newPasswordEntry.loginID"
-                   type="text"
-                   placeholder="Login ID"/>
-          </div>
+        <div class="form-group">
+          <label for="loginID" class="control-label">ID</label>
+          <input class="form-control"
+                 name="loginID"
+                 id="loginID"
+                 ng-model="newPasswordEntry.loginID"
+                 type="text"
+                 ng-trim="true"
+                 placeholder="Login ID"/>
         </div>
 
-        <div class="form-field">
-          <div class="label">
-            <label for="notes">Notes</label>
-          </div>
-          <div class="input">
-            <textarea class="standalone" name="notes"
-                      ng-model="newPasswordEntry.notes"
-                      placeholder="Notes"/>
-          </div>
+        <div class="form-group" pwg-bootstrap-form-error="url">
+          <label class="control-label" for="url">URL</label>
+          <input class="form-control"
+                 name="url"
+                 id="url"
+                 ng-model="newPasswordEntry.url"
+                 type="text"
+                 ng-trim="true"
+                 ng-pattern="URLPattern"
+                 placeholder="URL"/>
+          <p class="help-block"
+             ng-show="newEntry.url.$error.pattern && newEntry.url.$dirty">
+            Invalid URL.
+          </p>
+        </div>
+
+        <div class="form-group">
+          <label for="notes" class="control-label">Notes</label>
+          <textarea class="form-control" name="notes" id="notes"
+                    ng-model="newPasswordEntry.notes"
+                    ng-trim="true" placeholder="Notes"/>
         </div>
 
         <div class="button-bar left">
           <div class="buttons">
             <button class="btn btn-primary"
-                    ng-disabled="!newPasswordEntry.name"
+                    ng-disabled="newEntry.$invalid"
                     ng-click="newPasswordEntry.save()">
               Save
             </button>
@@ -167,108 +177,182 @@
 
   <!-- search results -->
 
-  <div class="row">
-    <div class="col-md-12" ng-show="searchResults != null" id="search-results">
-      <div class="search-results-header">
-        <div ng-show="searchResults.length == 0">No results.</div>
-        <div ng-show="searchResults.length == 1">One result.</div>
-        <div ng-show="searchResults.length > 1">{{searchResults.length}} results</div>
+  <div id="search-results">
+    <div class="row">
+      <div class="col-md-12" ng-show="searchResults != null" id="search-results">
+        <div class="search-results-header">
+          <div ng-show="searchResults.length == 0">No results.</div>
+          <div ng-show="searchResults.length == 1">One result.</div>
+          <div ng-show="searchResults.length > 1">{{searchResults.length}} results</div>
 
-        <div ng-show="(searchResults.length > 0) && !isMobile">
-          <span class="hint" ng-hide="newPasswordEntry">
-            You can click on a password to show it or hide it. You
-            can click on a long note to expand it.
-          </span>
+          <div ng-show="(searchResults.length > 0) && !isMobile">
+            <span class="hint" ng-hide="newPasswordEntry">
+              You can click on a password to show it or hide it. You
+              can click on a long note to expand it.
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div ng-show="(searchResults.length > 0)">
+
+      <div ng-if="isMobile" id="mobile-results" class="row">
+        <div class="panel-group" ng-model="activePanel" bs-collapse>
+          <div class="panel panel-default"
+               ng-repeat="pw in searchResults | orderBy:'name'">
+            <a class="panel-toggle" bs-collapse-toggle href="">
+              <div class="panel-heading">
+                <h4 class="panel-title">{{pw.name}}</h4>
+              </div>
+            </a>
+
+            <div class="panel-collapse" bs-collapse-target>
+              <div class="panel-body">
+                <div class="mobile-field description" ng-show="pw.description">
+                  <span class="mobile-label">Description:</span>
+                  <span class="mobile-value">{{pw.description}}</span>
+                </div>
+
+                <div class="mobile-field login" ng-show="pw.loginID">
+                  <span class="mobile-label">Login:</span>
+                  <span class="mobile-value">{{pw.loginID}}</span>
+                </div>
+
+                <div class="mobile-field password" ng-show="pw.plaintextPassword">
+                  <span class="mobile-label">Password:</span>
+                      <span class="mobile-value">
+                        <input id="result-{$index}" type="text" readonly="readonly"
+                               ng-model="pw.plaintextPassword"
+                               pwg-select-on-click/>
+                      </span>
+                </div>
+
+                <div class="mobile-field url" ng-show="pw.url">
+                  <span class="mobile-label">URL</span>
+                  <!--
+                    ng-bind-html sanitizes any HTML in the field. The
+                    linky filter then converts any links embedded in the
+                    text.
+                  -->
+                  <div class="mobile-value"
+                       ng-bind-html="pw.url | linky:'newPage'"/>
+                </div>
+
+                <div class="mobile-field notes" ng-show="pw.notes">
+                  <span class="mobile-label">Notes</span>
+                  <!--
+                    ng-bind-html sanitizes any HTML in the field. The
+                    linky filter then converts any links embedded in the
+                    text.
+                  -->
+                  <div class="mobile-value"
+                       ng-bind-html="pw.notes | linky:'newPage'"/>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div ng-show="(searchResults.length > 0)">
-        <div ng-if="!isMobile" id="desktop-results">
+      <div ng-if="!isMobile" id="desktop-results">
 
-          <!-- List of results -->
+        <!-- heading -->
 
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>
-                  <a href="" ng-click="sortBy('name')">Name</a>
-                  <pwg-sort-indicator reverse="reverse"
-                                      column="name"
-                                      sort-column="sortColumn">
-                  </pwg-sort-indicator>
-                </th>
-                <th>
-                  <a href="" ng-click="sortBy('description')">Description</a>
-                  <pwg-sort-indicator reverse="reverse"
-                                      column="description"
-                                      sort-column="sortColumn">
-                  </pwg-sort-indicator>
-                </th>
-                <th>
-                  <a href="" ng-click="sortBy('loginID')">Login</a>
-                  <pwg-sort-indicator reverse="reverse"
-                                      column="loginID"
-                                      sort-column="sortColumn">
-                  </pwg-sort-indicator>
-                </th>
-                <th>
-                  Password
-                </th>
-                <th>
-                  Notes
-                </th>
-                <th></th>
-              </tr>
-            </thead>
+        <div class="row results-header">
+          <div class="col-md-1">
+            <a href="" ng-click="sortBy('name')">Name</a>
+            <pwg-sort-indicator reverse="reverse"
+                                column="name"
+                                sort-column="sortColumn">
+            </pwg-sort-indicator>
+          </div>
 
-            <tbody>
-              <tr ng-repeat="pw in searchResults | orderBy:sortColumn:reverse"
-                  ng-class-odd="'odd'" ng-class-even="'even'">
+          <div class="col-md-2">
+            <a href="" ng-click="sortBy('description')">Description</a>
+            <pwg-sort-indicator reverse="reverse"
+                                column="description"
+                                sort-column="sortColumn">
+            </pwg-sort-indicator>
+          </div>
 
-                <td>
-                  <span ng-hide="pw.editing">{{pw.name}}</span>
-                  <span ng-show="pw.editing">
-                    <input class="standalone" ng-model="pw.name"
-                           type="text" placeholder="Name"/>
-                  </span>
-                </td>
+          <div class="col-md-2">
+            <a href="" ng-click="sortBy('loginID')">Login</a>
+            <pwg-sort-indicator reverse="reverse"
+                                column="loginID"
+                                sort-column="sortColumn">
+            </pwg-sort-indicator>
+          </div>
 
-                <td>
-                  <span ng-hide="pw.editing">{{pw.description}}</span>
-                  <span ng-show="pw.editing">
-                    <input class="standalone" ng-model="pw.description"
-                           type="text" placeholder="Description"/>
-                  </span>
-                </td>
+          <div class="col-md-2">
+            Password
+          </div>
 
-                <td>
-                  <span ng-hide="pw.editing">
-                    <input type="text" readonly="readonly" class="clickable"
-                           ng-model="pw.loginID"/>
-                  </span>
-                  <span ng-show="pw.editing">
-                    <input class="standalone" ng-model="pw.loginID"
-                           type="text" placeholder="ID"/>
-                  </span>
-                </td>
+          <div class="col-md-2">
+            <a href="" ng-click="sortBy('url')">URL</a>
+            <pwg-sort-indicator reverse="reverse"
+                                column="url"
+                                sort-column="sortColumn">
+            </pwg-sort-indicator>
+          </div>
 
-                <td class="password">
+          <div class="col-md-2">
+            Notes
+          </div>
+        </div>
+
+        <div class="results-body">
+          <div class="row"
+               ng-class="{even: $even, odd: $odd}"
+               ng-repeat="pw in searchResults | orderBy:sortColumn:reverse">
+            <form name="pwForm{{$index}}">
+              <div class="col-md-1">
+                <span ng-hide="pw.editing">{{pw.name}}</span>
+                <span ng-show="pw.editing">
+                  <input class="standalone" ng-model="pw.name"
+                         type="text" placeholder="Name"/>
+                </span>
+              </div>
+
+              <div class="col-md-2">
+                <span ng-hide="pw.editing">{{pw.description}}</span>
+                <span ng-show="pw.editing">
+                  <input class="standalone" ng-model="pw.description"
+                         type="text" placeholder="Description"/>
+                </span>
+              </div>
+
+              <div class="col-md-2">
+                <span ng-hide="pw.editing">
+                  <input type="text" readonly="readonly"
+                         pwg-select-on-click
+                         ng-model="pw.loginID"/>
+                </span>
+                <span ng-show="pw.editing">
+                  <input class="standalone" ng-model="pw.loginID"
+                         type="text" placeholder="ID"/>
+                </span>
+              </div>
+
+              <div class="col-md-2">
+                <div class="password">
                   <div ng-hide="pw.editing">
                     <div ng-show="pw.plaintextPassword">
 
                       <span class="show-hide-password">
                         <a href="" ng-click="pw.toggleVisibility()"
                            class="toggle-password">
-                            <span class="fa fa-toggle-on"
-                                  ng-show="pw.passwordVisible"></span>
-                            <span class="fa fa-toggle-off"
-                                  ng-hide="pw.passwordVisible"></span>
+                          <span class="fa fa-toggle-on"
+                                ng-show="pw.passwordVisible"></span>
+                          <span class="fa fa-toggle-off"
+                                ng-hide="pw.passwordVisible"></span>
                         </a>
                       </span>
 
                       <span ng-show="pw.passwordVisible">
                         <input type="text" readonly="readonly"
                                class="shown-password clickable"
+                               pwg-select-on-click
                                ng-show="pw.passwordVisible"
                                ng-model="pw.plaintextPassword"/>
                       </span>
@@ -280,103 +364,81 @@
 
                     </div>
                   </div>
-                  <div ng-show="pw.editing">
-                    <input class="standalone" ng-model="pw.plaintextPassword"
-                           type="text" placeholder="Password"/>
-                  </div>
-                </td>
-
-                <td>
-                  <span ng-hide="pw.editing"
-                        ng-class="{clickable: pw.previewAvailable}">
-                    <span ng-click="pw.showPreview=!pw.showPreview">
-                      <span ng-show="pw.showPreview">{{pw.notesPreview}}</span>
-                      <span ng-hide="pw.showPreview">{{pw.notes}}</span>
-                    </span>
-                  </span>
-                  <span ng-show="pw.editing">
-                    <textarea class="standalone" ng-model="pw.notes"/>
-                  </span>
-                </td>
-
-                <td class="pw-buttons">
-                  <a href="javascript:void(0)"
-                     class="btn btn-borderless"
-                     ng-click="pw.edit()"
-                     ng-hide="pw.editing">
-                    <i class="fa fa-pencil"></i>
-                  </a>
-                  <a href="javascript:void(0)"
-                     class="btn btn-borderless"
-                     ng-click="pw.delete()"
-                     ng-hide="pw.editing">
-                    <i class="fa fa-trash-o"></i>
-                  </a>
-                  <a href="javascript:void(0)"
-                     class="btn btn-borderless save"
-                     ng-click="pw.save()"
-                     ng-show="pw.editing">
-                    <i class="fa fa-save"></i>
-                  </a>
-                  <a href="javascript:void(0)"
-                     class="btn btn-borderless cancel"
-                     ng-click="pw.cancel()"
-                     ng-show="pw.editing">
-                    <i class="fa fa-times"></i>
-                  </a>
-                </td>
-
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div ng-if="isMobile" id="mobile-results">
-          <div class="panel-group" ng-model="activePanel" bs-collapse>
-            <div class="panel panel-default"
-                 ng-repeat="pw in searchResults | orderBy:'name'">
-              <a class="panel-toggle" bs-collapse-toggle href="">
-                <div class="panel-heading">
-                  <h4 class="panel-title">{{pw.name}}</h4>
                 </div>
-              </a>
 
-              <div class="panel-collapse" bs-collapse-target>
-                <div class="panel-body">
-                  <div class="mobile-field description" ng-show="pw.description">
-                    <span class="mobile-label">Description:</span>
-                    <span class="mobile-value">{{pw.description}}</span>
+                <div ng-show="pw.editing">
+                  <input class="standalone" ng-model="pw.plaintextPassword"
+                         type="text" placeholder="Password"/>
+                </div>
+              </div>
+
+              <div class="col-md-2">
+                <!--
+                  ng-bind-html sanitizes any HTML in the field. The
+                  linky filter then converts any links embedded in the
+                  text.
+                -->
+                <span ng-hide="pw.editing"
+                      ng-bind-html="pw.url | linky:'newPage'"/>
+                <span ng-show="pw.editing" pwg-bootstrap-form-error="url">
+                  <input type="text" ng-model="pw.url" name="url"
+                         ng-pattern="URLPattern"/>
+                  <div class="error" ng-show="pwForm{{$index}}.url.$error.pattern">
+                    Invalid URL.
                   </div>
+                </span>
+              </div>
 
-                  <div class="mobile-field login" ng-show="pw.loginID">
-                    <span class="mobile-label">Login:</span>
-                    <span class="mobile-value">{{pw.loginID}}</span>
-                  </div>
-
-                  <div class="mobile-field password" ng-show="pw.plaintextPassword">
-                    <span class="mobile-label">Password:</span>
-                    <span class="mobile-value">
-                      <input id="result-{$index}" type="text" readonly="readonly"
-                             ng-model="pw.plaintextPassword"
-                             pwg-select-on-click/>
-                    </span>
-                  </div>
-
-                  <div class="mobile-field notes" ng-show="pw.notes">
-                    <span class="mobile-label">Notes</span>
+              <div class="col-md-2">
+                <span ng-hide="pw.editing"
+                      ng-class="{clickable: pw.previewAvailable}">
+                  <span ng-click="pw.showPreview=!pw.showPreview">
+                    <span ng-show="pw.showPreview">{{pw.notesPreview}}</span>
                     <!--
                       ng-bind-html sanitizes any HTML in the field. The
                       linky filter then converts any links embedded in the
                       text.
                     -->
-                    <div class="mobile-value" ng-bind-html="pw.notes|linky">
-                    </div>
-                  </div>
-                </div>
+                    <span ng-hide="pw.showPreview"
+                          ng-bind-html="pw.notes | linky:'newPage'"/>
+                  </span>
+                </span>
+                <span ng-show="pw.editing">
+                  <textarea class="standalone" ng-model="pw.notes"/>
+                </span>
               </div>
-            </div>
+
+              <div class="pw-buttons col-md-1">
+                <a href="javascript:void(0)"
+                   class="btn btn-borderless"
+                   ng-click="pw.edit()"
+                   ng-hide="pw.editing">
+                  <i class="fa fa-pencil"></i>
+                </a>
+                <a href="javascript:void(0)"
+                   class="btn btn-borderless"
+                   ng-click="pw.delete()"
+                   ng-hide="pw.editing">
+                  <i class="fa fa-trash-o"></i>
+                </a>
+                <a href="javascript:void(0)"
+                   class="btn btn-borderless save"
+                   ng-click="pw.save()"
+                   ng-disabled="pwForm{{$index}}.$invalid"
+                   ng-show="pw.editing">
+                  <i class="fa fa-save"></i>
+                </a>
+                <a href="javascript:void(0)"
+                   class="btn btn-borderless cancel"
+                   ng-click="pw.cancel()"
+                   ng-show="pw.editing">
+                  <i class="fa fa-times"></i>
+                </a>
+              </div>
+            </form>
           </div>
         </div>
+
       </div>
     </div>
   </div>

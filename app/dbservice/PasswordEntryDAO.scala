@@ -128,7 +128,7 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
     Future[PasswordEntry] = {
 
     Future {
-      val id = (PasswordEntries returning PasswordEntries.map(_.id)) += pwEntry
+      val id = PasswordEntries.insert(pwEntry)
       pwEntry.copy(id = Some(id))
     }
   }
@@ -139,12 +139,13 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
     Future {
       val q = for { pwe <- PasswordEntries if pwe.id === pwEntry.id.get }
               yield (pwe.userID, pwe.name, pwe.description,
-                     pwe.encryptedPassword, pwe.notes)
+                     pwe.encryptedPassword, pwe.notes, pwe.url)
       q.update((pwEntry.userID,
                 pwEntry.name,
                 pwEntry.description,
                 pwEntry.encryptedPassword,
-                pwEntry.notes))
+                pwEntry.notes,
+                pwEntry.url))
       pwEntry
     }
   }

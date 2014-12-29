@@ -1,5 +1,7 @@
 package controllers
 
+import java.net.URL
+
 import dbservice.DAO
 import models.{UserHelpers, User, PasswordEntry}
 import util.EitherOptionHelpers._
@@ -38,6 +40,7 @@ object ImportExportController extends BaseController {
     val Description = Value
     val Login       = Value
     val Password    = Value
+    val URL         = Value
     val Notes       = Value
   }
 
@@ -51,14 +54,15 @@ object ImportExportController extends BaseController {
 
     def entryToList(user: User, e: PasswordEntry): Future[List[String]] = {
       val PasswordEntry(_, _, name, descriptionOpt, loginIDOpt,
-                        encryptedPasswordOpt, notesOpt) = e
+                        encryptedPasswordOpt, urlOpt, notesOpt) = e
       val description = descriptionOpt.getOrElse("")
       val loginID     = loginIDOpt.getOrElse("")
       val notes       = notesOpt.getOrElse("")
+      val url         = urlOpt.getOrElse("")
 
       encryptedPasswordOpt map { epw =>
         UserHelpers.decryptStoredPassword(user, epw) map { pw =>
-          List(name, description, loginID, pw, notes)
+          List(name, description, loginID, pw, url.toString, notes)
         }
       } getOrElse {
         Future.successful(List(name, description, loginID, "", notes))
@@ -88,6 +92,7 @@ object ImportExportController extends BaseController {
                               Field.Description.toString,
                               Field.Description.toString,
                               Field.Password.toString,
+                              Field.URL.toString,
                               Field.Notes.toString))
             for (l <- seq) csv.writeRow(l)
           }
@@ -180,6 +185,7 @@ object ImportExportController extends BaseController {
                   desc:     Option[String],
                   login:    Option[String],
                   password: Option[String],
+                  urlOpt:   Option[String],
                   notes:    Option[String]): Future[Option[PasswordEntry]] = {
       val user = authReq.user
 
@@ -192,12 +198,14 @@ object ImportExportController extends BaseController {
             Future.successful(None)
           }
           else {
+            val url = urlOpt map { new URL(_) }
             val entry = PasswordEntry(id                = None,
                                       userID            = user.id.get,
                                       name              = name,
                                       description       = desc,
                                       loginID           = login,
                                       encryptedPassword = epwOpt,
+                                      url               = url,
                                       notes             = notes)
             passwordEntryDAO.save(entry) map { Some(_) }
           }
@@ -224,6 +232,7 @@ object ImportExportController extends BaseController {
         val loginHeader = mappingFor(Field.Login, mappings)
         val notesHeader = mappingFor(Field.Notes, mappings)
         val pwHeader    = mappingFor(Field.Password, mappings)
+        val urlHeader   = mappingFor(Field.URL, mappings)
 
         Future.sequence {
           // Load each row and map it to an Option[PasswordEntry]. The
@@ -239,6 +248,7 @@ object ImportExportController extends BaseController {
                       password = map.get(pwHeader),
                       desc     = map.get(descHeader),
                       login    = map.get(loginHeader),
+                      urlOpt   = map.get(urlHeader),
                       notes    = map.get(notesHeader))
 
           }

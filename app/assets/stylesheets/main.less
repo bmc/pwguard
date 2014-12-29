@@ -36,7 +36,6 @@ header {
 
 #content {
   margin-top:   @navbarHeight + 10px;
-  width:        95%;
   margin-left:  auto;
   margin-right: auto;
 }
@@ -99,64 +98,6 @@ header {
 @tableHeaderBackground:  white;
 @tableOddRowBackground:  #f9f9f9;
 @tableEvenRowBackground: white;
-
-table.data-table {
-  width:            100%;
-  margin-top:       20px;
-  border-width:     0;
-  border-spacing:   2px;
-  border-style:     none;
-  border-collapse:  collapse;
-
-  thead {
-    background: @tableHeaderBackground;
-
-    th {
-      border-width: 0;
-      padding:      5px;
-      border-style: none;
-      background:   @tableHeaderBackground;
-      text-align:   left;
-
-      &.sortable-column {
-        cursor: pointer;
-      }
-
-      &.tablesort-asc:after {
-        content: "\25b4"; // small up arrow
-        visibility: visible;
-        // float: right;
-      }
-
-      &.tablesort-desc:after {
-        content: "\25be"; // small up arrow
-        visibility: visible;
-        // float: right;
-      }
-    }
-  }
-
-  tbody {
-    tr {
-      vertical-align: top;
-
-      &.odd {
-        background: @tableOddRowBackground;
-      }
-
-      &.even {
-        background: @tableEvenRowBackground;
-      }
-    }
-
-    td {
-      border-width: 0;
-      padding:      5px;
-      border-style: none;
-    }
-  }
-}
-
 
 @import "_buttons.less";
 @import "_form.less";

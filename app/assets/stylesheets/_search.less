@@ -54,7 +54,6 @@
     #search-form {
 
       .desktop-styles {
-        max-width: 400px;
         display: inline-block;
       }
 
@@ -114,6 +113,7 @@
     }
 
     #desktop-results {
+
       .pw-buttons {
         white-space: nowrap;
       }
@@ -124,21 +124,16 @@
 
       }
 
-      td {
-        margin-right: 10px;
+      .results-header {
+        font-weight: bold;
+        margin-bottom: 10px;
+        &.row {
+          padding: 5px;
+          border: 1px solid darken(@panelBackground, 20%);
+        }
       }
 
-      td.password {
-        min-width: 250px;
-
-        input.shown-password {
-          width: 60%;
-          max-width: 100px;
-        }
-
-        span.hidden-password {
-          width: 60%;
-        }
+      .password {
 
         .show-hide-password {
           a.toggle-password {
@@ -148,26 +143,23 @@
         }
       }
 
-      .angular-accordion-container {
+      .results-body {
+        .row {
+          padding-top: 10px;
 
-        .angular-accordion-header {
-          background: @accordionHeaderBackgroundColor;
-          color:      black;
-          padding-top: 15px;
-          padding-bottom: 15px;
-
-          &:hover {
-            text-decoration: none !important;
+          &.even {
+            background-color: @panelBackground;
+          }
+          &.odd {
+            background-color: white;
           }
         }
-
-        .angular-accordion-pane-content {
-          border-left:   1px solid @accordionBorderColor;
-          border-right:  1px solid @accordionBorderColor;
-          border-bottom: 1px solid @accordionBorderColor;
-
-          div {
-            margin-top: 5px;
+        .has-error {
+          input {
+            border-color: red !important;
+          }
+          .error {
+            color: red;
           }
         }
       }

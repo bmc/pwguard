@@ -1,5 +1,7 @@
 package controllers
 
+import java.net.URL
+
 import dbservice.DAO
 import models.{UserHelpers, User, PasswordEntry}
 import models.PasswordEntryHelper.json.implicits._
@@ -127,10 +129,12 @@ object PasswordEntryController extends BaseController {
                          json: JsValue):
     Future[PasswordEntry] = {
 
+    logger.error(s"*** JSON: $json")
     val nameOpt        = blankToNone((json \ "name").asOpt[String])
     val descriptionOpt = blankToNone((json \ "description").asOpt[String])
     val passwordOpt    = blankToNone((json \ "password").asOpt[String])
     val notesOpt       = blankToNone((json \ "notes").asOpt[String])
+    val urlOpt         = blankToNone((json \ "url").asOpt[String])
     val loginIDOpt     = blankToNone((json \ "login_id").asOpt[String])
 
     def maybeEncryptPassword(pwEntry: PasswordEntry): Future[PasswordEntry] = {
@@ -142,22 +146,27 @@ object PasswordEntryController extends BaseController {
       .getOrElse(Future.successful(pwEntry))
     }
 
-    def handleExisting(pw: PasswordEntry): Future[PasswordEntry] = {
+    def handleExisting(pw: PasswordEntry,
+                       urlOpt: Option[URL]): Future[PasswordEntry] = {
+
       val pw2 = pw.copy(name        = nameOpt.getOrElse(pw.name),
                         description = descriptionOpt.orElse(pw.description),
+                        url         = urlOpt.orElse(pw.url),
                         notes       = notesOpt.orElse(pw.notes))
       maybeEncryptPassword(pw2)
     }
 
-    def makeNew: Future[PasswordEntry] = {
+    def makeNew(urlOpt: Option[URL]): Future[PasswordEntry] = {
 
       def create(name: String, userID: Int): Future[PasswordEntry] = {
+
         Future.successful(PasswordEntry(id                = None,
                                         userID            = userID,
                                         name              = name,
                                         description       = descriptionOpt,
                                         loginID           = loginIDOpt,
                                         encryptedPassword = None,
+                                        url               = urlOpt,
                                         notes             = notesOpt))
       }
 
@@ -169,9 +178,28 @@ object PasswordEntryController extends BaseController {
       yield saved
     }
 
-    Seq(nameOpt, descriptionOpt, passwordOpt, notesOpt).flatMap {o => o} match {
+    def makeURL(urlStringOpt: Option[String]): Future[Option[URL]] = {
+      Future { urlStringOpt map { new URL(_) } }
+    }
+
+    def makeEntry(): Future[PasswordEntry] = {
+      def make(url: Option[URL]) = {
+        pwOpt map { pw =>
+          handleExisting(pw, url)
+        } getOrElse {
+          makeNew(url)
+        }
+      }
+
+      for { netUrlOpt <- makeURL(urlOpt)
+            pwEntry   <- make(netUrlOpt) }
+      yield pwEntry
+    }
+
+    Seq(nameOpt, descriptionOpt, passwordOpt,
+        notesOpt, urlOpt).flatMap {o => o} match {
       case Nil => Future.failed(new Exception("No posted password fields."))
-      case _   => pwOpt map { handleExisting(_) } getOrElse { makeNew }
+      case _   => makeEntry()
 
     }
   }

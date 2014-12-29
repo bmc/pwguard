@@ -77,12 +77,10 @@ pwgFakeCheckbox = ->
 pwgDirectives.directive 'pwgFakeCheckbox', [pwgFakeCheckbox]
 
 # ----------------------------------------------------------------------------
-# A button that selects a text input element's contents when clicked.
-#
-# Attributes:
-# input-id       - ID of the input element
-# text           - button label
-# button-classes - additional Bootstrap button classes
+# Mark an input element as selected when clicked. Must be used as an
+# attribute.
+# ----------------------------------------------------------------------------
+
 pwgSelectOnClick = ->
   restrict:   'A'
   transclude: false
@@ -94,3 +92,39 @@ pwgSelectOnClick = ->
       this.select()
 
 pwgDirectives.directive 'pwgSelectOnClick', [pwgSelectOnClick]
+
+# ----------------------------------------------------------------------------
+# Add a bootstrap error class to a form-group. Requires the existence of an
+# outer form. Use like this:
+#
+# <form name="someForm" ng-submit="submitForm()" novalidate">
+#   <div class="form-group" pwg-bootstrap-form-error="someForm.name">
+#     <label class="control-label" for="name">Name</label>
+#     <input class="form-control" id="name" name="name" type="text"
+#            ng-required="true" placeholder="Name">
+#     <p class="help-block" ng-show="someForm.name.$error.required && someForm.name.$dirty">
+#       Name is required.
+#     </p>
+#   </div>
+#   ...
+# </form>
+# ----------------------------------------------------------------------------
+
+pwgBootstrapFormError = ->
+  restrict: 'A'
+  require: '^form'
+  scope:
+    pwgBootstrapFormError: "@"
+
+  link: (scope, element, attrs, ctrl) ->
+    field = ctrl[scope.pwgBootstrapFormError]
+    watchFunc = ->
+      field.$invalid && field.$dirty
+
+    scope.$watch watchFunc, (newValue) ->
+      if newValue
+        element.addClass 'has-error'
+      else
+        element.removeClass 'has-error'
+
+pwgDirectives.directive 'pwgBootstrapFormError', [pwgBootstrapFormError]

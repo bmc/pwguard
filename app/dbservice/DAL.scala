@@ -47,6 +47,13 @@ trait PasswordEntriesComponent {
 
   import profile.simple._
   import models.PasswordEntry
+  import java.net.URL
+
+  implicit val JavaNetURLMapper =
+    MappedColumnType.base[java.net.URL, String] (
+      u => u.toString,
+      s => new URL(s)
+    )
 
   class PasswordEntriesTable(tag: Tag)
     extends Table[PasswordEntry](tag, "password_entries") {
@@ -57,10 +64,11 @@ trait PasswordEntriesComponent {
     def description          = column[Option[String]]("description")
     def loginID              = column[Option[String]]("login_id")
     def encryptedPassword    = column[Option[String]]("encrypted_password")
+    def url                  = column[Option[URL]]("url")
     def notes                = column[Option[String]]("notes")
 
     def * = (id.?, userID, name, description, loginID, encryptedPassword,
-             notes) <> (PasswordEntry.tupled, PasswordEntry.unapply)
+             url, notes) <> (PasswordEntry.tupled, PasswordEntry.unapply)
 
     def user = foreignKey("user_fk", userID, Users)(
       _.id, onUpdate = ForeignKeyAction.Restrict

@@ -258,41 +258,26 @@ pwguardApp.controller 'NavbarCtrl', ['$scope', 'pwgAjax', 'pwgModal', NavbarCtrl
 LoginCtrl = ($scope, pwgAjax, pwgFlash) ->
   $scope.email     = null
   $scope.password  = null
-  $scope.canSubmit = false
-
-  ### DEBUG
-  $scope.email = "admin@example.com"; $scope.password = "admin"
-  ###
-
-  $scope.$watch 'email', (newValue, oldValue) ->
-    checkSubmit()
-
-  $scope.$watch 'password', (newValue, oldValue) ->
-    checkSubmit()
 
   $scope.login = ->
-    if $scope.canSubmit
-      handleLogin = (data) ->
-        $scope.setLoggedInUser data.user
-        $scope.redirectToSegment 'search'
+    handleLogin = (data) ->
+      $scope.setLoggedInUser data.user
+      $scope.redirectToSegment 'search'
 
-      handleFailure = (data) ->
-        # Nothing to do.
-        return
+    handleFailure = (data) ->
+      # Nothing to do.
+      return
 
-      url = routes.controllers.SessionController.login().url
-      data =
-        email: $scope.email
-        password: $scope.password
+    url = routes.controllers.SessionController.login().url
+    data =
+      email: $scope.email
+      password: $scope.password
 
-      pwgAjax.post url, data, handleLogin, handleFailure
+    pwgAjax.post url, data, handleLogin, handleFailure
 
   $scope.clear = ->
     $scope.email    = null
     $scope.password = null
-
-  checkSubmit = ->
-    $scope.canSubmit = nonEmpty($scope.email) and nonEmpty($scope.password)
 
   nonEmpty = (s) ->
     s? and s.trim().length > 0
@@ -310,6 +295,8 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
   $scope.matchFullWord     = false
   $scope.lastSearch        = null
   $scope.activePanel       = -1 # mobile only
+
+  $scope.URLPattern = /^(ftp|http|https):\/\/[^ "]+$/
 
   SEARCH_ALL_MARKER = "-*-all-*-"
 
@@ -393,6 +380,7 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
       description: pw.description
       password:    pw.plaintextPassword
       notes:       pw.notes
+      url:         pw.url
 
     onSuccess = ->
       pw.editing = false
@@ -449,6 +437,7 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
       loginID:        ""
       password:       ""
       description:    ""
+      url:            ""
       notes:          ""
       cancel: ->
         $scope.newPasswordEntry = null
@@ -468,7 +457,6 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
       pw.passwordVisible  = false
       pw.toggleVisibility = ->
         pw.passwordVisible = !pw.passwordVisible
-        console.log "toggleVis #{pw.name} -> #{pw.passwordVisible}"
 
       originalEntries[pw.id] = pw
 

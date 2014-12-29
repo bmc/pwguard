@@ -1,37 +1,34 @@
-<div id="login-screen"
-     ng-controller="LoginCtrl"
-     ng-show="segmentIsActive('login')">
+<div id="login-screen">
 
-  <div class="grid">
-    <div class="unit whole">
-      <div id="login-panel">
+  <div class="row">
+    <div class="col-md-2"></div>
+    <div class="col-md-8">
+      <div class="well">
         <header>Please sign in.</header>
 
-        <form id="login-form">
+        <form id="login-form" name="loginForm" novalidate ng-submit="login()"
+              class="form-horizontal">
 
-          <div class="form-field">
-            <div class="label">
-              <label for="email">Email:</label>
-            </div>
-            <div class="input">
-              <input type="email" name="email" ng-model="email"/>
-            </div>
+          <div class="form-group">
+            <label for="email" class="control-label col-sm-3">Email:</label>
+            <div class="col-sm-6">
+            <input id="email" type="email" name="email" ng-model="email"
+                   ng-required="true" class="form-control"/>
+              </div>
           </div>
 
-          <div class="form-field">
-            <div class="label">
-              <label for="password">Password:</label>
-            </div>
-            <div class="input">
-              <input type="password" name="password" ng-model="password"/>
+          <div class="form-group">
+            <label for="password" class="control-label col-sm-3">Password:</label>
+            <div class="col-sm-6">
+              <input type="password" name="password" ng-model="password"
+                     id="password" ng-required="true" class="form-control"/>
             </div>
           </div>
 
           <div class="button-bar">
             <div class="buttons">
               <button class="btn btn-primary btn-large"
-                      ng-disabled="!canSubmit"
-                      ng-click="login()">
+                      ng-disabled="loginForm.$invalid" ng-submit>
                 Sign In
               </button>
               <button class="btn btn-large" ng-click="clear()">Clear</button>
