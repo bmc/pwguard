@@ -99,15 +99,15 @@ object UserController extends BaseController {
   private def decodeUserJSON(userOpt: Option[User], json: JsValue):
     Future[User] = {
 
-    val email     = (json \ "email").asOpt[String]
-    val firstName = (json \ "firstName").asOpt[String]
-    val lastName  = (json \ "lastName").asOpt[String]
-    val password1 = blankToNone((json \ "password1").asOpt[String])
-    val password2 = blankToNone((json \ "password2").asOpt[String])
-    val admin     = (json \ "admin").asOpt[Boolean].getOrElse(false)
-    val active    = (json \ "active").asOpt[Boolean].getOrElse(true)
+    val emailOpt     = (json \ "email").asOpt[String]
+    val firstNameOpt = (json \ "firstName").asOpt[String]
+    val lastNameOpt  = (json \ "lastName").asOpt[String]
+    val password1Opt = blankToNone((json \ "password1").asOpt[String])
+    val password2Opt = blankToNone((json \ "password2").asOpt[String])
+    val adminOpt     = (json \ "admin").asOpt[Boolean]
+    val activeOpt    = (json \ "active").asOpt[Boolean]
 
-    val pwMatch = Seq(password1, password2).flatten match {
+    val pwMatch = Seq(password1Opt, password2Opt).flatten match {
       case pw1 :: pw2 :: Nil => pw1 == pw2
       case Nil               => true
       case _                 => false
@@ -120,11 +120,11 @@ object UserController extends BaseController {
     else {
       def handleExistingUser(u: User): Future[User] = {
         // Can't overwrite email address on an existing user.
-        val u2 = u.copy(firstName = firstName,
-                        lastName  = lastName,
-                        active    = active,
-                        admin     = admin)
-        password1.map { pw =>
+        val u2 = u.copy(firstName = firstNameOpt.orElse(u.firstName),
+                        lastName  = lastNameOpt.orElse(u.lastName),
+                        active    = activeOpt.getOrElse(u.active),
+                        admin     = adminOpt.getOrElse(u.admin))
+        password1Opt.map { pw =>
           UserHelpers.encryptLoginPassword(pw) map { epw: String =>
             u2.copy(encryptedPassword = epw)
           }
@@ -134,13 +134,14 @@ object UserController extends BaseController {
 
       def handleNewUser: Future[User] = {
         // New user. Email and password are required.
-        for { e  <- email.toFuture("Missing email field")
-              pw <- password1.toFuture("Missing password1 field")
-              u  <- UserHelpers.createUser(email     = e,
-                                           password  = pw,
-                                           firstName = firstName,
-                                           lastName  = lastName,
-                                           admin     = admin) }
+        for { e  <- emailOpt.toFuture("Missing email field")
+              pw <- password1Opt.toFuture("Missing password1 field")
+              u  <- UserHelpers.createUser(
+                email     = e,
+                password  = pw,
+                firstName = firstNameOpt,
+                lastName  = lastNameOpt,
+                admin     = adminOpt.getOrElse(false)) }
         yield u
       }
 
