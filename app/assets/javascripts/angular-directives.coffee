@@ -17,25 +17,9 @@ pwgFlash = ($compile, $rootScope) ->
     flashType: "@"
 
   link: (scope, element, attrs) ->
-
-
-    # DON'T ADD THE "hide" CLASS UPON INITIALIZATION! Doing so will cause
-    # Angular to run the animation when the element is initially hidden.
-    # Instead, add it the first time through.
-
-    #if attrs.animateHide?
-      #element.addClass "animate-hide"
-
-    if attrs.animateShow?
-      element.addClass "animate-show"
-
     scope.message = null
 
     $rootScope.$watch "flash.message.#{scope.flashType}", (newValue, oldValue) ->
-      if newValue?
-        # We have a value. Add the animation class.
-        element.addClass "animate-hide"
-
       scope.message = newValue
 
     scope.clear = ->

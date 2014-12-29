@@ -1,7 +1,11 @@
 // Styles used by local Angular.js services.
 
+@errorBgColor:   #f2dede;
 @errorTextColor: #b65f5e;
+@infoBgColor:    #d9edf7;
 @infoTextColor:  #3b7896;
+@warnBgColor:    #f2d3d3;
+@warnTextColor:  #a94442;
 
 .flash-container {
   width: 100%;
@@ -11,9 +15,8 @@
     // position the button. See
     // http://css-tricks.com/absolute-positioning-inside-relative-positioning/
     position:       relative;
-    max-width:      80%;
     width:          auto;
-    min-height:     30px;
+    min-height:     50px;
     margin-left:    auto;
     margin-right:   auto;
     margin-bottom:  10px;
@@ -23,19 +26,26 @@
     padding-left:   10px;
 
     &.flash-error {
-      background-color: #f2dede;
+      background-color: @errorBgColor;
       color:            @errorTextColor;
     }
 
-
     &.flash-info {
-      background-color: #d9edf7;
+      background-color: @infoBgColor;
       color:            @infoTextColor;
     }
 
+    &.flash-warning {
+      background-color: @warnBgColor;
+      color:            @warnTextColor;
+    }
+
     &.flash-message {
-      vertical-align: middle;
-      width: 100%;
+      vertical-align: bottom;
+      width: auto;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: center;
     }
 
     .flash-close {

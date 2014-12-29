@@ -83,6 +83,8 @@ MainCtrl = ($scope,
             pwgCheckUser,
             pwgLogging) ->
 
+  pwgFlash.init() # initialize the flash service
+
   $scope.debugMessages = []
   $scope.debug = (msg) ->
     $scope.debugMessages.push msg
@@ -99,7 +101,6 @@ MainCtrl = ($scope,
 
   $scope.isMobile              = window.browserIsMobile
 
-  pwgFlash.init() # initialize the flash service
 
   pwgAjax.on401 ->
     $scope.loggedInUser = null
@@ -294,10 +295,9 @@ pwguardApp.controller 'LoginCtrl', ['$scope', 'pwgAjax', 'pwgFlash', LoginCtrl]
 SearchCtrl = ($scope) ->
   return
 
-pwguardApp.controller 'SearchCtrl', ['$scope', SearchCtrl]
+pwguardApp.controller 'SearchCtrl', ['$scope', 'pwgFlash', SearchCtrl]
 
 InnerSearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
-  console.log "InnerSearchCtrl: NEW"
   $scope.searchTerm     = null
   $scope.searchResults  = null
   $scope.lastSearch     = null
