@@ -101,7 +101,6 @@ MainCtrl = ($scope,
 
   $scope.isMobile              = window.browserIsMobile
 
-
   pwgAjax.on401 ->
     if $scope.loggedInUser
       $scope.loggedInUser = null
@@ -536,7 +535,7 @@ ImportExportCtrl = ($scope,
                     $location) ->
 
   $scope.downloading = false
-  $scope.state = 'new'
+  $scope.importState = 'new'
 
   #######################
   # Export              #
@@ -562,15 +561,15 @@ ImportExportCtrl = ($scope,
 
   uploader = new FileUploader()
 
-  fileNamePattern = /\.csv$/
+  fileNamePattern = /\.(csv|xlsx?)$/
   validFilename = (f) ->
-    (f.type is "text/csv") or (fileNamePattern.exec(f.name)?)
+    fileNamePattern.exec(f.name)?
 
   # Make sure the CSV filter is first. The queue limit is also implemented
   # as a filter, and we want it to fire *after* the queue limit filter.
   # Otherwise, the attempt to add an invalid item when the queue has one element
   # will inadvertently clear the queue.
-  uploader.filters.unshift {name: 'CSV', fn: validFilename}
+  uploader.filters.unshift {name: 'Spreadsheet', fn: validFilename}
   uploader.queueLimit = 1
   uploader.removeAfterUpload = true
   uploader.url = routes.controllers.ImportExportController.importDataUpload().url
@@ -597,7 +596,7 @@ ImportExportCtrl = ($scope,
     # The response is JSON.
     pwgAjax.checkResponse response, status, (data) ->
       prepareMappingData data
-      $scope.state = 'mapping'
+      $scope.importState = 'mapping'
 
   uploader.onErrorItem = (item, response, status, headers) ->
     pwgAjax.checkResponse response, status
@@ -695,7 +694,7 @@ ImportExportCtrl = ($scope,
 
     url = routes.controllers.ImportExportController.completeImport().url
     pwgAjax.post url, data, (response) ->
-      $scope.state = 'complete'
+      $scope.importState = 'complete'
       handleCompletion(response.total)
 
   # ------------------------ #
@@ -711,7 +710,7 @@ ImportExportCtrl = ($scope,
 
 
   $scope.reset = ->
-    $scope.state = 'new'
+    $scope.importState = 'new'
     $scope.progress = 0
     pwgFlash.clearAll()
 

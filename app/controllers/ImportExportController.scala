@@ -1,7 +1,5 @@
 package controllers
 
-import java.net.URL
-
 import dbservice.DAO
 import models.{UserHelpers, User, PasswordEntry}
 import util.EitherOptionHelpers._
@@ -110,36 +108,45 @@ object ImportExportController extends BaseController {
   }
 
   def importDataUpload = SecuredAction(parse.multipartFormData) { authReq =>
-    Future {
-      implicit val request = authReq.request
-      val optRes =
-        for { uploaded <- request.body.file("file")
-              // uploaded.ref is a play.api.libs.Files.TemporaryFile,
-              // with a file member
-              file      = uploaded.ref.file
-              reader    = CSVReader.open(file)
-              header    <- reader.readNext() }
-        yield {
-          val nonEmpty = header.filter { _.trim().length > 0 }
-          if (nonEmpty.length == 0)
-            throw new UploadFailed("Empty header row.")
+    implicit val request = authReq.request
 
-          Cache.set(FileCacheKey, file)
-          Ok(
-            Json.obj(
-              "headers" -> nonEmpty,
-              "fields" -> Field.values.map { field =>
-                Json.obj(
-                  "name" -> field.toString,
-                  "required" -> Field.Required.contains(field))
-              }
-            )
-          )
+    request.body.file("file") map { uploaded =>
+      // uploaded.ref is a play.api.libs.Files.TemporaryFile,
+      // with a file member
+
+      def header(r: CSVReader): Option[List[String]] = {
+        r.readNext().flatMap { list =>
+          list.filter(_.trim.length > 0) match {
+            case Nil => None
+            case l   => Some(l)
+          }
         }
-
-      optRes.getOrElse {
-        throw new UploadFailed("Empty or unspecified CSV file.")
       }
+
+      getCSVReader(uploaded.ref.file, uploaded.contentType) map {
+        case (f: File, reader: CSVReader) => {
+
+          val jsonOpt = for { h  <- header(reader) }
+          yield {
+            Cache.set(FileCacheKey, f)
+            Ok(
+              Json.obj(
+                "headers" -> h,
+                "fields"  -> Field.values.map { field =>
+                  Json.obj("name" -> field.toString,
+                           "required" -> Field.Required.contains(field))
+                }
+              )
+            )
+          }
+
+          jsonOpt.getOrElse {
+            throw new UploadFailed("Empty file.")
+          }
+        }
+      }
+    } getOrElse {
+      Future.failed(new UploadFailed("No uploaded file."))
 
     } recover {
       case NonFatal(e) => BadRequest(jsonError(e))
@@ -230,7 +237,7 @@ object ImportExportController extends BaseController {
 
     // If none of those failed, save the mappings in the CSV file, but only
     // if they're new.
-    f flatMap {
+    val result = f flatMap {
       case (mappings, reader) => {
         // Use the mappings to find the appropriate headings.
         val nameHeader  = mappingFor(Field.Name, mappings)
@@ -268,6 +275,78 @@ object ImportExportController extends BaseController {
 
     } recover {
       case NonFatal(e) => BadRequest(jsonError(e))
+    }
+
+    getFile() map { f =>
+      f.delete()
+      Cache.remove(FileCacheKey)
+    }
+
+    result
+  }
+
+  // -------------------------------------------------------------------------
+  // Private Methods
+  // -------------------------------------------------------------------------
+
+  private val ExcelContentTypes = Set(
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  )
+
+  private val CSVContentTypes = Set(
+    "text/csv", // preferred
+    "application/csv",
+    "text/comma-separated-values"
+  )
+
+  private def getCSVReader(f: File, contentTypeOpt: Option[String]):
+    Future[(File, CSVReader)] = {
+
+    contentTypeOpt map { contentType =>
+      if (ExcelContentTypes contains contentType)
+        convertExcelToCSV(f).map { csv => (csv, CSVReader.open(csv)) }
+      else if (CSVContentTypes contains contentType)
+        Future { (f, CSVReader.open(f)) }
+      else
+        Future.failed(new ImportFailed(s"Unknown import file type: $contentType"))
+    } getOrElse {
+      logger.error(s"No content type posted. Assuming CSV.")
+      Future { (f, CSVReader.open(f)) }
+    }
+  }
+
+  private def convertExcelToCSV(f: File): Future[File] = {
+    import org.apache.poi.ss.usermodel.WorkbookFactory
+    import java.io.FileInputStream
+    import scala.collection.JavaConversions.asScalaIterator
+
+    Future {
+      logger.debug(s"Converting ${f.getName} to CSV.")
+      val in = new FileInputStream(f)
+      val wb = WorkbookFactory.create(in)
+      val sheet = wb.getNumberOfSheets match {
+        case 0 => throw new UploadFailed(s"No worksheets in ${f.getName}")
+        case 1 => wb.getSheetAt(0)
+        case n => {
+          logger.warn(s"$n worksheets in ${f.getName}. Ignoring extras.")
+          wb.getSheetAt(0)
+        }
+      }
+
+      val csvFile = File.createTempFile("pwg", ".csv")
+
+      val writer = CSVWriter.open(csvFile)
+
+      for (row <- sheet.iterator) {
+        val cells = row.cellIterator.map { _.toString }.toList
+        writer.writeRow(cells)
+      }
+
+      writer.close()
+      f.delete()
+      csvFile.deleteOnExit()
+      csvFile
     }
   }
 }

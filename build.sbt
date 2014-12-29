@@ -21,6 +21,8 @@ libraryDependencies ++= Seq(
   "net.sf.uadetector"     %  "uadetector-resources"       % "2014.04",
   "com.google.guava"      %  "guava"                      % "17.0",
   "com.github.tototoshi" %%  "scala-csv"                  % "1.1.2",
+  "org.apache.poi"        %  "poi"                        % "3.11",
+  "org.apache.poi"        %  "poi-ooxml"                  % "3.11",
   "org.webjars"           %  "bootstrap"                  % "3.0.0",
   "org.webjars"           %  "angularjs"                  % "1.3.8",
   "org.webjars"           %  "angular-route-segment"      % "1.3.3",
