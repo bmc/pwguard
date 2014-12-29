@@ -38,3 +38,15 @@ libraryDependencies ++= Seq(
 includeFilter in (Assets, LessKeys.less) := "*.less"
 
 excludeFilter in (Assets, LessKeys.less) := "_*.less"
+
+// Use (baseDirectory.value / "static" for a full path, but file("static")
+// for a relative one.
+//
+// See http://stackoverflow.com/a/19568979/53495
+mappings in Universal ++= (file("static") ** "*").get map { f =>
+  f -> f.getPath
+}
+
+// Override the "dist" command to build a tarball, instead of a zip file.
+addCommandAlias("dist", "universal:package-zip-tarball")
+
