@@ -23,6 +23,11 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
   // Public methods
   // ------------------------------------------------------------------------
 
+  private val compiledAllQuery = Compiled{ (userID: Column[Int]) =>
+    val q = for { pwe <- PasswordEntries if pwe.userID === userID } yield pwe
+    q.sorted(_.name)
+  }
+
   /** Get all entries for a particular user.
     *
     * @return A future containing the results, or a failed future.
@@ -30,9 +35,7 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
   def allForUser(user: User): Future[Set[PasswordEntry]] = {
     withTransaction { implicit session =>
       user.id.map { userID =>
-        val q = for { pwe <- PasswordEntries if pwe.userID === user.id }
-                yield pwe
-        loadMany(q)
+        Future { compiledAllQuery(userID).run.toSet }
       }.
       getOrElse(Future.successful(Set.empty[PasswordEntry]))
     }
@@ -47,7 +50,7 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
   def findByIDs(idSet: Set[Int]): Future[Set[PasswordEntry]] = {
     withTransaction { implicit session =>
       val q = for { pwe <- PasswordEntries if pwe.id inSet idSet } yield pwe
-      loadMany(q)
+      Future { q.list.toSet }
     }
   }
 
@@ -77,7 +80,6 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
     *
     * @param userID       the user whose passwords are to be searched
     * @param term         the search term
-    * @param fullWordOnly match only full words. Disabled by default.
     * @param includeDesc  whether to include the description field in the
     *                     search. Enabled by default.
     * @param includeURL   whether to include the URL field in the search.
@@ -87,7 +89,6 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
     */
   def search(userID:       Int,
              term:         String,
-             fullWordOnly: Boolean = false,
              includeDesc:  Boolean = true,
              includeURL:   Boolean = true):
     Future[Set[PasswordEntry]] = {
@@ -114,13 +115,8 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
 
       // Can't do word-only matches in the database in a database-agnostic
       // fashion. So, we need to filter here.
-      loadMany(qFinal) map { matches =>
-        if (fullWordOnly) {
-          filterFullWordMatches(matches, lcTerm, includeDesc)
-        }
-        else {
-          matches
-        }
+      Future {
+        qFinal.list.toSet
       }
     }
   }
@@ -163,26 +159,4 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
   // Private methods
   // ------------------------------------------------------------------------
 
-  private def filterFullWordMatches(entries:     Set[PasswordEntry],
-                                    word:        String,
-                                    includeDesc: Boolean):
-  Set[PasswordEntry] = {
-    val re = ("""\b""" + word + """\b""").r
-
-    entries.filter { pwe =>
-      val nameMatch = re.matches(pwe.name)
-      if (includeDesc) {
-        pwe.description.map { re.matches(_) }.getOrElse(false) || nameMatch
-      }
-      else {
-        nameMatch
-      }
-    }
-  }
-
-  private def loadMany(query: PWEntryQuery)(implicit session: SlickSession):
-    Future[Set[PasswordEntry]] = {
-
-    Future { query.sorted { _.name }.list.toSet }
-  }
 }
