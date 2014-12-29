@@ -109,14 +109,20 @@
     }
   }
 
-  #search-results {
+  #desktop-results {
 
-    .search-results-header {
-      margin-top:    20px;
+    @horizontal-margin: 30px;
+
+    .desktop-results-header {
+      margin-left:   @horizontal-margin;
+      margin-right:  @horizontal-margin;
       margin-bottom: 20px;
     }
 
-    #desktop-results {
+    .results-table {
+
+      margin-left:  @horizontal-margin;
+      margin-right: @horizontal-margin;
 
       .pw-buttons {
         white-space: nowrap;
@@ -131,6 +137,7 @@
       .results-header {
         font-weight: bold;
         margin-bottom: 10px;
+
         &.row {
           padding: 5px;
           border: 1px solid darken(@panelBackground, 20%);
@@ -172,6 +179,9 @@
 
   #mobile-results {
     @labelMinWidth: 130px;
+
+    margin-left: 10px;
+    margin-right: 10px;
 
     a.panel-toggle {
       background-color: #f7f3ed;

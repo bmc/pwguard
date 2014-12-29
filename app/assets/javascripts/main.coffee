@@ -106,6 +106,9 @@ MainCtrl = ($scope,
     $scope.redirectToSegment "login"
     $scope.flashAfterRouteChange = "Session timeout. Please log in again."
 
+  $scope.templateURL = (path) ->
+    window.angularTemplateURL(path)
+
   $scope.$on '$routeChangeSuccess', ->
     # Clear flash messages on route change.
     pwgFlash.clear 'all'
@@ -288,13 +291,17 @@ pwguardApp.controller 'LoginCtrl', ['$scope', 'pwgAjax', 'pwgFlash', LoginCtrl]
 # Search controller
 # ---------------------------------------------------------------------------
 
-SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
-  $scope.searchTerm        = null
-  $scope.searchResults     = null
-  $scope.searchDescription = true
-  $scope.matchFullWord     = false
-  $scope.lastSearch        = null
-  $scope.activePanel       = -1 # mobile only
+SearchCtrl = ($scope) ->
+  return
+
+pwguardApp.controller 'SearchCtrl', ['$scope', SearchCtrl]
+
+InnerSearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
+  console.log "InnerSearchCtrl: NEW"
+  $scope.searchTerm     = null
+  $scope.searchResults  = null
+  $scope.lastSearch     = null
+  $scope.activePanel    = -1 # mobile only
 
   $scope.URLPattern = /^(ftp|http|https):\/\/[^ "]+$/
 
@@ -302,13 +309,15 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
 
   originalEntries = {}
 
+  $scope.pluralizeResults = (n) ->
+    switch n
+      when 0 then "No results"
+      when 1 then "One result"
+      else "#{n} results"
+
   clearResults = ->
     originalEntries = {}
     $scope.searchResults = null
-
-  for v in ['searchDescription', 'matchFullWord']
-    $scope.$watch v, ->
-      searchOptionChanged()
 
   keyboardTimeout = null
   $scope.searchTermChanged = ->
@@ -321,12 +330,6 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
 
   $scope.mobileSelect = (i) ->
     $("#result-#{i}").select()
-
-  searchOptionChanged = ->
-    if validSearchTerm()
-      doSearch()
-    else
-      clearResults()
 
   validSearchTerm = ->
     trimmed = if $scope.searchTerm? then $scope.searchTerm.trim() else ""
@@ -344,9 +347,7 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
       pwgFlash.error "Server error issuing the search. We're looking into it."
 
     params =
-      searchTerm:         $scope.searchTerm
-      includeDescription: $scope.searchDescription
-      wordMatch:          $scope.matchFullWord
+      searchTerm: $scope.searchTerm
 
     url = routes.controllers.PasswordEntryController.searchPasswordEntries().url
     pwgAjax.post url, params, onSuccess, onFailure
@@ -414,7 +415,6 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
       url = routes.controllers.PasswordEntryController.create().url
 
       onSuccess = ->
-        $scope.showAll()
         $scope.newPasswordEntry = null
         reissueLastSearch()
 
@@ -467,12 +467,12 @@ SearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
       pw
 
 
-pwguardApp.controller 'SearchCtrl', ['$scope',
-                                     'pwgAjax',
-                                     'pwgFlash',
-                                     'pwgTimeout',
-                                     'pwgModal',
-                                     SearchCtrl]
+pwguardApp.controller 'InnerSearchCtrl', ['$scope',
+                                          'pwgAjax',
+                                          'pwgFlash',
+                                          'pwgTimeout',
+                                          'pwgModal',
+                                          InnerSearchCtrl]
 
 # ---------------------------------------------------------------------------
 # Profile controller
