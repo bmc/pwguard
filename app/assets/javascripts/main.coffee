@@ -747,6 +747,15 @@ pwguardApp.controller 'ImportExportCtrl', ['$scope',
 AdminUsersCtrl = ($scope, pwgAjax, pwgFlash, pwgModal) ->
   $scope.users = null
   $scope.addingUser = null
+  $scope.sortColumn = "email"
+  $scope.reverse = false
+
+  $scope.sortBy = (column) ->
+    if column is $scope.sortColumn
+      $scope.reverse = !$scope.reverse
+    else
+      $scope.reverse = false
+      $scope.sortColumn = column
 
   originalUsers = {}
 

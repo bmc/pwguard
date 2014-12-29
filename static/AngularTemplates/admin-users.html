@@ -1,210 +1,232 @@
-<div id="admin-users"
-     ng-show="segmentIsActive('admin-users')">
+<div id="admin-users">
 
-  <div class="grid">
-    <div class="unit" ng-class="{half: !isMobile, whole: isMobile}">
-      <div ng-show="addingUser">
+  <div class="row" ng-show="addingUser">
+    <div class="col-md-3" ng-if="!isMobile"></div>
+    <div ng-class="{'col-md-6': !isMobile, 'col-md-12': isMobile}">
 
-        <!-- For creating a new user. -->
+    <!-- For creating a new user. -->
 
-        <form name="newUser" ng-submit="addingUser.save()">
-          <div class="form-field">
-            <div class="label">
-              <label for="email">Email:</label>
-            </div>
-            <div class="input">
-              <input class="standalone" ng-model="addingUser.email"
-                     type="email" placeholder="Email" required/>
-            </div>
+      <form name="newUser" ng-submit="addingUser.save()">
+        <div class="form-field">
+          <div class="label">
+            <label for="email">Email:</label>
           </div>
-
-          <div class="form-field">
-            <div class="label">
-              <label for="password1">Password:</label>
-            </div>
-            <div class="input">
-              <input class="standalone" ng-model="addingUser.password1"
-                     name="password1" type="password" placeholder="Password"
-                     required/>
-            </div>
+          <div class="input">
+            <input class="standalone" ng-model="addingUser.email"
+                   type="email" placeholder="Email" required/>
           </div>
-
-          <div class="form-field">
-            <div class="label">
-              <label for="password2">Password (again):</label>
-            </div>
-            <div class="input">
-              <input class="standalone" ng-model="addingUser.password2"
-                     name="password2" type="password"
-                     placeholder="Password (again)" required/>
-            </div>
-          </div>
-
-          <div class="form-field">
-            <div class="label">
-              <label for="first-name">First name:</label>
-            </div>
-            <div class="input">
-              <input class="standalone" ng-model="addingUser.firstName"
-                     name="first-name" type="text" placeholder="First name"/>
-            </div>
-          </div>
-
-          <div class="form-field">
-            <div class="label">
-              <label for="last-name">Last name:</label>
-            </div>
-            <div class="input">
-              <input class="standalone" ng-model="addingUser.lastName"
-                     name="last-name" type="text" placeholder="Last name"/>
-            </div>
-          </div>
-
-          <div class="form-field">
-            <div class="input">
-              <input class="standalone" type="checkbox" name="active"
-                     ng-model="addingUser.active"/>
-              <span class="label">
-                <label for="active">Active:</label>
-              </span>
-            </div>
-          </div>
-          <div class="form-field">
-            <div class="input">
-              <input class="standalone" type="checkbox" name="admin"
-                     ng-model="addingUser.admin"/>
-              <span class="label">
-                <label for="admin">Admin</label>
-              </span>
-            </div>
-          </div>
-
-          <div class="button-bar left">
-            <div class="buttons">
-              <button class="btn btn-primary"
-                      ng-disabled="addingUser.canSave()"
-                      ng-click="addingUser.save()">
-                Save
-              </button>
-              <button class="btn" ng-click="addingUser.cancel()">
-                Cancel
-              </button>
-              <button class="btn" ng-click="addingUser.clear()">
-                Clear
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <div class="unit whole" ng-show="users && !addingUser" id="users-list">
-      <div ng-show="users.length > 0">
-        <div class="users-header">
-          <div ng-show="users.length == 0">Impossible! No users!</div>
-          <div ng-show="users.length == 1">One user.</div>
-          <div ng-show="users.length > 1">{{users.length}} users.</div>
         </div>
 
-        <!-- List of existing users -->
+        <div class="form-field">
+          <div class="label">
+            <label for="password1">Password:</label>
+          </div>
+          <div class="input">
+            <input class="standalone" ng-model="addingUser.password1"
+                   name="password1" type="password" placeholder="Password"
+                   required/>
+          </div>
+        </div>
 
-        <table class="data-table" ts-wrapper>
-          <thead>
-            <tr>
-              <th class="sortable-column" ts-criteria="email|lowercase" ts-default>
-                Email
-              </th>
-              <th class="sortable-column" ts-criteria="displayName|lowercase">
-                Name
-              </th>
-              <th></th>
-              <th class="sortable-column" ts-criteria="admin">
-                Administrator
-              </th>
-              <th class="sortable-column" ts-criteria="active">
-                Active
-              </th>
-              <th>
-                <a href="#" ng-click="editNewUser()"
-                   class="btn btn-borderless" ng-hide="editingAny()">
-                  <i class="fa fa-plus"></i>
-                </a>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr ng-repeat="user in users track by $index" ts-repeat
-                ng-class="{admin: user.admin}">
-              <td>
-                {{user.email}}
-              </td>
+        <div class="form-field">
+          <div class="label">
+            <label for="password2">Password (again):</label>
+          </div>
+          <div class="input">
+            <input class="standalone" ng-model="addingUser.password2"
+                   name="password2" type="password"
+                   placeholder="Password (again)" required/>
+          </div>
+        </div>
 
-              <td>
-                <span ng-hide="user.editing">{{user.displayName}}</span>
-                <span ng-show="user.editing">
-                  <input class="standalone" ng-model="user.firstName"
-                         type="text" placeholder="First name"/>
-                  <input class="standalone" ng-model="user.lastName"
-                         type="text" placeholder="Last name"/>
-                </span>
-              </td>
+        <div class="form-field">
+          <div class="label">
+            <label for="first-name">First name:</label>
+          </div>
+          <div class="input">
+            <input class="standalone" ng-model="addingUser.firstName"
+                   name="first-name" type="text" placeholder="First name"/>
+          </div>
+        </div>
 
-              <td>
-                <span ng-show="user.editing">
-                  <input class="standalone" ng-model="user.password1"
-                         type="password" placeholder="Password"/>
-                  <input class="standalone" ng-model="user.password2"
-                         type="password" placeholder="Password (again)"/>
-                </span>
-              </td>
+        <div class="form-field">
+          <div class="label">
+            <label for="last-name">Last name:</label>
+          </div>
+          <div class="input">
+            <input class="standalone" ng-model="addingUser.lastName"
+                   name="last-name" type="text" placeholder="Last name"/>
+          </div>
+        </div>
 
-              <td>
-                <span ng-hide="user.editing">
-                  {{user.admin|pwgBoolean}}
-                </span>
-                <span ng-show="user.editing">
-                  <input class="standalone" ng-model="user.admin" type="checkbox"/>
-                </span>
-              </td>
+        <div class="form-field">
+          <div class="input">
+            <input class="standalone" type="checkbox" name="active"
+                   ng-model="addingUser.active"/>
+            <span class="label">
+              <label for="active">Active:</label>
+            </span>
+          </div>
+        </div>
+        <div class="form-field">
+          <div class="input">
+            <input class="standalone" type="checkbox" name="admin"
+                   ng-model="addingUser.admin"/>
+            <span class="label">
+              <label for="admin">Admin</label>
+            </span>
+          </div>
+        </div>
 
-              <td>
-                <span ng-hide="user.editing">
-                  {{user.active|pwgBoolean}}
-                </span>
-                <span ng-show="user.editing">
-                  <input class=standalone" ng-model="user.active" type="checkbox"/>
-                </span>
-              </td>
+        <div class="button-bar left">
+          <div class="buttons">
+            <button class="btn btn-primary"
+                    ng-disabled="addingUser.canSave()"
+                    ng-click="addingUser.save()">
+              Save
+            </button>
+            <button class="btn" ng-click="addingUser.cancel()">
+              Cancel
+            </button>
+            <button class="btn" ng-click="addingUser.clear()">
+              Clear
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
 
-              <td>
-                <a href="javascript:void(0)"
-                   class="btn btn-borderless"
-                   ng-click="user.edit()"
-                   ng-hide="user.editing">
-                  <i class="fa fa-pencil"></i>
-                </a>
-                <a href="javascript:void(0)"
-                   class="btn btn-borderless"
-                   ng-click="user.delete()"
-                   ng-hide="user.editing">
-                  <i class="fa fa-trash-o"></i>
-                </a>
-                <a href="javascript:void(0)"
-                   class="btn btn-borderless save"
-                   ng-click="user.save()"
-                   ng-show="user.editing">
-                  <i class="fa fa-save"></i>
-                </a>
-                <a href="javascript:void(0)"
-                   class="btn btn-borderless cancel"
-                   ng-click="user.cancel()"
-                   ng-show="user.editing">
-                  <i class="fa fa-times"></i>
-                 </a>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+  <div class="row" ng-show="users && !addingUser" id="users-total">
+    <div class="col-md-11">
+      <div ng-show="users.length > 0" class="pull-right">
+        <div class="users-header">
+          <div ng-show="users.length == 0">Impossible! No users!</div>
+          <div ng-show="users.length == 1">One user</div>
+          <div ng-show="users.length > 1">{{users.length}} users</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- List of existing users -->
+
+  <div class="results-table">
+    <div class="row results-header">
+      <div class="col-md-2">
+        <a href="" ng-click="sortBy('email')">Email</a>
+        <pwg-sort-indicator reverse="reverse"
+                            column="email"
+                            sort-column="sortColumn">
+        </pwg-sort-indicator>
+      </div>
+
+      <div class="col-md-2">
+        <a href="" ng-click="sortBy('displayName')">Name</a>
+        <pwg-sort-indicator reverse="reverse"
+                            column="displayName"
+                            sort-column="sortColumn">
+        </pwg-sort-indicator>
+      </div>
+
+      <div class="col-md-2" ng-show="editingAny()">
+        Password
+      </div>
+
+      <div class="col-md-2">
+        <a href="" ng-click="sortBy('admin')">Administrator</a>
+        <pwg-sort-indicator reverse="reverse"
+                            column="admin"
+                            sort-column="sortColumn">
+        </pwg-sort-indicator>
+      </div>
+
+      <div class="col-md-2">
+        <a href="" ng-click="sortBy('active')">Active</a>
+        <pwg-sort-indicator reverse="reverse"
+                            column="active"
+                            sort-column="sortColumn">
+        </pwg-sort-indicator>
+      </div>
+
+      <div class="col-md-1">
+        <a href="" ng-click="editNewUser()"
+           class="btn btn-borderless" ng-hide="editingAny()">
+          <i class="fa fa-plus"></i>
+        </a>
+      </div>
+    </div> <!-- results-header -->
+
+    <div class="results-body">
+      <div class="row"
+           ng-repeat="user in users | orderBy:sortColumn:reverse"
+           ng-class="{admin: user.admin, even: $even, odd: $odd}">
+        <form name="userForm{{$index}}">
+
+          <div class="col-md-2">{{user.email}}</div>
+
+          <div class="col-md-2">
+            <span ng-hide="user.editing">{{user.displayName}}</span>
+            <span ng-show="user.editing">
+              <input class="standalone" ng-model="user.firstName"
+                     type="text" placeholder="First name"/>
+              <input class="standalone" ng-model="user.lastName"
+                     type="text" placeholder="Last name"/>
+            </span>
+          </div>
+
+          <div class="col-md-2" ng-show="user.editing">
+            <input class="standalone" ng-model="user.password1"
+                   type="password" placeholder="Password"/>
+            <input class="standalone" ng-model="user.password2"
+                   type="password" placeholder="Password (again)"/>
+          </div>
+
+          <div class="col-md-2">
+            <span ng-hide="user.editing">
+              {{user.admin|pwgBoolean}}
+            </span>
+            <span ng-show="user.editing">
+              <input class="standalone" ng-model="user.admin" type="checkbox"/>
+            </span>
+          </div>
+
+          <div class="col-md-2">
+            <span ng-hide="user.editing">
+              {{user.active|pwgBoolean}}
+            </span>
+            <span ng-show="user.editing">
+              <input class=standalone" ng-model="user.active" type="checkbox"/>
+            </span>
+          </div>
+
+          <div class="col-md-1">
+            <a href="javascript:void(0)"
+               class="btn btn-borderless"
+               ng-click="user.edit()"
+               ng-hide="user.editing">
+              <i class="fa fa-pencil"></i>
+            </a>
+            <a href="javascript:void(0)"
+               class="btn btn-borderless"
+               ng-click="user.delete()"
+               ng-hide="user.editing">
+              <i class="fa fa-trash-o"></i>
+            </a>
+            <a href="javascript:void(0)"
+               class="btn btn-borderless save"
+               ng-click="user.save()"
+               ng-show="user.editing">
+              <i class="fa fa-save"></i>
+            </a>
+            <a href="javascript:void(0)"
+               class="btn btn-borderless cancel"
+               ng-click="user.cancel()"
+               ng-show="user.editing">
+              <i class="fa fa-times"></i>
+            </a>
+          </div>
+        </form>
       </div>
     </div>
   </div>

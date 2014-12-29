@@ -95,6 +95,44 @@ header {
   }
 }
 
+@results-table-margin: 30px;
+
+.results-table {
+  margin-left:  @results-table-margin;
+  margin-right: @results-table-margin;
+
+  .results-header {
+    font-weight: bold;
+    margin-bottom: 10px;
+
+    &.row {
+      padding: 5px;
+      border:  1px solid darken(@panelBackground, 20%);
+    }
+  }
+
+  .results-body {
+    .row {
+      padding-top: 10px;
+
+      &.even {
+        background-color: @panelBackground;
+      }
+      &.odd {
+        background-color: white;
+      }
+    }
+    .has-error {
+      input {
+        border-color: red !important;
+      }
+      .error {
+        color: red;
+      }
+    }
+  }
+}
+
 @tableHeaderBackground:  white;
 @tableOddRowBackground:  #f9f9f9;
 @tableEvenRowBackground: white;
