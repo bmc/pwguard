@@ -176,6 +176,16 @@ You can disable this check in your configuration file:
 **DO NOT DO THAT IN PRODUCTION.** If you do, your passwords (stored and
 login) are sent **in the clear**.
 
+If `ensureSSL` is `true` (which it is, by default, in production), if you
+attempt to connect to PWGuard directly (on port 9000) or through a
+non-SSL gateway, `PWGuard` will simply display
+
+    Can't find X-Forwarded-Proto header
+
+in the browser and refuse to do anything.
+
+To fix this problem, you need to run PWGuard behind an SSL-enabled gateway.
+
 I use [Nginx][], and I configure it as follows:
 
     upstream pwguard {
