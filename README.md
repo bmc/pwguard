@@ -9,7 +9,9 @@ a relatively secure deployment, by providing the following capabilities:
 * By default, it uses a [SQLite][] database. Since SQLite confines its data to
   a single file, you can easily locate that file on an encrypted volume.
 * By putting an SSL-aware web server, such as [Nginx][], in front of the
-  running PWGuard server, you can encrypt the data in-transit.
+  running PWGuard server, you can encrypt the data in-transit. By default,
+  PWGuard will refuse to do anything unless it detects that it is running
+  behind an SSL gateway.
 * User login passwords are one-way encrypted via [BCrypt][JBCrypt].
 * Stored passwords are encrypted with a user-specific (symmetric) key,
   which is kept in the database. **WARNING**: This strategy protects
@@ -38,6 +40,187 @@ This application serves two purposes:
    relatively small, open source application that uses both technologies
    allows me to experiment with new technologies and with changes in Play
    and AngularJS, without affecting my clients.
+
+## Deploying
+
+Deploying PWGuard is straighforward, though there's some initial setup to
+consider.
+
+### Preparing for initial deployment
+
+#### Install memcached
+
+PWGuard uses [Memcached][] to store its session information. (I may expand its
+use of Memcached, as well.) You need to ensure that the _memcached_ daemon
+is running on the machine where you intend to run PWGuard.
+
+* On Debian-based Linux systems, use `apt-get install memcached`
+* On RedHat/Fedora systems, use `yum install memcached`
+* On FreeBSD, use `portmaster databases/memcached`
+
+See <https://code.google.com/p/memcached/wiki/NewInstallFromPackage> for
+details.
+
+#### Install a Java JDK
+
+You'll need a Java runtime. The JDK is preferable to the JRE, in case you
+need to debug things. Any 1.6 or better JDK will work, though I recommend
+1.7 or 1.8. Once it's installed, set environment variable `JAVA_HOME`
+appropriately.
+
+#### Decide where you want your database
+
+First, decide where you want your SQLite database to be stored. Then, make
+a copy of `conf/production.conf` and override the database configuration.
+The default configuration is in `conf/database.conf` and looks like this:
+
+    db {
+      default {
+        url: "jdbc:sqlite:pwg.db"
+        driver: "org.sqlite.JDBC"
+        username: ""
+        password: ""
+      }
+    }
+
+To override the location, simply redefine `db.default.url` in your copy
+of `production.conf`. For instance:
+
+
+`my-production.conf`
+
+    ...
+
+    db {
+      default {
+        url: "jdbc:sqlite:/encryptedvol/pwguard.db"
+
+    ...
+
+**WARNINGS**
+
+* PWGuard _only_ supports SQLite. The initial DDL that creates the
+  database is SQLite-specific. Do _not_ attempt to use another database driver.
+* The database name _must_ be `default`. If you change the name (e.g.,
+  if you use `db.pwguard.url`), PWGuard will _not_ use your database
+  configuration.
+
+#### Create the distribution
+
+Get a copy of this source code (e.g., by cloning the Git repo). Then, within
+the resulting `pwguard` directory, run the following command:
+
+    ./activator dist
+
+That command will download the various third-party open source packages, compile
+the PWGuard code, and create a distribution tarball in the `target/universal`
+directory. Currently, that tarball is `pwguard-1.0-SNAPSHOT.tgz`.
+
+#### Unpack the distribution
+
+Copy the tarball to the appropriate location. Then, unpack it. You'll get a
+`pwguard-1.0-SNAPSHOT` directory. Change your working directory to that
+directory.
+
+#### Install your configuration file
+
+Copy your custom configuration file somewhere. Let's assume it's in
+`/home/pwguard/conf/production.conf`, though you can put it anywhere.
+
+I recommend installing your configuration file somewhere _outside_ the unpacked
+distribution, to make it easier to upgrade the application.
+
+#### Running the application
+
+You can run the application manually, from the command line, using the
+`bin/pwguard` script in the unpacked directory. If you do that, you'll
+probably want to use `screen` or `tmux` to ensure that the process doesn't
+die when you log off.
+
+Ensure that `JAVA_HOME` is set appropriately and that the path to the
+JDK's `bin` directory is in your `PATH`.
+
+You'll need to pass a few arguments to the command:
+
+    bin/pwguard -DLOG_DIR="/home/pwguard/current/logs" \
+                -Dconfig.file=/home/pwguard/current/conf/production.conf \
+                -DapplyEvolutions.default=true
+
+* `-DLOG_DIR` specifies the location of the log files.
+* `-Dconfig.file` specifies the path to your configuration file.
+* `-DapplyEvolutions.default=true` instructs Play to apply any database
+  migrations automatically.
+
+Again, I recommend location the logs _outside_ the unpacked directory.
+
+##### Using `supervisord`
+
+You can also run the application under the auspices of a service such as
+[Supervisor](http://supervisord.org/). The `supervisord` service must be
+installed and running, and you'll have to create a configuration file for
+PWGuard. You'll find a sample configuration file in `conf/supervisord.conf`.
+Edit that file and install it as `pwguard.conf` (usually in
+`/etc/supervisor/conf.d`); then, restart the `supervisord` service.
+
+#### Configuring your web server
+
+By default, PWGuard _insists_ that it be running behind an SSL-enabled
+web server. It checks the HTTP `X-Forwarded-Proto` header and refuses to
+do anything unless it detects that the front-end connection came in via
+SSL.
+
+You can disable this check in your configuration file:
+
+    ensureSSL: false
+
+### Upgrading
+
+Upgrading PWGuard is easy enough.
+
+* Use `git pull` to pull down the latest code.
+* Run `./activator clean dist` to rebuild the distribution.
+* Copy the resulting tarball to the production directory.
+* Remove the existing unpacked code (or move it out of the way).
+* Unpack the new code.
+* Apply any configuration changes. (See the CHANGELOG.)
+* Restart the application. If you're using `supervisord`, it should be
+  sufficient to kill the `java` process; `supervisord` should automatically
+  restart it. Otherwise, you'll have to do the work manually.
+
+**DO NOT DO THAT IN PRODUCTION.** If you do, your passwords (stored and
+login) are sent **in the clear**.
+
+I use [Nginx][], and I configure it as follows:
+
+    upstream pwguard {
+      server 127.0.0.1:9000
+    }
+
+    server {
+      server_name: pwguard.example.com
+      listen 443 default;
+      ssl on;
+      ssl_certificate /etc/ssl/pwguard.example.com.crt;
+      ssl_certificate_key /etc/ssl/private/pwguard.example.com.key;
+
+      root /home/pwguard/current;
+      keepalive_timeout 70;
+
+      location / {
+        proxy_pass http://play;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Server $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_redirect off;
+      }
+    }
+
+That's just a starting point. You may have to play with things to get them
+to work in your environment.
+
+If you prefer to use Apache, you're on your own (though I'll gladly add
+Apache instructions here, if someone works through the details and sends me
+the information).
 
 ## Disclaimers
 
@@ -78,7 +261,7 @@ uses many excellent open source packages, most of which are listed below.
 * [JodaTime](http://www.joda.org/)
 * [jQuery](https://jquery.org/)
 * [Log4Javascript](http://log4javascript.org/)
-* [Memcached](http://www.memcached.org/)
+* [Memcached][]
 * [Modernizr](http://modernizr.com/)
 * [scala-csv](https://github.com/tototoshi/scala-csv)
 * [SQLite](http://sqlite.org/)
@@ -93,3 +276,4 @@ uses many excellent open source packages, most of which are listed below.
 [JBCrypt]: http://www.mindrot.org/projects/jBCrypt/
 [Scala]: http://www.scala-lang.org/
 [bootstrap]: http://getbootstrap.com/
+[Memcached]: http://www.memcached.org/
