@@ -14,9 +14,6 @@ import pwguard.global.Globals.ExecutionContexts.Default._
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-class AuthenticatedRequest[T](val user: User, val request: Request[T])
-  extends WrappedRequest[T](request)
-
 // See https://www.playframework.com/documentation/2.3.x/ScalaActionsComposition
 
 object LoggedAction extends ActionBuilder[Request] with Logging {
@@ -75,12 +72,15 @@ object CheckSSLAction
   }
 }
 
+class AuthenticatedRequest[T](val user: User, val request: Request[T])
+  extends WrappedRequest[T](request)
+
 object AuthenticatedAction
   extends ActionBuilder[AuthenticatedRequest]
   with ActionRefiner[Request, AuthenticatedRequest] {
 
   def refine[T](request: Request[T]):
-  Future[Either[Result, AuthenticatedRequest[T]]] = {
+    Future[Either[Result, AuthenticatedRequest[T]]] = {
 
     import DAO.userDAO
 
