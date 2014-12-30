@@ -277,9 +277,9 @@ MainCtrl = ($scope,
     useRoute
 
   userPromise = pwgCheckUser.checkUser()
-  $scope.initializing = false
 
   userInfoSuccess = (response) ->
+    $scope.initializing = false
     if response.loggedIn
       $scope.setLoggedInUser response.user
     else
@@ -290,6 +290,7 @@ MainCtrl = ($scope,
     $scope.routeOnLoad = null
 
   userInfoFailure = (response) ->
+    $scope.initializing = false
     $scope.setLoggedInUser null
     $scope.redirectToNamedRoute "login"
 

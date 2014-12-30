@@ -35,7 +35,7 @@ pwgLogging = ->
       when "fatal" then log4javascript.Level.FATAL
       else log4javascript.Level.INFO
 
-  loggingLevel = mapLevel $("#config").data("log-level")
+  loggingLevel = mapLevel window.browserLogLevel
   appender.setThreshold loggingLevel
 
   logger: (name, level='debug') ->
