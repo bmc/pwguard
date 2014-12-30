@@ -43,6 +43,8 @@ object ImportExportController extends BaseController {
     val Notes       = Value
 
     val Required = Set(Name, Description)
+
+    val valuesInOrder = values.toList.sorted
   }
 
   val XSLXContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -61,13 +63,17 @@ object ImportExportController extends BaseController {
     "text/comma-separated-values"
   )
 
+  private val BaseExportFilename = "passwords"
+
   // -------------------------------------------------------------------------
   // Public methods
   // -------------------------------------------------------------------------
 
-  def exportData(filename: String, format: String) = SecuredAction { authReq =>
+  def exportData(format: String) = SecuredAction { authReq =>
 
-    def entryToList(user: User, e: PasswordEntry): Future[List[String]] = {
+    def unpackEntry(user: User, e: PasswordEntry):
+      Future[Map[Field.Value, String]] = {
+
       val PasswordEntry(_, _, name, descriptionOpt, loginIDOpt,
                         encryptedPasswordOpt, urlOpt, notesOpt) = e
       val description = descriptionOpt.getOrElse("")
@@ -76,11 +82,18 @@ object ImportExportController extends BaseController {
       val url         = urlOpt.getOrElse("")
 
       encryptedPasswordOpt map { epw =>
-        UserHelpers.decryptStoredPassword(user, epw) map { pw =>
-          List(name, description, loginID, pw, url.toString, notes)
-        }
+        UserHelpers.decryptStoredPassword(user, epw)
+
       } getOrElse {
-        Future.successful(List(name, description, loginID, "", notes))
+        Future.successful("")
+
+      } map { pwString =>
+        Map(Field.Name        -> name,
+            Field.Password    -> pwString,
+            Field.Description -> description,
+            Field.Login       -> loginID,
+            Field.URL         -> url,
+            Field.Notes       -> notes)
       }
     }
 
@@ -94,7 +107,7 @@ object ImportExportController extends BaseController {
 
       } flatMap { out: File =>
 
-        val entryFutures = entries.map { entryToList(user, _) }.toSeq
+        val entryFutures = entries.map { unpackEntry(user, _) }.toSeq
         for { seqOfFutures <- Future.sequence(entryFutures) }
         yield (out, seqOfFutures)
 
@@ -108,14 +121,19 @@ object ImportExportController extends BaseController {
       }
     }
 
-    val result = for { seq          <- passwordEntryDAO.allForUser(authReq.user)
-                       (file, mime) <- createDownload(seq, authReq.user) }
-                 yield Ok.sendFile(file)
-                         .as(mime)
-                         .withHeaders("Content-disposition" ->
-                                        s"attachment; filename=$filename")
+    // Main logic
 
-    result recover {
+    val r = for { seq          <- passwordEntryDAO.allForUser(authReq.user)
+                 (file, mime) <- createDownload(seq, authReq.user) }
+            yield {
+              val filename = s"${BaseExportFilename}.${format}"
+              Ok.sendFile(file)
+                .as(mime)
+                .withHeaders("Content-disposition" ->
+                             s"attachment; filename=$filename")
+            }
+
+    r recover {
       case NonFatal(e) =>
         BadRequest(jsonError(e))
     }
@@ -303,7 +321,9 @@ object ImportExportController extends BaseController {
   // Private Methods
   // -------------------------------------------------------------------------
 
-  private def writeExcel(out: File, entries: Seq[List[String]]): Future[File] = {
+  private def writeExcel(out: File, entries: Seq[Map[Field.Value, String]]):
+    Future[File] = {
+
     import java.io.FileOutputStream
     import org.apache.poi.xssf.usermodel.XSSFWorkbook
 
@@ -311,10 +331,28 @@ object ImportExportController extends BaseController {
       withCloseable(new FileOutputStream(out)) { fOut =>
         val wb = new XSSFWorkbook
         val sheet = wb.createSheet("Passwords")
-        for { rowData    <- entries
-              row         = sheet.createRow(0.asInstanceOf[Short])
-              (cell, i)  <- rowData.zipWithIndex } {
-          row.createCell(i).setCellValue(cell)
+
+        // Write the header.
+        val font = wb.createFont()
+        font.setBold(true)
+        val style = wb.createCellStyle()
+        style.setFont(font)
+
+        val row = sheet.createRow(0.asInstanceOf[Short])
+        for ((cellValue, i) <- Field.valuesInOrder.zipWithIndex) {
+          val cell = row.createCell(i)
+          cell.setCellValue(cellValue.toString)
+          cell.setCellStyle(style)
+        }
+
+        // Now the data.
+        for { (rowMap, rI)  <- entries.zipWithIndex
+              rowNum         = rI + 1
+              row            = sheet.createRow(rowNum.asInstanceOf[Short])
+              (name, cI)    <- Field.valuesInOrder.zipWithIndex } {
+          val cellNum = cI + 1
+          val cell    = row.createCell(cI.asInstanceOf[Short])
+          cell.setCellValue(rowMap.getOrElse(name, ""))
         }
 
         wb.write(fOut)
@@ -323,20 +361,23 @@ object ImportExportController extends BaseController {
     }
   }
 
-  private def writeCSV(out: File, entries: Seq[List[String]]): Future[File] = {
+  private def writeCSV(out: File, entries: Seq[Map[Field.Value, String]]):
+    Future[File] = {
+
     Future {
       withCloseable(new BufferedWriter(
         new OutputStreamWriter(
           new FileOutputStream(out), "UTF-8"))) { fOut =>
         withCloseable(CSVWriter.open(fOut)) { csv =>
-          csv.writeRow(List(Field.Name.toString,
-                            Field.Description.toString,
-                            Field.Login.toString,
-                            Field.Password.toString,
-                            Field.URL.toString,
-                            Field.Notes.toString))
 
-          for (l <- entries) csv.writeRow(l)
+          // Write the header.
+          csv.writeRow(Field.valuesInOrder.map(_.toString).toList)
+
+          // Now the data.
+          for ( rowMap <- entries ) {
+            val row = Field.valuesInOrder.map { rowMap.getOrElse(_, "") }.toList
+            csv.writeRow(row)
+          }
 
           out
         }

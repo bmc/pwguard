@@ -70,8 +70,6 @@ config = ($routeProvider) ->
       templateUrl: r.templateUrl
       controller:  r.controller
 
-    console.log "$routeProvider.when '#{url},"
-    console.log cfg
     $routeProvider.when url, cfg
     if r.defaultURL
       DEFAULT_ROUTE = url
@@ -87,9 +85,6 @@ config = ($routeProvider) ->
       redirectTo: DEFAULT_ROUTE
     $routeProvider.otherwise cfg
 
-  console.log "REVERSE_ROUTES:"
-  console.log REVERSE_ROUTES
-
 pwguardApp.config ['$routeProvider', config]
 
 pwgRoutes = (pwgLogging, $location) ->
@@ -97,7 +92,6 @@ pwgRoutes = (pwgLogging, $location) ->
   log = pwgLogging.logger "pwgRoutes"
 
   URL_RE = /^.*#(.*)$/
-  console.log ADMIN_ONLY_ROUTES
 
   postLoginRoute = (name) ->
     name in POST_LOGIN_ROUTES
@@ -121,7 +115,6 @@ pwgRoutes = (pwgLogging, $location) ->
     DEFAULT_ROUTE
 
   routeNameForURL: (url) ->
-    console.log "--- routeNameForURL = #{url}"
     url = if url? then url else ""
     m = URL_RE.exec(url)
     strippedURL = if m then m[1] else url
@@ -130,15 +123,13 @@ pwgRoutes = (pwgLogging, $location) ->
       if REVERSE_ROUTES[r] is strippedURL
         result = r
         break
-    console.log "--- result=#{result}"
+
     result
 
   redirectToNamedRoute: (name) ->
     url = REVERSE_ROUTES[name]
-    console.log "redirectToNamedRoute: name=#{name}, url=#{url}"
     if url?
       log.debug "Redirecting to #{url}"
-      console.log "Redirecting to #{url}"
       log.trace (new Error("Debug stack trace").stack)
       $location.path(url)
     else
@@ -206,7 +197,6 @@ MainCtrl = ($scope,
   $scope.dialogConfirmMessage  = null
   $scope.loggedInUser          = null
   $scope.routeOnLoad           = pwgRoutes.routeNameForURL($location.path())
-  console.log "routeOnLoad = #{$scope.routeOnLoad}"
   $scope.initializing          = true
   $scope.flashAfterRouteChange = null
 
@@ -290,15 +280,12 @@ MainCtrl = ($scope,
   $scope.initializing = false
 
   userInfoSuccess = (response) ->
-    console.log "userInfoSuccess"
-    console.log response
     if response.loggedIn
       $scope.setLoggedInUser response.user
     else
       $scope.setLoggedInUser null
 
     useRoute = validateLocationChange $scope.routeOnLoad
-    console.log "Routing to #{useRoute}"
     pwgRoutes.redirectToNamedRoute useRoute
     $scope.routeOnLoad = null
 
@@ -645,30 +632,9 @@ ImportExportCtrl = ($scope,
   $scope.isCSV   = -> $scope.exportFormat is 'csv'
 
   $scope.downloading = false
-  $scope.exportFilename = "export"
   $scope.exportFormat = 'csv'
-  $scope.exportURL = null
-
-  $scope.$watch "exportFilename", (newValue, oldValue) ->
-    console.log "*** #{newValue}, #{oldValue}"
-
-  adjustURL = (filename, format) ->
-    file = "#{filename}.#{format}"
-    $scope.exportURL = routes.controllers.ImportExportController.exportData(file, format).url
-    console.log "New URL: #{$scope.exportURL}"
-
-  $scope.exportFormatChanged = (fmt) ->
-    console.log "New format: #{fmt}"
-    adjustURL($scope.exportFilename, fmt)
-    $scope.exportFormat = fmt
-
-  $scope.exportFileChanged = ->
-    console.log $scope.exportFilename
-    f = -> console.log $scope.exportFilename
-    $timeout f, 1000
-    adjustURL($scope.exportFilename, $scope.exportFormat)
-
-  $scope.exportFormatChanged($scope.exportFormat) # initialize
+  $scope.formatPlaceholder = 'XXX'
+  $scope.exportURLTemplate = routes.controllers.ImportExportController.exportData($scope.formatPlaceholder).url
 
   $scope.startDownload = ->
     $scope.downloading = true
