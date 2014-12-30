@@ -1,8 +1,10 @@
 package pwguard.global
 
+import play.api.mvc.WithFilters
 import play.api.{Logger, GlobalSettings, Application}
 import play.api.libs.concurrent.Akka
 import play.api.Play.current
+import play.filters.csrf._
 import services.UserAgentDecoder
 import scala.concurrent.ExecutionContext
 import scala.language.postfixOps;
@@ -16,7 +18,7 @@ import scala.slick.driver.{
 
 /** Global object, for startup. DON'T IMPORT THIS! Import Globals, instead.
   */
-object Global extends GlobalSettings {
+object Global extends WithFilters(CSRFFilter()) with GlobalSettings {
     // No choice but to use vars here.
   private[global] var _dal: Option[dbservice.DAL] = None
   private[global] var _db: Option[scala.slick.jdbc.JdbcBackend#Database] = None

@@ -12,6 +12,7 @@ libraryDependencies ++= Seq(
   jdbc,
   cache,
   ws,
+  filters,
   "com.typesafe.slick"   %%  "slick"                      % "2.1.0",
   "org.xerial"            %  "sqlite-jdbc"                % "3.7.2",
   "org.clapper"          %%  "grizzled-scala"             % "1.3",
