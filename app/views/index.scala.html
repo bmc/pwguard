@@ -11,6 +11,11 @@
     <title>PWGuard</title>
     <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
 
+    <!--[if lt IE 9]>
+    @scriptWebJar("excanvas/excanvas.js")
+    @scriptWebJar("html5shiv/html5shiv.min.js")
+    <![endif]-->
+
     @* ----------------------------------------------------------------------
        JQuery
        ---------------------------------------------------------------------- *@
@@ -56,6 +61,7 @@
 
     @scriptWebJar("log4javascript/js/log4javascript.js")
     @scriptWebJar("underscorejs/underscore-min.js")
+    @scriptWebJar("modernizr/modernizr.min.js")
 
     @* ----------------------------------------------------------------------
         Local

@@ -28,6 +28,9 @@ libraryDependencies ++= Seq(
   "org.apache.poi"        % "poi-ooxml"                  % "3.11",
   "com.github.mumoshu"   %% "play2-memcached"            % "0.6.0",
   "org.webjars"           % "bootstrap"                  % "3.2.0",
+  "org.webjars"           % "modernizr"                  % "2.8.3",
+  "org.webjars"           % "excanvas"                   % "3",
+  "org.webjars"           % "html5shiv"                  % "3.7.2",
   // -------------------------------------------------------------------------
   // AngularJS consistency irritations:
   //

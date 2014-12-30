@@ -23,8 +23,7 @@ ADMIN_ONLY_ROUTES = []
 REVERSE_ROUTES    = {}
 DEFAULT_ROUTE     = null
 
-config = ($routeProvider) ->
-
+initializeRouting = ($routeProvider) ->
   templateURL   = window.angularTemplateURL
 
   # Routing table
@@ -84,6 +83,23 @@ config = ($routeProvider) ->
     cfg =
       redirectTo: DEFAULT_ROUTE
     $routeProvider.otherwise cfg
+
+checkMissingFeatures = ->
+  missing = []
+  unless window.FileReader and Modernizr.draganddrop
+    missing.push("drag-and-drop")
+  unless Modernizr.canvastext
+    missing.push("canvas")
+
+  if missing.length > 0
+    alert("Your browser lacks the following HTML 5 features:\n\n" +
+          missing.join(', ') + "\n\n" +
+          "Parts of this application may not behave as designed or may fail " +
+          "completely. Please consider using a newer browser.")
+
+config = ($routeProvider) ->
+  initializeRouting $routeProvider
+  checkMissingFeatures()
 
 pwguardApp.config ['$routeProvider', config]
 
