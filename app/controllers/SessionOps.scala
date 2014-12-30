@@ -17,7 +17,7 @@ import pwguard.global.Globals.ExecutionContexts.Default._
   */
 object SessionOps {
 
-  private val sessionStore   = new MemorySessionStore
+  private val sessionStore   = new PlayCacheSessionStore
   private val logger         = Logger("pwguard.controllers.SessionOps")
   private val SessionTimeout = current.configuration
                                       .getMilliseconds("session.timeout")

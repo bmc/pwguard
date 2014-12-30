@@ -137,3 +137,32 @@ class MemorySessionStore extends SessionStore {
     }
   }
 }
+
+/** A version of the session store that uses Play's cache API. With a
+  * persistent underlying cache store, such as Memcache, this session store
+  * can allow session data to persist across server restarts.
+  */
+class PlayCacheSessionStore extends SessionStore {
+  import play.api.cache.Cache
+  import play.api.Play.current
+
+  def getSessionData(sessionID: String): Future[Option[SessionData]] = {
+    Future {
+      Cache.getAs[SessionData](sessionID)
+    }
+  }
+
+  def storeSessionData(sessionData: SessionData): Future[Boolean] = {
+    Future {
+      Cache.set(sessionData.sessionID, sessionData)
+      true
+    }
+  }
+
+  def clearSessionData(sessionID: String): Future[Boolean] = {
+    Future {
+      Cache.remove(sessionID)
+      true
+    }
+  }
+}
