@@ -54,7 +54,9 @@ trait BaseController extends Logging {
     * @return    The actual action
     */
   def UnsecuredJSONAction(f: (Request[JsValue]) => Future[Result]) = {
-    (Action andThen LoggedAction).async(parse.json) { req =>
+    (CheckSSLAction andThen
+     Action andThen
+     LoggedAction).async(parse.json) { req =>
       f(req)
     }
   }
@@ -67,7 +69,7 @@ trait BaseController extends Logging {
     * @return    The actual action
     */
   def UnsecuredAction(f: (Request[AnyContent]) => Future[Result]) = {
-    (Action andThen LoggedAction).async { req =>
+    (CheckSSLAction andThen Action andThen LoggedAction).async { req =>
       f(req)
     }
   }
@@ -80,7 +82,9 @@ trait BaseController extends Logging {
     * @return    The actual action
     */
   def SecuredJSONAction(f: (AuthenticatedRequest[JsValue]) => Future[Result]) = {
-    (LoggedAction andThen AuthenticatedAction).async(parse.json) { authReq =>
+    (CheckSSLAction andThen
+     LoggedAction andThen
+     AuthenticatedAction).async(parse.json) { authReq =>
       f(authReq)
     }
   }
@@ -93,7 +97,9 @@ trait BaseController extends Logging {
     * @return    The actual action
     */
   def SecuredAction(f: (AuthenticatedRequest[AnyContent]) => Future[Result]) = {
-    (LoggedAction andThen AuthenticatedAction).async { authReq =>
+    (CheckSSLAction andThen
+     LoggedAction andThen
+     AuthenticatedAction).async { authReq =>
       f(authReq)
     }
   }
@@ -102,12 +108,15 @@ trait BaseController extends Logging {
     * back a consistent error when no user is logged in. Built on top of
     * `ActionWithUser`.
     *
-    * @param f   The handler returning the result, wrapped in a Future
-    * @return    The actual action
+    * @param parser  The desired body parser
+    * @param f       The handler returning the result, wrapped in a Future
+    * @return        The actual action
     */
-  def SecuredAction[T](bodyParser: BodyParser[T])
+  def SecuredAction[T](parser: BodyParser[T])
                    (f: (AuthenticatedRequest[T]) => Future[Result]) = {
-    (LoggedAction andThen AuthenticatedAction).async(bodyParser) { authReq =>
+    (CheckSSLAction andThen
+     LoggedAction andThen
+     AuthenticatedAction).async(parser) { authReq =>
       f(authReq)
     }
   }

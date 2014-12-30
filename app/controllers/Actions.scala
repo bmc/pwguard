@@ -2,6 +2,7 @@ package controllers
 
 import dbservice.DAO
 import models.User
+import play.api.Logger
 import services.Logging
 import util.EitherOptionHelpers.Implicits._
 
@@ -33,6 +34,44 @@ object LoggedAction extends ActionBuilder[Request] with Logging {
           res <- block(request)
           f2  <- futureLog { s"Finished processing request ${request}" } }
     yield res
+  }
+}
+
+object CheckSSLAction
+  extends ActionBuilder[Request]
+  with ActionRefiner[Request, Request] {
+
+  def refine[T](request: Request[T]): Future[Either[Result, Request[T]]] = {
+    val cfg = play.api.Play.current.configuration
+    val ensureSSL = cfg.getBoolean("ensureSSL").getOrElse(false)
+
+    def doCheck(): Future[Request[T]] = {
+      Future {
+        if (! ensureSSL) {
+          request
+        }
+        else {
+          val proto = request.headers.get("x-forwarded-proto")
+          if (proto.isEmpty)
+            throw new Exception("Can't find X-Forwarded-Proto header")
+          if (! proto.get.contains("https"))
+            throw new Exception("Request did not use SSL.")
+
+          request
+        }
+      }
+    }
+
+    doCheck() map {
+      Right(_)
+
+    } recover {
+      case NonFatal(e) => {
+        val error = e.getMessage
+        Logger.error(error)
+        Left(PreconditionFailed(error))
+      }
+    }
   }
 }
 
