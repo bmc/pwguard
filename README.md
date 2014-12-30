@@ -173,20 +173,6 @@ You can disable this check in your configuration file:
 
     ensureSSL: false
 
-### Upgrading
-
-Upgrading PWGuard is easy enough.
-
-* Use `git pull` to pull down the latest code.
-* Run `./activator clean dist` to rebuild the distribution.
-* Copy the resulting tarball to the production directory.
-* Remove the existing unpacked code (or move it out of the way).
-* Unpack the new code.
-* Apply any configuration changes. (See the CHANGELOG.)
-* Restart the application. If you're using `supervisord`, it should be
-  sufficient to kill the `java` process; `supervisord` should automatically
-  restart it. Otherwise, you'll have to do the work manually.
-
 **DO NOT DO THAT IN PRODUCTION.** If you do, your passwords (stored and
 login) are sent **in the clear**.
 
@@ -221,6 +207,20 @@ to work in your environment.
 If you prefer to use Apache, you're on your own (though I'll gladly add
 Apache instructions here, if someone works through the details and sends me
 the information).
+
+### Upgrading
+
+Upgrading PWGuard is easy enough.
+
+* Use `git pull` to pull down the latest code.
+* Run `./activator clean dist` to rebuild the distribution.
+* Copy the resulting tarball to the production directory.
+* Remove the existing unpacked code (or move it out of the way).
+* Unpack the new code.
+* Apply any configuration changes. (See the CHANGELOG.)
+* Restart the application. If you're using `supervisord`, it should be
+  sufficient to kill the `java` process; `supervisord` should automatically
+  restart it. Otherwise, you'll have to do the work manually.
 
 ## Disclaimers
 
