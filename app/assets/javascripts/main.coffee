@@ -7,9 +7,6 @@
 ###############################################################################
 
 requiredModules = ['ngRoute',
-                   'ngAnimate',
-                   'route-segment',
-                   'view-segment',
                    'ngCookies',
                    'ngSanitize',
                    'mgcrea.ngStrap',
@@ -17,33 +14,142 @@ requiredModules = ['ngRoute',
                    'pwguard-services',
                    'pwguard-filters',
                    'pwguard-directives']
-
-# Angular.js configuration function. Passed into the actual application, below,
-# when it is created.
-configApp = ($routeSegmentProvider,
-             $routeProvider,
-             $locationProvider) ->
-
-  # For now, don't use this. Allow Angular to use its "#" URLs. This approach
-  # simplifies things on the backend, since it doesn't result in backend
-  # routing issues. (That is, the Play! router ignores hash fragments.)
-
-  #$locationProvider.html5Mode(true).hashPrefix('!')
-
-  window.setRoutes $routeSegmentProvider, $routeProvider
-
 # The app itself.
 pwguardApp = angular.module('PWGuardApp', requiredModules)
-pwguardApp.config ['$routeSegmentProvider',
-                   '$routeProvider',
-                   '$locationProvider',
-                   configApp]
+
+ROUTES            = {}
+POST_LOGIN_ROUTES = []
+ADMIN_ONLY_ROUTES = []
+REVERSE_ROUTES    = {}
+DEFAULT_ROUTE     = null
+
+config = ($routeProvider) ->
+
+  templateURL   = window.angularTemplateURL
+
+  # Routing table
+
+  ROUTES =
+    "/login":
+      templateUrl: templateURL("login.html")
+      controller:  'LoginCtrl'
+      name:        'login'
+      admin:       false
+      postLogin:   false
+    "/search":
+      templateUrl: templateURL("search.html")
+      controller:  'SearchCtrl'
+      name:        'search'
+      admin:       false
+      postLogin:   true
+      defaultURL:  true
+    "/profile":
+      templateUrl: templateURL("profile.html")
+      controller:  'ProfileCtrl'
+      name:        'profile'
+      admin:       false
+      postLogin:   true
+    "/admin/users":
+      templateUrl: templateURL("admin-users.html")
+      controller:  'AdminUsersCtrl'
+      name:        'admin-users'
+      admin:       true
+      postLogin:   true
+    "/import-export":
+      templateUrl: templateURL("ImportExport.html")
+      controller:  'ImportExportCtrl'
+      name:        'import-export'
+      admin:       false
+      postLogin:   true
+
+  for url of ROUTES
+    r = ROUTES[url]
+    REVERSE_ROUTES[r.name] = url
+
+    cfg =
+      templateUrl: r.templateUrl
+      controller:  r.controller
+
+    console.log "$routeProvider.when '#{url},"
+    console.log cfg
+    $routeProvider.when url, cfg
+    if r.defaultURL
+      DEFAULT_ROUTE = url
+
+    if r.postLogin
+      POST_LOGIN_ROUTES.push r.name
+
+    if r.admin
+      ADMIN_ONLY_ROUTES.push r.name
+
+  if DEFAULT_ROUTE
+    cfg =
+      redirectTo: DEFAULT_ROUTE
+    $routeProvider.otherwise cfg
+
+  console.log "REVERSE_ROUTES:"
+  console.log REVERSE_ROUTES
+
+pwguardApp.config ['$routeProvider', config]
+
+pwgRoutes = (pwgLogging, $location) ->
+
+  log = pwgLogging.logger "pwgRoutes"
+
+  URL_RE = /^.*#(.*)$/
+  console.log ADMIN_ONLY_ROUTES
+
+  postLoginRoute = (name) ->
+    name in POST_LOGIN_ROUTES
+
+  isAdminOnlyRoute: (name) ->
+    name in ADMIN_ONLY_ROUTES
+
+  isPostLoginRoute: (name) ->
+    postLoginRoute(name)
+
+  isPreLoginRoute: (name) ->
+    not postLoginRoute(name)
+
+  pathForRouteName: (name) ->
+    REVERSE_ROUTES[name]
+
+  hrefForRouteName: (name) ->
+    "#" + pathForRouteName(name)
+
+  defaultRoute: ->
+    DEFAULT_ROUTE
+
+  routeNameForURL: (url) ->
+    console.log "--- routeNameForURL = #{url}"
+    url = if url? then url else ""
+    m = URL_RE.exec(url)
+    strippedURL = if m then m[1] else url
+    result = null
+    for r of REVERSE_ROUTES
+      if REVERSE_ROUTES[r] is strippedURL
+        result = r
+        break
+    console.log "--- result=#{result}"
+    result
+
+  redirectToNamedRoute: (name) ->
+    url = REVERSE_ROUTES[name]
+    console.log "redirectToNamedRoute: name=#{name}, url=#{url}"
+    if url?
+      log.debug "Redirecting to #{url}"
+      console.log "Redirecting to #{url}"
+      log.trace (new Error("Debug stack trace").stack)
+      $location.path(url)
+    else
+      console.log "(BUG) No URL for route #{name}"
+
+
+pwguardApp.factory 'pwgRoutes', ['pwgLogging', '$location', pwgRoutes]
 
 ###############################################################################
 # Local functions
 ###############################################################################
-
-# Instantiating the module this way, rather than via "ng-app", provides
 
 fieldsMatch = (v1, v2) ->
   normalizeValue(v1) is normalizeValue(v2)
@@ -75,15 +181,20 @@ ellipsize = (input, max=30) ->
 # ---------------------------------------------------------------------------
 
 MainCtrl = ($scope,
-            $routeSegment,
             $location,
             pwgTimeout,
             pwgAjax,
             pwgFlash,
             pwgCheckUser,
-            pwgLogging) ->
+            pwgLogging,
+            pwgRoutes,
+            angularTemplateURL) ->
 
   pwgFlash.init() # initialize the flash service
+
+  # Put the template URL in the scope, because it's used inside templates
+  # (e.g., within ng-include directives).
+  $scope.templateURL = angularTemplateURL
 
   $scope.debugMessages = []
   $scope.debug = (msg) ->
@@ -94,8 +205,8 @@ MainCtrl = ($scope,
   $scope.dialogConfirmTitle    = null
   $scope.dialogConfirmMessage  = null
   $scope.loggedInUser          = null
-  $scope.$routeSegment         = $routeSegment
-  $scope.segmentOnLoad         = window.segmentForURL($location.path())
+  $scope.routeOnLoad           = pwgRoutes.routeNameForURL($location.path())
+  console.log "routeOnLoad = #{$scope.routeOnLoad}"
   $scope.initializing          = true
   $scope.flashAfterRouteChange = null
 
@@ -104,13 +215,10 @@ MainCtrl = ($scope,
   pwgAjax.on401 ->
     if $scope.loggedInUser
       $scope.loggedInUser = null
-      $scope.redirectToSegment "login"
+      $scope.redirectToNamedRoute "login"
       $scope.flashAfterRouteChange = "Session timeout. Please log in again."
     else
       pwgFlash.error "Login failure."
-
-  $scope.templateURL = (path) ->
-    window.angularTemplateURL(path)
 
   $scope.$on '$routeChangeSuccess', ->
     # Clear flash messages on route change.
@@ -123,31 +231,24 @@ MainCtrl = ($scope,
     # Skip, while initializing. (Doing this during initialization screws
     # things up, causing multiple redirects that play games with Angular.)
     unless $scope.initializing
-      segment = window.segmentForURL $location.path()
-      useSegment = validateLocationChange segment
-      log.debug "segment=#{segment}, useSegment=#{useSegment}"
-      if useSegment isnt segment
-        e.preventDefault()
-        $scope.redirectToSegment useSegment
+      routeName = pwgRoutes.routeNameForURL $location.path()
+      useRoute = validateLocationChange routeName
+      log.debug "routeName=#{routeName}, useRoute=#{useRoute}"
+      if useRoute isnt routeName
+        $scope.redirectToNamedRoute useRoute
 
   # Page-handling.
 
   # Convenient way to show a page/segment
 
-  $scope.redirectToSegment = (segment) ->
-    url = $scope.pathForSegment segment
+  $scope.redirectToNamedRoute = (name) ->
+    url = pwgRoutes.pathForRouteName name
     if url?
       log.debug "Redirecting to #{url}"
       log.trace (new Error("Debug stack trace").stack)
       $location.path(url)
     else
-      console.log "(BUG) No URL for segment #{segment}"
-
-  $scope.segmentIsActive = (segment) ->
-    ($routeSegment.name is segment) or ($routeSegment.startsWith("#{segment}."))
-
-  $scope.pathForSegment = window.pathForSegment
-  $scope.hrefForSegment = window.hrefForSegment
+      console.log "(BUG) No URL for route #{name}"
 
   $scope.loggedIn = ->
     $scope.loggedInUser?
@@ -162,56 +263,60 @@ MainCtrl = ($scope,
   # On initial load or reload, we need to determine whether the user is
   # still logged in, since a reload clears everything in the browser.
 
-  validateLocationChange = (segment) ->
-    useSegment = null
+  validateLocationChange = (routeName) ->
+    useRoute = null
     if $scope.loggedInUser?
       # Ensure that the segment is valid for a logged in user.
-      useSegment = 'search' # default
-      if segment?
-        if window.isPostLoginSegment(segment)
+      useRoute = pwgRoutes.defaultRoute()
+      if routeName?
+        if pwgRoutes.isPostLoginRoute(routeName)
           if $scope.loggedInUser.admin
             # Admins can go anywhere.
-            useSegment = segment
-          else if (not window.isAdminOnlySegment(segment))
+            useRoute = routeName
+          else if (not pwgRoutes.isAdminOnlyRoute(segment))
             # Non-admins can go to non-admin segments.
-            useSegment = segment
+            useRoute = routeName
 
     else
       # Ensure that the segment is valid for a non-logged in user.
-      if segment? and window.isPreLoginSegment(segment)
-        useSegment = segment
+      if routeName? and pwgRoutes.isPreLoginRoute(routeName)
+        useRoute = routeName
       else
-        useSegment = 'login'
+        useRoute = 'login'
 
-    useSegment
+    useRoute
 
   userPromise = pwgCheckUser.checkUser()
   $scope.initializing = false
 
   userInfoSuccess = (response) ->
+    console.log "userInfoSuccess"
+    console.log response
     if response.loggedIn
       $scope.setLoggedInUser response.user
     else
       $scope.setLoggedInUser null
 
-    useSegment = validateLocationChange $scope.segmentOnLoad
-    $scope.redirectToSegment useSegment
-    $scope.segmentOnLoad = false
+    useRoute = validateLocationChange $scope.routeOnLoad
+    console.log "Routing to #{useRoute}"
+    pwgRoutes.redirectToNamedRoute useRoute
+    $scope.routeOnLoad = null
 
   userInfoFailure = (response) ->
     $scope.setLoggedInUser null
-    $scope.redirectToSegment "login"
+    $scope.redirectToNamedRoute "login"
 
   userPromise.then userInfoSuccess, userInfoFailure
 
 pwguardApp.controller 'MainCtrl', ['$scope',
-                                   '$routeSegment',
                                    '$location',
                                    'pwgTimeout',
                                    'pwgAjax',
                                    'pwgFlash',
                                    'pwgCheckUser',
                                    'pwgLogging',
+                                   'pwgRoutes',
+                                   'angularTemplateURL',
                                    MainCtrl]
 
 # ---------------------------------------------------------------------------
@@ -237,7 +342,7 @@ NavbarCtrl = ($scope, pwgAjax, pwgModal) ->
       confirmed = ->
         always = () ->
           $scope.setLoggedInUser null
-          $scope.redirectToSegment 'login'
+          $scope.redirectToNamedRoute 'login'
 
         onSuccess = (response) ->
           always()
@@ -268,7 +373,7 @@ LoginCtrl = ($scope, pwgAjax, pwgFlash) ->
   $scope.login = ->
     handleLogin = (data) ->
       $scope.setLoggedInUser data.user
-      $scope.redirectToSegment 'search'
+      $scope.redirectToNamedRoute 'search'
 
     handleFailure = (data) ->
       console.log data
@@ -530,20 +635,40 @@ ImportExportCtrl = ($scope,
                     $timeout,
                     FileUploader,
                     pwgAjax,
-                    pwgFlash,
-                    $rootScope,
-                    $location) ->
-
-  $scope.downloading = false
-  $scope.importState = 'new'
+                    pwgFlash) ->
 
   #######################
   # Export              #
   #######################
 
-  $scope.exportFilename = "export.csv"
-  $scope.exportURL = ->
-    routes.controllers.ImportExportController.exportData($scope.exportFilename).url
+  $scope.isExcel = -> $scope.exportFormat is 'xlsx'
+  $scope.isCSV   = -> $scope.exportFormat is 'csv'
+
+  $scope.downloading = false
+  $scope.exportFilename = "export"
+  $scope.exportFormat = 'csv'
+  $scope.exportURL = null
+
+  $scope.$watch "exportFilename", (newValue, oldValue) ->
+    console.log "*** #{newValue}, #{oldValue}"
+
+  adjustURL = (filename, format) ->
+    file = "#{filename}.#{format}"
+    $scope.exportURL = routes.controllers.ImportExportController.exportData(file, format).url
+    console.log "New URL: #{$scope.exportURL}"
+
+  $scope.exportFormatChanged = (fmt) ->
+    console.log "New format: #{fmt}"
+    adjustURL($scope.exportFilename, fmt)
+    $scope.exportFormat = fmt
+
+  $scope.exportFileChanged = ->
+    console.log $scope.exportFilename
+    f = -> console.log $scope.exportFilename
+    $timeout f, 1000
+    adjustURL($scope.exportFilename, $scope.exportFormat)
+
+  $scope.exportFormatChanged($scope.exportFormat) # initialize
 
   $scope.startDownload = ->
     $scope.downloading = true
@@ -554,6 +679,8 @@ ImportExportCtrl = ($scope,
   #######################
   # Import              #
   #######################
+
+  $scope.importState = 'new'
 
   # ------------------- #
   # when state == 'new' #

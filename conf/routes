@@ -20,7 +20,7 @@ POST          /user                          controllers.UserController.create
 GET           /users                         controllers.UserController.getAll
 DELETE        /user/:id                      controllers.UserController.delete(id: Int)
 
-GET           /export                        controllers.ImportExportController.exportData(filename: String)
+GET           /export                        controllers.ImportExportController.exportData(filename: String, format: String)
 POST          /import                        controllers.ImportExportController.importDataUpload
 POST          /complete-import               controllers.ImportExportController.completeImport
 

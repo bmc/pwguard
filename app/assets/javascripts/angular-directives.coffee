@@ -1,7 +1,6 @@
 # Local Angular directives.
 
-pwgDirectives = angular.module 'pwguard-directives', ['pwguard-services',
-                                                      'ngAnimate']
+pwgDirectives = angular.module 'pwguard-directives', ['pwguard-services']
 templateURL   = window.angularTemplateURL
 
 # -----------------------------------------------------------------------------

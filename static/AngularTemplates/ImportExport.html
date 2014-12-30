@@ -7,36 +7,79 @@
       <p>Click the Export button to download a CSV file with all your
       password data.</p>
 
-      <div class="row">
-        <form name="exportForm" novalidate>
-          <div class="col-md-9">
+      <form name="exportForm" novalidate class="form-inline">
+        <div class="row">
+          <div class="col-md-8">
             <div ng-class="{'has-error': exportForm.$invalid}">
+              <!--
+                AngularJS doesn't seem to be handling ng-model properly here.
+                Simulate.
+              -->
               <input type="text"
+                     id="exportFilename"
                      class="form-control"
                      ng-model="exportFilename"
                      placeholder="export filename"
+                     ng-change="exportFileChanged()"
+<!--
                      ng-trim="true"
-                     ng-pattern="/^[^/]+\.csv$/"
-                     ng-required="true"/>
-              <div class="error" ng-show="exportForm.$invalid">
-                The file name is required, must have a .CSV extension, and
-                cannot be a pathname.
-              </div>
+                     required/>
+-->
+              >
+              <input type="text" class="form-control" readonly="readonly"
+                     value=".{{exportFormat}}" size="5">
             </div>
           </div>
-          <div class="col-md-2">
-            <a class="btn btn-primary btn-lg"
+        </div>
+        <div class="row">
+          <div class="col-md-8">
+            <div class="error" ng-show="exportForm.$invalid">
+              The file name is required. It can't be a path, and the
+              extension (.csv or .xlsx) will be supplied automatically.
+            </div>
+          </div>
+        </div>
+        <div class="row export-format">
+          <div class="col-md-5">
+            Format:
+
+            <!--
+              AngularJS doesn't seem to be handling ng-model properly here.
+              Simulate.
+            -->
+            <input type="radio" name="format" id="csv-format"
+                   ng-model="exportFormat"
+                   ng-change="exportFormatChanged('csv')"
+                   value="csv">
+            <label for="csv-format">CSV</label>
+            <input type="radio" name="format" id="xlsx-format"
+                   ng-model="exportFormat"
+                   ng-change="exportFormatChanged('xlsx')"
+                   value="xlsx">
+            <label for="xlsx-format">Excel</label>
+            <pre>
+{{exportFilename}}.{{exportFormat}}
+{{exportURL}}
+            </pre>
+
+          </div>
+          <div class="col-md-7">
+            <a class="btn btn-primary btn-lg pull-right"
                type="submit"
                ng-click="startDownload()"
-               ng-href="{{exportURL()}}"
+               href="{{exportURL}}"
                ng-disabled="exportForm.$invalid">Export</a>
           </div>
-        </form>
-      </div>
-
-      <div ng-show="downloading" class="alert alert-info"
-           id="downloading-notice">
-        Downloading to {{exportFilename}}
+        </div>
+      </form>
+      <div class="row">
+        <div class="col-md-3"></div>
+        <div class="col-md-6">
+          <div ng-show="downloading" class="alert alert-info"
+               id="downloading-notice">
+            Downloading to {{exportFullFilename()}}
+          </div>
+        </div>
       </div>
     </div>
   </div>

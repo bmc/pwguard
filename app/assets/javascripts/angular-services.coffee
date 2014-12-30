@@ -2,6 +2,8 @@
 
 pwgServices = angular.module('pwguard-services', [])
 
+pwgServices.value('angularTemplateURL', window.angularTemplateURL)
+
 # ----------------------------------------------------------------------------
 # Logging service. Basically, this service simply hides the initialization
 # of a log4javascript-compatible logging service, providing a simple

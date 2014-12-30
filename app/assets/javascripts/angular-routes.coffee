@@ -1,84 +1,109 @@
-# Angular routing.
-#
-# NOTE: This routing depends on the third-party angular-route-segment
-# module. See http://angular-route-segment.com/
+# Angular routing. All routes are consolidated in this service.
 # -----------------------------------------------------------------------------
+
+pwgRoutesModule = angular.module('pwguard-routes', ['ngRoute'])
 
 templateURL   = window.angularTemplateURL
 
-# This table allows easy mappings from route segment to URL.
-#
-# NOTE: Be sure to adjust POST_LOGIN_SEGMENTS and ADMIN_ONLY_SEGMENTS as needed.
-segments =
-  "login":         "/login"
-  "search":        "/search"
-  "profile":       "/profile"
-  "import-export": "/import-export"
-  "admin-users":   "/admin/users"
+ROUTES            = {}
+POST_LOGIN_ROUTES = []
+ADMIN_ONLY_ROUTES = []
+REVERSE_ROUTES    = {}
 
-POST_LOGIN_SEGMENTS = ['search', 'profile', 'admin-users', 'import-export']
-ADMIN_ONLY_SEGMENTS = ['admin-users']
+config = ($routeProvider) ->
 
-# The routes themselves.
-window.setRoutes = ($routeSegmentProvider, $routeProvider) ->
-  $routeSegmentProvider.options.autoLoadTemplates = true
+  # Routing table
 
-  # Map URLs to segment names. This is the actual routing table.
+  ROUTES =
+    "/login":
+      templateUrl: templateURL("login.html")
+      controller:  'LoginCtrl'
+      name:        'login'
+      admin:       false
+      postLogin:   false
+    "/search":
+      templateUrl: templateURL("search.html")
+      controller:  'SearchCtrl'
+      name:        'search'
+      admin:       false
+      postLogin:   true
+      defaultURL:  true
+    "/profile":
+      templateUrl: templateURL("profile.html")
+      controller:  'ProfileCtrl'
+      name:        'profile'
+      admin:       false
+      postLogin:   true
+    "/admin/users":
+      templateUrl: templateURL("admin-users.html")
+      controller:  'AdminUsersCtrl'
+      name:        'admin-users'
+      admin:       true
+      postLogin:   true
+    "/import-export":
+      templateUrl: templateURL("ImportExport.html")
+      controller:  'ImportExportCtrl'
+      name:        'import-export'
+      admin:       false
+      postLogin:   true
 
-  for segment of segments
-    $routeSegmentProvider.when(segments[segment], segment)
+  otherwise           = null
 
-  # Define each segment's behavior and nesting.
+  for url of ROUTES
+    r = ROUTES[url]
+    REVERSE_ROUTES[r.name] = '#' + url
 
-  $routeSegmentProvider.segment "login",
-    templateUrl: templateURL("login.html")
-    controller:  'LoginCtrl'
+    cfg =
+      templateUrl: r.templateUrl
+      controller:  r.controller
 
-  $routeSegmentProvider.segment "search",
-    templateUrl: templateURL("search.html")
-    controller:  'SearchCtrl'
+    $routeProvider.when url, r
+    if r.defaultURL
+      otherwise = url
 
-  $routeSegmentProvider.segment "profile",
-    templateUrl: templateURL("profile.html")
-    controller:  'ProfileCtrl'
+    if r.postLogin
+      POST_LOGIN_ROUTES.push r.name
 
-  $routeSegmentProvider.segment "admin-users",
-    templateUrl: templateURL("admin-users.html")
-    controller:  'AdminUsersCtrl'
+    if r.admin
+      ADMIN_ONLY_ROUTES.push r.name
 
-  $routeSegmentProvider.segment "import-export",
-    templateUrl: templateURL("ImportExport.html")
-    controller:  'ImportExportCtrl'
+  if otherwise
+    cfg =
+      redirectTo: otherwise
+    $routeProvider.otherwise cfg
 
-  $routeProvider.otherwise
-    redirectTo: "/search"
+  console.log REVERSE_ROUTES
 
-# -----------------------------------------------------------------------------
-# Utility functions
-# -----------------------------------------------------------------------------
+pwgRoutesModule.config ['$routeProvider', config]
 
-window.isAdminOnlySegment = (segment) ->
-  segment in ADMIN_ONLY_SEGMENTS
+pwgRoutes = ->
 
-window.isPostLoginSegment = (segment) ->
-  segment in POST_LOGIN_SEGMENTS
+  console.log ADMIN_ONLY_ROUTES
 
-window.isPreLoginSegment = (segment) ->
-  not window.isPostLoginSegment(segment)
+  isAdminOnlyRoute: (name) ->
+    name in ADMIN_ONLY_ROUTES
 
-window.pathForSegment = (segment) ->
-  segments[segment]
+  isPostLoginRoute: (name) ->
+    name in POST_LOGIN_ROUTES
 
-window.hrefForSegment = (segment) ->
-  "#" + pathForSegment(segment)
+  isPreLoginSegment: (name) ->
+    not window.isPostLoginRoute(name)
 
-window.segmentForURL = (url) ->
-  url = if url? then url else ""
-  strippedURL = if url[0] is "#" then url[1..] else url
-  segment = null
-  for seg of segments
-    if segments[seg] is strippedURL
-      segment = seg
-      break
-  segment
+  pathForRouteName: (name) ->
+    REVERSE_ROUTES[name]
+
+  hrefForRouteName: (name) ->
+    "#" + pathForRouteName(name)
+
+  routeNameForURL: (url) ->
+    url = if url? then url else ""
+    strippedURL = if url[0] is "#" then url[1..] else url
+    result = null
+    for r of REVERSE_ROUTES
+      if REVERSE_ROUTES[r] is strippedURL
+        result = r
+        break
+    result
+
+pwgRoutesModule.factory 'pwgRoutes', [pwgRoutes]
 

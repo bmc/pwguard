@@ -28,7 +28,7 @@
        Angular.js
        ---------------------------------------------------------------------- *@
 
-    @scriptWebJar("angularjs/angular.min.js")
+    @scriptWebJar("angularjs/angular.js")
     @scriptWebJar("angularjs/angular-route.min.js")
     @scriptWebJar("angularjs/angular-cookies.min.js")
     @scriptWebJar("angularjs/angular-animate.min.js")
@@ -45,7 +45,11 @@
     @stylesheetWebJar("bootstrap/css/bootstrap.min.css")
 
     @scriptWebJar("angular-route-segment/angular-route-segment.min.js")
-    @scriptWebJar("angular-strap/angular-strap.min.js")
+    @*
+      This version of Angular-Strap doesn't have a map file, so we're loading
+      the non-minified version to avoid spurious 404s in the console.
+    *@
+    @scriptWebJar("angular-strap/angular-strap.js")
     @scriptWebJar("nervgh-angular-file-upload/angular-file-upload.min.js")
 
     @stylesheetWebJar("font-awesome/css/font-awesome.min.css")
@@ -65,7 +69,6 @@
     @stylesheetAsset("main.css")
 
     @scriptAsset("angular-util.js")
-    @scriptAsset("angular-routes.js")
     @scriptAsset("angular-directives.js")
     @scriptAsset("angular-services.js")
     @scriptAsset("angular-filters.js")
@@ -103,7 +106,6 @@
       }
 
       var browserLogLevel = "@browserLoggingLevel";
-
       var browserIsMobile = @mobile;
     </script>
   </head>
@@ -136,7 +138,7 @@
 
         @flash()
 
-        <div app-view-segment="0" id="segment-level-0"></div>
+        <div ng-view></div>
 
       </div>
 

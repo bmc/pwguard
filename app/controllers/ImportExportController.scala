@@ -24,6 +24,7 @@ import scala.util.control.NonFatal
 
 class UploadFailed(msg: String) extends Exception(msg)
 class ImportFailed(msg: String) extends Exception(msg)
+class ExportFailed(msg: String) extends Exception(msg)
 
 object ImportExportController extends BaseController {
 
@@ -44,13 +45,27 @@ object ImportExportController extends BaseController {
     val Required = Set(Name, Description)
   }
 
-  val FileCacheKey = "uploaded-file"
+  val XSLXContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  val CSVContentType  = "text/csv"
+
+  private val FileCacheKey = "uploaded-file"
+
+  private val ExcelContentTypes = Set(
+    "application/vnd.ms-excel",
+    XSLXContentType
+  )
+
+  private val CSVContentTypes = Set(
+    CSVContentType,
+    "application/csv",
+    "text/comma-separated-values"
+  )
 
   // -------------------------------------------------------------------------
   // Public methods
   // -------------------------------------------------------------------------
 
-  def exportData(filename: String) = SecuredAction { authReq =>
+  def exportData(filename: String, format: String) = SecuredAction { authReq =>
 
     def entryToList(user: User, e: PasswordEntry): Future[List[String]] = {
       val PasswordEntry(_, _, name, descriptionOpt, loginIDOpt,
@@ -69,42 +84,41 @@ object ImportExportController extends BaseController {
       }
     }
 
-    def copyResults(seq: Set[PasswordEntry], user: User): Future[File] = {
+    def createDownload(entries: Set[PasswordEntry], user: User):
+      Future[(File, String)] = {
+
       Future {
-        val out = File.createTempFile("pwguard", ".csv")
+        val out = File.createTempFile("pwguard", format)
         out.deleteOnExit()
         out
 
       } flatMap { out: File =>
 
-        val entryFutures = seq.map { entryToList(user, _) }
+        val entryFutures = entries.map { entryToList(user, _) }.toSeq
         for { seqOfFutures <- Future.sequence(entryFutures) }
         yield (out, seqOfFutures)
 
-      } map { case (out, seq) =>
-        withCloseable(new BufferedWriter(
-                        new OutputStreamWriter(
-                          new FileOutputStream(out), "UTF-8"))) { fOut =>
-          withCloseable(CSVWriter.open(fOut)) { csv =>
-            csv.writeRow(List(Field.Name.toString,
-                              Field.Description.toString,
-                              Field.Login.toString,
-                              Field.Password.toString,
-                              Field.URL.toString,
-                              Field.Notes.toString))
-            for (l <- seq) csv.writeRow(l)
-          }
-        }
+      } flatMap { case (out, entries) =>
 
-        out
+        format match {
+          case "xlsx" => writeExcel(out, entries).map { (_, XSLXContentType) }
+          case "csv"  => writeCSV(out, entries).map { (_, CSVContentType) }
+          case _      => throw new ExportFailed("Unknown format")
+        }
       }
     }
 
-    for { seq  <- passwordEntryDAO.allForUser(authReq.user)
-          file <- copyResults(seq, authReq.user) }
-    yield Ok.sendFile(file)
-            .as("application/x-download")
-            .withHeaders("Content-disposition" -> s"attachment; filename=$filename")
+    val result = for { seq          <- passwordEntryDAO.allForUser(authReq.user)
+                       (file, mime) <- createDownload(seq, authReq.user) }
+                 yield Ok.sendFile(file)
+                         .as(mime)
+                         .withHeaders("Content-disposition" ->
+                                        s"attachment; filename=$filename")
+
+    result recover {
+      case NonFatal(e) =>
+        BadRequest(jsonError(e))
+    }
   }
 
   def importDataUpload = SecuredAction(parse.multipartFormData) { authReq =>
@@ -289,16 +303,46 @@ object ImportExportController extends BaseController {
   // Private Methods
   // -------------------------------------------------------------------------
 
-  private val ExcelContentTypes = Set(
-    "application/vnd.ms-excel",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-  )
+  private def writeExcel(out: File, entries: Seq[List[String]]): Future[File] = {
+    import java.io.FileOutputStream
+    import org.apache.poi.xssf.usermodel.XSSFWorkbook
 
-  private val CSVContentTypes = Set(
-    "text/csv", // preferred
-    "application/csv",
-    "text/comma-separated-values"
-  )
+    Future {
+      withCloseable(new FileOutputStream(out)) { fOut =>
+        val wb = new XSSFWorkbook
+        val sheet = wb.createSheet("Passwords")
+        for { rowData    <- entries
+              row         = sheet.createRow(0.asInstanceOf[Short])
+              (cell, i)  <- rowData.zipWithIndex } {
+          row.createCell(i).setCellValue(cell)
+        }
+
+        wb.write(fOut)
+        out
+      }
+    }
+  }
+
+  private def writeCSV(out: File, entries: Seq[List[String]]): Future[File] = {
+    Future {
+      withCloseable(new BufferedWriter(
+        new OutputStreamWriter(
+          new FileOutputStream(out), "UTF-8"))) { fOut =>
+        withCloseable(CSVWriter.open(fOut)) { csv =>
+          csv.writeRow(List(Field.Name.toString,
+                            Field.Description.toString,
+                            Field.Login.toString,
+                            Field.Password.toString,
+                            Field.URL.toString,
+                            Field.Notes.toString))
+
+          for (l <- entries) csv.writeRow(l)
+
+          out
+        }
+      }
+    }
+  }
 
   private def getCSVReader(f: File, contentTypeOpt: Option[String]):
     Future[(File, CSVReader)] = {
@@ -318,13 +362,11 @@ object ImportExportController extends BaseController {
 
   private def convertExcelToCSV(f: File): Future[File] = {
     import org.apache.poi.ss.usermodel.WorkbookFactory
-    import java.io.FileInputStream
     import scala.collection.JavaConversions.asScalaIterator
 
     Future {
       logger.debug(s"Converting ${f.getName} to CSV.")
-      val in = new FileInputStream(f)
-      val wb = WorkbookFactory.create(in)
+      val wb = WorkbookFactory.create(f)
       val sheet = wb.getNumberOfSheets match {
         case 0 => throw new UploadFailed(s"No worksheets in ${f.getName}")
         case 1 => wb.getSheetAt(0)
