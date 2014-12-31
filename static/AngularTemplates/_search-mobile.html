@@ -61,13 +61,17 @@
 
                 <div class="mobile-field login" ng-show="pw.loginID">
                   <span class="mobile-label">Login:</span>
-                  <span class="mobile-value">{{pw.loginID}}</span>
+                  <span class="mobile-value">
+                    <input type="text" readonly="readonly"
+                           ng-model="pw.loginID"
+                           pwg-select-on-click/>
+                  </span>
                 </div>
 
                 <div class="mobile-field password" ng-show="pw.plaintextPassword">
                   <span class="mobile-label">Password:</span>
                       <span class="mobile-value">
-                        <input id="result-{$index}" type="text" readonly="readonly"
+                        <input type="text" readonly="readonly"
                                ng-model="pw.plaintextPassword"
                                pwg-select-on-click/>
                       </span>
