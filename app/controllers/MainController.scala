@@ -139,6 +139,14 @@ object MainController extends BaseController {
     }
   }
 
+  /** Redirect from root.
+    */
+  def root(isMobile: Option[String]) = UnsecuredAction { implicit request =>
+    Future {
+      Redirect(routes.MainController.index(isMobile))
+    }
+  }
+
   // -------------------------------------------------------------------------
   // Private methods
   // -------------------------------------------------------------------------

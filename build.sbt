@@ -20,10 +20,11 @@ libraryDependencies ++= Seq(
   "org.clapper"          %% "grizzled-scala"             % "1.3",
   "org.mindrot"           % "jbcrypt"                    % "0.3m",
   "joda-time"             % "joda-time"                  % "2.3",
-  "org.apache.commons"    % "commons-math3"              % "3.3",
   "net.sf.uadetector"     % "uadetector-resources"       % "2014.04",
   "com.google.guava"      % "guava"                      % "17.0",
   "com.github.tototoshi" %% "scala-csv"                  % "1.1.2",
+  "org.apache.commons"    % "commons-math3"              % "3.3",
+  "commons-codec"         % "commons-codec"              % "1.10",
   "org.apache.poi"        % "poi"                        % "3.11",
   "org.apache.poi"        % "poi-ooxml"                  % "3.11",
   "com.github.mumoshu"   %% "play2-memcached"            % "0.6.0",
@@ -34,7 +35,6 @@ libraryDependencies ++= Seq(
   // -------------------------------------------------------------------------
   // AngularJS consistency irritations:
   //
-  // - nervgh-angular-file-upload depends on AngularJS 1.2.26
   // - angular-strap (at least through webjars) depends on AngularJS 1.3.0
   //   after version 2.1.3, so we have to wire it to 2.1.2.
   //
@@ -42,7 +42,6 @@ libraryDependencies ++= Seq(
   // don't support it yet.
   "org.webjars"           % "angularjs"                  % "1.2.26",
   "org.webjars"           % "angular-strap"              % "2.1.2",
-  "org.webjars"           % "nervgh-angular-file-upload" % "1.1.5-1",
   // -------------------------------------------------------------------------
   "org.webjars"           % "font-awesome"               % "4.2.0",
   "org.webjars"           % "jquery"                     % "1.11.2",
@@ -50,6 +49,17 @@ libraryDependencies ++= Seq(
   "org.webjars"           % "underscorejs"               % "1.7.0-1"
 )
 
+// Some components aren't available in WebJars, so we use Bower. Note that
+// the .bowerrc file ensures that Bower components are installed in the
+// same directory as WebJars components, thus ensuring that we can move
+// components into WebJars references, when they become available.
+//
+// Run "bower install" whenever we do a compile. See
+// http://stackoverflow.com/a/17734236/53495
+compile in Compile <<= (compile in Compile) map { compile =>
+  "bower install".!!
+  compile
+}
 
 includeFilter in (Assets, LessKeys.less) := "*.less"
 

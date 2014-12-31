@@ -1,8 +1,11 @@
 @()
 
-<div>
-  <pwg-flash flash-type="info"></pwg-flash>
-  <pwg-flash flash-type="error"></pwg-flash>
-  <pwg-flash flash-type="warning"></pwg-flash>
+@import tags.flashType
+
+<div id="flash-container">
+
+  @flashType("info", "flashInfo")
+  @flashType("danger", "flashError")
+  @flashType("warning", "flashWarning")
 
 </div>

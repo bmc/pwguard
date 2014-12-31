@@ -234,79 +234,66 @@ pwgServices.factory 'pwgTimeout', ['$timeout', pwgTimeout]
 # clearAll()         - convenience
 # ----------------------------------------------------------------------------
 
-pwgFlash = ($rootScope) ->
+pwgFlash = ($alert) ->
 
-  handleMessage = (type, msg) ->
-    m = $rootScope.flash.message
-    switch type
-      when 'info'    then m.info    = msg
-      when 'warning' then m.warning = msg
-      when 'error'   then m.error   = msg
-      when 'all'
-        m.info    = msg
-        m.warning = msg
-        m.error   = msg
+  infoAlert  = null
+  errorAlert = null
+  infoAlert  = null
 
-  showMessage = (type, msg) ->
-    handleMessage type, msg
-    #if msg?
-    #  cb = -> handleMessage type, null
-    #  $timeout cb, 5000
+  clearError = ->
+    if errorAlert?
+      errorAlert.$hide()
+      errorAlert = null
 
-  init: ->
-    $rootScope.flash =
-      message:
-        info:    null
-        error:   null
-        warning: null
-      warn:    (msg) ->
-        showMessage 'warning', msg
-      info:    (msg) ->
-        showMessage 'info', msg
-      error:   (msg) ->
-        showMessage 'error', msg
-      message: (type, msg) ->
-        showMessage type, msg
-      clear:   (type) ->
-        showMessage type, null
-      clearError: ->
-        showMessage 'error', null
-      clearWarning: ->
-        showMessage 'warning', null
-      clearInfo: ->
-        showMessage 'info', null
-      clearAll: ->
-        for type in ['info', 'warning', 'error']
-          showMessage type, null
+  clearWarning = ->
+    if warningAlert?
+      warningAlert.$hide()
+      warningAlert = null
 
-  message: (type, msg) ->
-    showMessage type, msg
+  clearInfo = ->
+    if infoAlert?
+      infoAlert.$hide()
+      infoAlert = null
+
+  doAlert = (content, type) ->
+    cfg =
+      title:     ""
+      content:   content
+      placement: 'top-right'
+      type:      type
+      show:      true
+      template:  routes.staticAsset("AngularTemplates/alert.html")
+      container: '.navbar'
+    $alert cfg
 
   warn: (msg) ->
-    $rootScope.flash.warn msg
+    clearWarning()
+    doAlert msg, 'warning'
 
   error: (msg) ->
-    $rootScope.flash.error msg
+    console.log "Setting error to #{msg}"
+    clearError()
+    doAlert msg, 'danger'
 
   info: (msg) ->
-    $rootScope.flash.info msg
-
-  clear: (type) ->
-    $rootScope.flash.clear type
+    clearInfo()
+    doAlert msg, 'info'
 
   clearError: ->
-    $rootScope.flash.clearError()
+    clearError()
 
   clearInfo: ->
-    $rootScope.flash.clearInfo()
+    clearInfo()
 
   clearWarning: ->
-    $rootScope.flash.clearWarning()
+    clearWarning()
 
   clearAll: ->
-    $rootScope.flash.clearAll()
+    clearError()
+    clearInfo()
+    clearWarning()
 
-pwgServices.factory 'pwgFlash', ['$rootScope', pwgFlash]
+pwgServices.factory 'pwgFlash', ['$alert', pwgFlash]
 
 # ----------------------------------------------------------------------------
 # Get info about the currently logged-in user

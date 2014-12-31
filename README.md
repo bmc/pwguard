@@ -186,43 +186,47 @@ in the browser and refuse to do anything.
 
 To fix this problem, you need to run PWGuard behind an SSL-enabled gateway.
 
-I use [Nginx][], and I configure it as follows:
+I use [Nginx][], and I've included a sample `nginx.conf` file in the repo's
+`conf` directory. That file is just a starting point. You may have to play with
+things to get them to work in your environment.
 
-    upstream pwguard {
-      server 127.0.0.1:9000
-    }
+**NOTE**: PWGuard is configured, via its Play `routes` file, to assume that
+it is "mounted" on `/pwguard` in the main web server. That is, it assumes
+that, for instance, a connection to `http://www.example.com/pwguard` will be
+sent back to Play.
 
-    server {
-      server_name: pwguard.example.com
-      listen 443 default;
-      ssl on;
-      ssl_certificate /etc/ssl/pwguard.example.com.crt;
-      ssl_certificate_key /etc/ssl/private/pwguard.example.com.key;
-
-      root /home/pwguard/current;
-      keepalive_timeout 70;
-
-      location / {
-        proxy_pass http://play;
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header X-Forwarded-Server $host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_redirect off;
-      }
-    }
-
-That's just a starting point. You may have to play with things to get them
-to work in your environment.
+If you mount the application on a different URL, you _must_ change the
+PWGuard `routes` file. Otherwise, it'll serve its assets with the wrong
+path.
 
 If you prefer to use Apache, you're on your own (though I'll gladly add
 Apache instructions here, if someone works through the details and sends me
 the information).
+
+### The first login
+
+When you point your browser at PWGuard for the first time, you'll be
+presented with a login screen. Out of the box, PWGuard has a single
+pre-configured user:
+
+* **Login**: `admin@example.com`
+* **Password**: `admin`
+
+Log in as that user. Then:
+
+* On the "Edit Users" screen, create a new user for yourself.
+* Be sure to give the new user Admin privileges.
+* Either delete the `admin@example.com` user or mark it inactive.
 
 ### Upgrading
 
 Upgrading PWGuard is easy enough.
 
 * Use `git pull` to pull down the latest code.
+* Ensure that [Bower][http://bower.io/] is installed. (While most
+  front-end dependencies are resolved through WebJars, some are only
+  available via Bower.)
+* Type `bower install`.
 * Run `./activator clean dist` to rebuild the distribution.
 * Copy the resulting tarball to the production directory.
 * Remove the existing unpacked code (or move it out of the way).
@@ -231,6 +235,10 @@ Upgrading PWGuard is easy enough.
 * Restart the application. If you're using `supervisord`, it should be
   sufficient to kill the `java` process; `supervisord` should automatically
   restart it. Otherwise, you'll have to do the work manually.
+
+## Building from source
+
+See **Upgrading**, above.
 
 ## Disclaimers
 
@@ -260,6 +268,7 @@ uses many excellent open source packages, most of which are listed below.
 * [AngularStrap](http://mgcrea.github.io/angular-strap/)
 * Portions of [Apache Commons Math](http://commons.apache.org/proper/commons-math/)
 * Portions of [Apache POI](https://poi.apache.org/)
+* Portions of [Apache Commons Codec](http://commons.apache.org/proper/commons-codec/)
 * Twitter [Bootstrap][bootstrap]
 * [CoffeeScript](http://coffeescript.org/)
 * [excanvas](http://excanvas.sourceforge.net/)

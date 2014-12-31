@@ -2,35 +2,38 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-# Home page
-GET           /                              controllers.MainController.index(isMobile: Option[String])
+# This file assumes that the application will be "mounted" on /pwguard/
+# behind the front-end web server.
 
-POST          /logged-in-user                controllers.SessionController.getLoggedInUser
-POST          /login                         controllers.SessionController.login
-POST          /logout                        controllers.SessionController.logout
+GET           /                               controllers.MainController.root(isMobile: Option[String])
+GET           /pwguard/                       controllers.MainController.index(isMobile: Option[String])
 
-POST          /pw/search                     controllers.PasswordEntryController.searchPasswordEntries
-GET           /pw/all                        controllers.PasswordEntryController.all
-POST          /pw                            controllers.PasswordEntryController.create
-POST          /pw/:id                        controllers.PasswordEntryController.save(id: Int)
-DELETE        /pw/:id                        controllers.PasswordEntryController.delete(id: Int)
+POST          /pwguard/logged-in-user         controllers.SessionController.getLoggedInUser
+POST          /pwguard/login                  controllers.SessionController.login
+POST          /pwguard/logout                 controllers.SessionController.logout
 
-POST          /user/:id                      controllers.UserController.save(id: Int)
-POST          /user                          controllers.UserController.create
-GET           /users                         controllers.UserController.getAll
-DELETE        /user/:id                      controllers.UserController.delete(id: Int)
+POST          /pwguard/pw/search              controllers.PasswordEntryController.searchPasswordEntries
+GET           /pwguard/pw/all                 controllers.PasswordEntryController.all
+POST          /pwguard/pw                     controllers.PasswordEntryController.create
+POST          /pwguard/pw/:id                 controllers.PasswordEntryController.save(id: Int)
+DELETE        /pwguard/pw/:id                 controllers.PasswordEntryController.delete(id: Int)
 
-GET           /export                        controllers.ImportExportController.exportData(format: String)
-POST          /import                        controllers.ImportExportController.importDataUpload
-POST          /complete-import               controllers.ImportExportController.completeImport
+POST          /pwguard/user                   controllers.UserController.create
+POST          /pwguard/user/:id               controllers.UserController.save(id: Int)
+GET           /pwguard/users                  controllers.UserController.getAll
+DELETE        /pwguard/user/:id               controllers.UserController.delete(id: Int)
 
-GET           /user-agent-info               controllers.MainController.getUserAgentInfo
+GET           /pwguard/export                 controllers.ImportExportController.exportData(format: String)
+POST          /pwguard/import                 controllers.ImportExportController.importDataUpload
+POST          /pwguard/complete-import        controllers.ImportExportController.completeImport
 
-GET           /angular/template/*path        controllers.MainController.getAngularTemplate(path: String)
+GET           /pwguard/user-agent-info        controllers.MainController.getUserAgentInfo
+
+GET           /pwguard/angular/template/*path controllers.MainController.getAngularTemplate(path: String)
 
 # Map static resources from the /public folder to the /assets URL path
-GET           /assets/*file                  controllers.Assets.at(path="/public", file)
+GET           /pwguard/assets/*file           controllers.Assets.at(path="/public", file)
 
 # Static handler, for development. Should be handled by front-end web server
 # in production.
-GET           /static/*path                  controllers.MainController.static(path: String)
+GET           /pwguard/static/*path           controllers.MainController.static(path: String)

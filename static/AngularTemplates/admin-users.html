@@ -63,18 +63,14 @@
           <div class="input">
             <input class="standalone" type="checkbox" name="active"
                    ng-model="addingUser.active"/>
-            <span class="label">
-              <label for="active">Active:</label>
-            </span>
+            <label for="active">Active</label>
           </div>
         </div>
         <div class="form-field">
           <div class="input">
             <input class="standalone" type="checkbox" name="admin"
                    ng-model="addingUser.admin"/>
-            <span class="label">
-              <label for="admin">Admin</label>
-            </span>
+            <label for="admin">Admin</label>
           </div>
         </div>
 
@@ -82,7 +78,7 @@
           <div class="buttons">
             <button class="btn btn-primary"
                     ng-disabled="addingUser.canSave()"
-                    ng-click="addingUser.save()">
+                    type="submit">
               Save
             </button>
             <button class="btn" ng-click="addingUser.cancel()">

@@ -10,11 +10,6 @@
       <div class="row export-format">
         <div class="col-md-5">
           Format:
-
-          <!--
-              AngularJS doesn't seem to be handling ng-model properly here.
-              Simulate.
-          -->
           <input type="radio" name="format" id="csv-format"
                  ng-model="exportFormat" value="csv"/>
           <label for="csv-format">CSV</label>
@@ -50,23 +45,17 @@
 
       <p>Drag and drop a CSV file or an Excel spreadsheet containing your data.</p>
 
-      <div id="drop-area" nv-file-over nv-file-drop uploader="uploader">
+      <div id="drop-area"
+           pwg-drop-file="text/csv, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+           file-dropped="fileDropped" on-error="importError">
         <span class="drop-label">Drag file here.</span>
       </div>
 
-      <div id="upload-progress">
-        <div class="progress-bar" role="progressbar"
-             aria-valuenow="{{progress}}"
-             aria-valuemin="0"
-             aria-valuemax="100"
-             style="width: {{progress}}%">
-          {{progress}}%
-        </div>
-      </div>
-
-      <div ng-repeat="item in uploader.queue" id="queue">
-        Name: {{item.file.name}}
-        <button class="btn btn-primary btn-lg" ng-click="item.upload()">Upload</button>
+      <div id="upload-button">
+        <button class="btn btn-primary btn-xs"
+                ng-click="upload()"
+                ng-disabled="!importFilename">Upload</button>
+        <span ng-bind="importFilename"></span>
       </div>
 
     </div>

@@ -10,7 +10,6 @@ requiredModules = ['ngRoute',
                    'ngCookies',
                    'ngSanitize',
                    'mgcrea.ngStrap',
-                   'angularFileUpload',
                    'pwguard-services',
                    'pwguard-filters',
                    'pwguard-directives']
@@ -188,6 +187,7 @@ ellipsize = (input, max=30) ->
 # ---------------------------------------------------------------------------
 
 MainCtrl = ($scope,
+            $rootScope,
             $location,
             pwgTimeout,
             pwgAjax,
@@ -196,8 +196,6 @@ MainCtrl = ($scope,
             pwgLogging,
             pwgRoutes,
             angularTemplateURL) ->
-
-  pwgFlash.init() # initialize the flash service
 
   # Put the template URL in the scope, because it's used inside templates
   # (e.g., within ng-include directives).
@@ -228,7 +226,7 @@ MainCtrl = ($scope,
 
   $scope.$on '$routeChangeSuccess', ->
     # Clear flash messages on route change.
-    pwgFlash.clear 'all'
+    pwgFlash.clearAll()
     if $scope.flashAfterRouteChange?
       pwgFlash.info $scope.flashAfterRouteChange
       $scope.flashAfterRouteChange = null
@@ -313,6 +311,7 @@ MainCtrl = ($scope,
   userPromise.then userInfoSuccess, userInfoFailure
 
 pwguardApp.controller 'MainCtrl', ['$scope',
+                                   '$rootScope',
                                    '$location',
                                    'pwgTimeout',
                                    'pwgAjax',
@@ -637,7 +636,6 @@ pwguardApp.controller 'ProfileCtrl', ['$scope',
 
 ImportExportCtrl = ($scope,
                     $timeout,
-                    FileUploader,
                     pwgAjax,
                     pwgFlash) ->
 
@@ -669,49 +667,27 @@ ImportExportCtrl = ($scope,
   # when state == 'new' #
   # ------------------- #
 
-  uploader = new FileUploader()
+  $scope.importError = (msg) ->
+    pwgFlash.error(msg)
 
-  fileNamePattern = /\.(csv|xlsx?)$/
-  validFilename = (f) ->
-    fileNamePattern.exec(f.name)?
+  $scope.importFilename = null
+  $scope.mimeType       = null
+  $scope.importFile     = null
+  $scope.fileDropped = (contents, name, mimeType) ->
+    $scope.importFilename = name
+    $scope.importFile = contents
+    $scope.mimeType   = mimeType
 
-  # Make sure the CSV filter is first. The queue limit is also implemented
-  # as a filter, and we want it to fire *after* the queue limit filter.
-  # Otherwise, the attempt to add an invalid item when the queue has one element
-  # will inadvertently clear the queue.
-  uploader.filters.unshift {name: 'Spreadsheet', fn: validFilename}
-  uploader.queueLimit = 1
-  uploader.removeAfterUpload = true
-  uploader.url = routes.controllers.ImportExportController.importDataUpload().url
-  uploader.onWhenAddingFileFailed = (item, filter, options) ->
-    if filter.name is "queueLimit"
-      # We're replacing an existing file.
-      uploader.clearQueue()
-      uploader.addToQueue([item])
+  $scope.upload = ->
+    url = routes.controllers.ImportExportController.importDataUpload().url
+    data =
+      filename: $scope.importFilename
+      contents: $scope.importFile
+      mimeType: $scope.mimeType
 
-  $scope.fileSelected = ->
-    uploader.getNotUploadedItems().length > 0
-
-  $scope.progress = 0
-  uploader.onProgressAll = (prog) ->
-    $scope.progress = prog
-
-  uploader.onCompleteAll = ->
-    uploader.clearQueue()
-
-  uploader.onAfterAddingFile = ->
-    $scope.progress = 0
-
-  uploader.onSuccessItem = (item, response, status, headers) ->
-    # The response is JSON.
-    pwgAjax.checkResponse response, status, (data) ->
-      prepareMappingData data
+    pwgAjax.post url, data, (response) ->
       $scope.importState = 'mapping'
-
-  uploader.onErrorItem = (item, response, status, headers) ->
-    pwgAjax.checkResponse response, status
-
-  $scope.uploader = uploader
+      prepareMappingData(response)
 
   # ------------------------ #
   # when state == 'mapping'  #
@@ -789,9 +765,7 @@ ImportExportCtrl = ($scope,
 
   $scope.allMatched = ->
     totalRequired = $scope.fields.filter (f) -> f.required
-    console.log "totalRequired=#{totalRequired.length}"
     matchedRequired = $scope.headers.filter (h) -> h.matchedTo?.required
-    console.log "matchedRequired=#{matchedRequired.length}"
     totalRequired.length is matchedRequired.length
 
   $scope.completeImport = ->
@@ -826,11 +800,8 @@ ImportExportCtrl = ($scope,
 
 pwguardApp.controller 'ImportExportCtrl', ['$scope',
                                            '$timeout',
-                                           'FileUploader',
                                            'pwgAjax',
                                            'pwgFlash',
-                                           '$rootScope',
-                                           '$location',
                                            ImportExportCtrl]
 
 # ---------------------------------------------------------------------------

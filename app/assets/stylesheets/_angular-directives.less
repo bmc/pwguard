@@ -7,68 +7,6 @@
 @warnBgColor:    #f2d3d3;
 @warnTextColor:  #a94442;
 
-.flash-container {
-  width: 100%;
-
-  .flash {
-    // Relatively position the outer element, so that we can absolutely
-    // position the button. See
-    // http://css-tricks.com/absolute-positioning-inside-relative-positioning/
-    position:       relative;
-    width:          auto;
-    min-height:     50px;
-    margin-left:    auto;
-    margin-right:   auto;
-    margin-bottom:  10px;
-    border-radius:  5px 5px 5px 5px;
-    padding-top:    10px;
-    padding-right:  0px;
-    padding-left:   10px;
-
-    &.flash-error {
-      background-color: @errorBgColor;
-      color:            @errorTextColor;
-    }
-
-    &.flash-info {
-      background-color: @infoBgColor;
-      color:            @infoTextColor;
-    }
-
-    &.flash-warning {
-      background-color: @warnBgColor;
-      color:            @warnTextColor;
-    }
-
-    &.flash-message {
-      vertical-align: bottom;
-      width: auto;
-      margin-left: auto;
-      margin-right: auto;
-      text-align: center;
-    }
-
-    .flash-close {
-      position: absolute;
-      top:      -2px;
-      right:    @tinyButtonMinWidth / 4;
-
-      font-size: larger;
-      font-weight: normal;
-      /*
-      position: absolute;
-      top: 5px;
-      right: @tinyMinButtonWidth / 3;
-      */
-      border: none;
-      background: transparent;
-      color: #555;
-      cursor: pointer;
-
-    }
-  }
-}
-
 .pwg-modal {
   .modal-title {
     width: auto;

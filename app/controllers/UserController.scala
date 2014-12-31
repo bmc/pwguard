@@ -82,7 +82,7 @@ object UserController extends BaseController {
     }
   }
 
-  def delete(id: Int) = SecuredJSONAction { authReq =>
+  def delete(id: Int) = SecuredAction { authReq =>
 
     userDAO.delete(id) map { ok =>
       Ok(Json.obj("ok" -> ok))

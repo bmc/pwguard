@@ -2,6 +2,7 @@ package controllers
 
 import dbservice.DAO
 import models.{UserHelpers, User, PasswordEntry}
+import org.apache.poi.ss.usermodel.Sheet
 import util.EitherOptionHelpers._
 
 import com.github.tototoshi.csv._
@@ -100,12 +101,7 @@ object ImportExportController extends BaseController {
     def createDownload(entries: Set[PasswordEntry], user: User):
       Future[(File, String)] = {
 
-      Future {
-        val out = File.createTempFile("pwguard", format)
-        out.deleteOnExit()
-        out
-
-      } flatMap { out: File =>
+      createFile("pwguard", format) flatMap { out =>
 
         val entryFutures = entries.map { unpackEntry(user, _) }.toSeq
         for { seqOfFutures <- Future.sequence(entryFutures) }
@@ -139,12 +135,19 @@ object ImportExportController extends BaseController {
     }
   }
 
-  def importDataUpload = SecuredAction(parse.multipartFormData) { authReq =>
+  def importDataUpload = SecuredJSONAction { authReq =>
     implicit val request = authReq.request
 
-    request.body.file("file") map { uploaded =>
-      // uploaded.ref is a play.api.libs.Files.TemporaryFile,
-      // with a file member
+    case class UploadedFile(name: String, data: String, mimeType: String)
+
+    val json = request.body
+
+    val optData = for { name <- (json \ "filename").asOpt[String]
+                        data <- (json \ "contents").asOpt[String]
+                        mime <- (json \ "mimeType").asOpt[String] }
+                  yield UploadedFile(name, data, mime)
+
+    optData map { uploaded =>
 
       def header(r: CSVReader): Option[List[String]] = {
         r.readNext().flatMap { list =>
@@ -155,42 +158,70 @@ object ImportExportController extends BaseController {
         }
       }
 
-      getCSVReader(uploaded.ref.file, uploaded.contentType) map {
-        case (f: File, reader: CSVReader) => {
+      def decodeFile(): Future[File] = {
+        import org.apache.commons.codec.binary.Base64
+        import grizzled.file.{util => fileutil}
+        import java.io.FileOutputStream
 
-          val jsonOpt = for { h  <- header(reader) }
-          yield {
-            Cache.set(FileCacheKey, f)
-            Ok(
-              Json.obj(
-                "headers" -> h,
-                "fields"  -> Field.values.map { field =>
-                  Json.obj("name" -> field.toString,
-                           "required" -> Field.Required.contains(field))
-                }
-              )
+        def extension(filename: String): String = {
+          val (_, _, extension) = fileutil.dirnameBasenameExtension(filename)
+          extension
+        }
+
+        for { bytes <- Future { Base64.decodeBase64(uploaded.data) }
+              ext    = extension(uploaded.name)
+              file  <- createFile("pwguard", ext) }
+        yield {
+          withCloseable(new FileOutputStream(file)) { out =>
+            out.write(bytes)
+          }
+
+          file
+        }
+      }
+
+      for { f1           <- decodeFile()
+            (f2, reader) <- getCSVReader(f1, uploaded.mimeType) }
+      yield {
+        val jsonOpt = for { h  <- header(reader) }
+        yield {
+          Cache.set(FileCacheKey, f2.getPath)
+          logger.error(s"--- f2=${f2.getPath}, exists=${f2.exists}")
+          Ok(
+            Json.obj(
+              "headers" -> h,
+              "fields"  -> Field.values.map { field =>
+                Json.obj("name" -> field.toString,
+                         "required" -> Field.Required.contains(field))
+              }
             )
-          }
+          )
+        }
 
-          jsonOpt.getOrElse {
-            throw new UploadFailed("Empty file.")
-          }
+        jsonOpt.getOrElse {
+          throw new UploadFailed("Empty file.")
         }
       }
     } getOrElse {
-      Future.failed(new UploadFailed("No uploaded file."))
+      Future.failed(new UploadFailed("Incomplete file upload."))
 
     } recover {
-      case NonFatal(e) => BadRequest(jsonError(e))
+      case NonFatal(e) => {
+        logger.error("Error preparing import", e)
+        BadRequest(jsonError(e))
+      }
     }
   }
 
   def completeImport = SecuredJSONAction { authReq =>
     def getFile(): Future[File] = {
       Future {
-        Cache.getAs[File](FileCacheKey).getOrElse {
+        val path = Cache.getAs[String](FileCacheKey).getOrElse {
           throw new ImportFailed("No previously uploaded file.")
         }
+        val f = new File(path)
+        logger.error(s"file=${f.getPath}, exists=${f.exists}")
+        f
       }
     }
 
@@ -205,6 +236,7 @@ object ImportExportController extends BaseController {
 
     def getReader(file: File): Future[CSVReader] = {
       Future {
+        logger.error(s"getReader: f=${file.getPath}, exists=${file.exists}")
         CSVReader.open(file)
       }
     }
@@ -306,12 +338,17 @@ object ImportExportController extends BaseController {
       Ok(Json.obj("total" -> seq.flatten.length))
 
     } recover {
-      case NonFatal(e) => BadRequest(jsonError(e))
-    }
-
-    getFile() map { f =>
-      f.delete()
-      Cache.remove(FileCacheKey)
+      case NonFatal(e) => {
+        logger.error("Cannot complete import", e)
+        BadRequest(jsonError(e))
+      }
+    } andThen {
+      case _ => {
+        getFile() map { f =>
+          f.delete()
+          Cache.remove(FileCacheKey)
+        }
+      }
     }
 
     result
@@ -385,40 +422,40 @@ object ImportExportController extends BaseController {
     }
   }
 
-  private def getCSVReader(f: File, contentTypeOpt: Option[String]):
+  private def getCSVReader(f: File, contentType: String):
     Future[(File, CSVReader)] = {
 
-    contentTypeOpt map { contentType =>
-      if (ExcelContentTypes contains contentType)
-        convertExcelToCSV(f).map { csv => (csv, CSVReader.open(csv)) }
-      else if (CSVContentTypes contains contentType)
-        Future { (f, CSVReader.open(f)) }
-      else
-        Future.failed(new ImportFailed(s"Unknown import file type: $contentType"))
-    } getOrElse {
-      logger.error(s"No content type posted. Assuming CSV.")
+    if (ExcelContentTypes contains contentType)
+      convertExcelToCSV(f).map { csv => (csv, CSVReader.open(csv)) }
+    else if (CSVContentTypes contains contentType)
       Future { (f, CSVReader.open(f)) }
-    }
+    else
+      Future.failed(new ImportFailed(s"Unknown import file type: $contentType"))
   }
 
   private def convertExcelToCSV(f: File): Future[File] = {
     import org.apache.poi.ss.usermodel.WorkbookFactory
     import scala.collection.JavaConversions.asScalaIterator
 
-    Future {
-      logger.debug(s"Converting ${f.getName} to CSV.")
-      val wb = WorkbookFactory.create(f)
-      val sheet = wb.getNumberOfSheets match {
-        case 0 => throw new UploadFailed(s"No worksheets in ${f.getName}")
-        case 1 => wb.getSheetAt(0)
-        case n => {
-          logger.warn(s"$n worksheets in ${f.getName}. Ignoring extras.")
-          wb.getSheetAt(0)
+    logger.debug(s"Converting ${f.getName} to CSV.")
+
+    def getWorksheet(): Future[Sheet] = {
+      Future {
+        val wb = WorkbookFactory.create(f)
+        wb.getNumberOfSheets match {
+          case 0 => throw new UploadFailed(s"No worksheets in ${f.getName}")
+          case 1 => wb.getSheetAt(0)
+          case n => {
+            logger.warn(s"$n worksheets in ${f.getName}. Ignoring extras.")
+            wb.getSheetAt(0)
+          }
         }
       }
+    }
 
-      val csvFile = File.createTempFile("pwg", ".csv")
-
+    for { sheet   <- getWorksheet()
+          csvFile <- createFile("pwguard", ".csv") }
+    yield {
       val writer = CSVWriter.open(csvFile)
 
       for (row <- sheet.iterator) {
@@ -430,6 +467,40 @@ object ImportExportController extends BaseController {
       f.delete()
       csvFile.deleteOnExit()
       csvFile
+    }
+  }
+
+  private val rng = new java.security.SecureRandom()
+
+  /** Create a randomly generated file name that is *not* a temporary file,
+    * so that the file will *not* be deleted by the destructor. This strategy
+    * is necessary because we might be storing the filename in the cache
+    * between requests. If the cache is not in memory (e.g., we're using
+    * Memcached), the File object may be cleaned up. If it's a temporary file
+    * the File destructor will delete the file.
+    *
+    * The resulting file will behave like a temporary file, in that it will
+    * be deleted upon JVM exit. However, it will *not* be deleted by the
+    * File class's destructor.
+    *
+    * @param prefix  the file name prefix
+    * @param suffix  the file name suffix
+    *
+    * @return a `Future[File]`
+    */
+  private def createFile(prefix: String, suffix: String): Future[File] = {
+    import scala.collection.JavaConversions.propertiesAsScalaMap
+    import scala.collection.mutable.{Map => MutableMap}
+
+    Future {
+      val random = rng.nextLong
+      val mutableProps: MutableMap[String, String] = System.getProperties
+      val props = mutableProps.toMap
+      val tmp = props.getOrElse("java.io.tmpdir", "/tmp")
+      val file = new File(s"${tmp}/${prefix}${random}${suffix}")
+      file.createNewFile()
+      file.deleteOnExit()
+      file
     }
   }
 }
