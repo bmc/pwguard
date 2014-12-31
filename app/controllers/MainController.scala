@@ -1,5 +1,7 @@
 package controllers
 
+import org.joda.time.DateTime
+import org.joda.time.format.DateTimeFormat
 import play.api._
 import play.api.libs.json.Json
 import play.api.mvc._
@@ -10,9 +12,20 @@ import pwguard.global.Globals.ExecutionContexts.Default._
 import util.UserAgent.UserAgent
 import util.EitherOptionHelpers._
 
+import java.util.Date
+import java.util.jar.{Manifest => JarManifest}
+
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 import scala.util.{Success, Try}
+
+/** Git information, from the manifest.
+  *
+  * @param branch    Git branch
+  * @param date      Date of commit
+  * @param revision  Revision hash
+  */
+case class GitInfo(branch: String, date: DateTime, revision: String)
 
 /** Main controller.
   */
@@ -27,34 +40,49 @@ object MainController extends BaseController {
   // -------------------------------------------------------------------------
 
   def index(isMobile: Option[String]) = UnsecuredAction { implicit request =>
-      val browserLogLevel = current.configuration.getString("browserLoggingLevel")
-                                                 .getOrElse("error")
+    val browserLogLevel = current.configuration.getString("browserLoggingLevel")
+                                               .getOrElse("error")
 
-      def isMobileBrowser(): Future[Boolean] = {
-        // Did a parameter come in on the request? If so, use it to override
-        // the User-Agent setting.
-        val f = Future {
-          isMobile map { _.toBoolean }
-        } recover {
-          case NonFatal(e) => noneT[Boolean]
-        }
+    def isMobileBrowser(): Future[Boolean] = {
+      // Did a parameter come in on the request? If so, use it to override
+      // the User-Agent setting.
+      val f = Future {
+        isMobile map { _.toBoolean }
+      } recover {
+        case NonFatal(e) => noneT[Boolean]
+      }
 
-        f flatMap { mobileParamOpt: Option[Boolean] =>
-          mobileParamOpt map { v =>
-            // Use the parameter.
-            Future.successful(v)
-          } getOrElse {
-            // Retrieve the user agent information.
-            getUserAgent(request).map { userAgent: UserAgent =>
-              userAgent.isMobile
-            }
+      f flatMap { mobileParamOpt: Option[Boolean] =>
+        mobileParamOpt map { v =>
+          // Use the parameter.
+          Future.successful(v)
+        } getOrElse {
+          // Retrieve the user agent information.
+          getUserAgent(request).map { userAgent: UserAgent =>
+            userAgent.isMobile
           }
         }
       }
+    }
 
-      isMobileBrowser() map { isMobile =>
-        Ok(views.html.index(browserLogLevel, isMobile))
-      } recover {
+    def getVersionInfo(): Future[String] = {
+      getGitInfo() map { gitInfoOpt =>
+        gitInfoOpt.map { g: GitInfo =>
+          val fmt = DateTimeFormat.forPattern("yyyyMMdd")
+          val d = fmt.print(g.date)
+          s"${d}.${g.revision.take(7)}/${g.branch}"
+        }.
+        getOrElse("dev")
+      }
+    }
+
+    val res = for { version  <- getVersionInfo()
+                    isMobile <- isMobileBrowser() }
+      yield {
+        Ok(views.html.index(browserLogLevel, isMobile, version))
+      }
+
+    res recover {
       // If an error occurred, log it, but assume false.
       case NonFatal(e) => {
         logger.error("Error determining whether browser is mobile", e)
@@ -178,6 +206,31 @@ object MainController extends BaseController {
 
         case r: Any => {
           throw new Exception(s"unexpected ${r.getClass} type from template")
+        }
+      }
+    }
+  }
+
+  /** Get Git information from the manifest, if available.
+    *
+    */
+  private def getGitInfo(): Future[Option[GitInfo]] = {
+    import org.joda.time.format.ISODateTimeFormat
+    import util.JarHelpers.matchingManifest
+
+    matchingManifest("Implementation-Version", "pwguard") map { manifestOpt =>
+
+      manifestOpt flatMap { manifest =>
+
+        for { rev     <- manifest.get("Git-Head-Rev")
+              branch  <- manifest.get("Git-Branch")
+              dateStr <- manifest.get("Git-Build-Date") }
+        yield {
+          val dateParser = ISODateTimeFormat.dateTimeParser()
+
+          GitInfo(branch = branch,
+                  date = dateParser.parseDateTime(dateStr),
+                  revision = rev)
         }
       }
     }

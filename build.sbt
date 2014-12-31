@@ -10,6 +10,8 @@ scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked")
 
 resolvers += "Spy Repository" at "http://files.couchbase.com/maven2"
 
+seq(gitStampSettings: _*)
+
 libraryDependencies ++= Seq(
   jdbc,
   cache,
@@ -75,4 +77,3 @@ mappings in Universal ++= (file("static") ** "*").get map { f =>
 
 // Override the "dist" command to build a tarball, instead of a zip file.
 addCommandAlias("dist", "universal:package-zip-tarball")
-

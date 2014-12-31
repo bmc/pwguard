@@ -1,0 +1,25 @@
+#about {
+  @aboutLogoColor: black;
+
+  .logo {
+    color: @aboutLogoColor;
+    text-decoration: underline;
+    &.desktop {
+      font-size: larger;
+    }
+  }
+
+  .version {
+    font-style: italic;
+    white-space: nowrap;
+    color: lighten(@aboutLogoColor, 30%);
+  }
+
+  .text {
+    margin-top: 20px;
+
+    div {
+      margin-top: 0.75em;
+    }
+  }
+}

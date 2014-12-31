@@ -13,12 +13,14 @@
           <span class="icon-bar"></span>
         </button>
         <span class="navbar-brand">
-          <span class="logo">
-            <i class="fa fa-lock"></i> PWGuard
-          </span>
+          <ng-include src="templateURL('logo.html')">
+          </ng-include>
+
           <span ng-show="isMobile" class="qualifier">
             Mobile
           </span>
+
+
         </span>
       </div>
 
@@ -33,27 +35,33 @@
               <i class="fa fa-sign-out"></i> Logout
             </a>
           </li>
-          <li ng-class="{active: segmentIsActive('search')}">
+          <li ng-class="{active: routeIsActive('search')}">
             <a href="#/search">
               <i class="fa fa-search"></i> Search
             </a>
           </li>
-          <li ng-class="{active: segmentIsActive('profile')}">
+          <li ng-class="{active: routeIsActive('profile')}">
             <a href="#/profile">
               <i class="fa fa-wrench"></i> Profile
             </a>
           </li>
-          <li ng-class="{active: segmentIsActive('import-export')}">
+          <li ng-class="{active: routeIsActive('import-export')}"
+              ng-hide="isMobile">
             <a href="#/import-export">
               <i class="fa fa-folder-o" ng-hide="segmentIsActive('import-export')"></i>
               <i class="fa fa-folder-open-o" ng-show="segmentIsActive('import-export')"></i>
               Import &amp; Export
             </a>
           </li>
-          <li ng-class="{active: segmentIsActive('admin-users')}"
+          <li ng-class="{active: routeIsActive('admin-users')}"
               ng-show="loggedInUser.admin">
             <a ng-href="#/admin/users">
               <i class="fa fa-users"></i> Edit Users
+            </a>
+          </li>
+          <li ng-class="{active: routeIsActive('about')}">
+            <a href="#/about">
+              <i class="fa fa-question-circle"></i> About
             </a>
           </li>
         </ul>

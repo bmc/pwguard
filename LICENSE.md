@@ -6,7 +6,7 @@ This software is released under BSD license, adapted from
 
 ---
 
-Copyright &copy; 2014 Brian M. Clapper.
+Copyright &copy; 2014 ArdenTex, Inc.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

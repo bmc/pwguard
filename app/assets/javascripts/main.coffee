@@ -59,6 +59,12 @@ initializeRouting = ($routeProvider) ->
       name:        'import-export'
       admin:       false
       postLogin:   true
+    "/about":
+      templateUrl: templateURL("about.html")
+      controller:  'AboutCtrl'
+      name:        'about'
+      admin:       false
+      postLogin:   true
 
   for url of ROUTES
     r = ROUTES[url]
@@ -70,7 +76,7 @@ initializeRouting = ($routeProvider) ->
 
     $routeProvider.when url, cfg
     if r.defaultURL
-      DEFAULT_ROUTE = url
+      DEFAULT_ROUTE = r.name
 
     if r.postLogin
       POST_LOGIN_ROUTES.push r.name
@@ -102,7 +108,7 @@ config = ($routeProvider) ->
 
 pwguardApp.config ['$routeProvider', config]
 
-pwgRoutes = (pwgLogging, $location) ->
+pwgRoutes = (pwgLogging, pwgError, $location, $route) ->
 
   log = pwgLogging.logger "pwgRoutes"
 
@@ -129,6 +135,10 @@ pwgRoutes = (pwgLogging, $location) ->
   defaultRoute: ->
     DEFAULT_ROUTE
 
+  routeIsActive: (name) ->
+    path = REVERSE_ROUTES[name]
+    path? and $location.path().endsWith(path)
+
   routeNameForURL: (url) ->
     url = if url? then url else ""
     m = URL_RE.exec(url)
@@ -148,10 +158,14 @@ pwgRoutes = (pwgLogging, $location) ->
       log.trace (new Error("Debug stack trace").stack)
       $location.path(url)
     else
-      console.log "(BUG) No URL for route #{name}"
+      pwgError.showStackTrace "(BUG) No URL for route #{name}"
 
 
-pwguardApp.factory 'pwgRoutes', ['pwgLogging', '$location', pwgRoutes]
+pwguardApp.factory 'pwgRoutes', ['pwgLogging',
+                                 'pwgError',
+                                 '$location',
+                                 '$route',
+                                 pwgRoutes]
 
 ###############################################################################
 # Local functions
@@ -195,11 +209,13 @@ MainCtrl = ($scope,
             pwgCheckUser,
             pwgLogging,
             pwgRoutes,
-            angularTemplateURL) ->
+            angularTemplateURL,
+            pwgError) ->
 
   # Put the template URL in the scope, because it's used inside templates
   # (e.g., within ng-include directives).
   $scope.templateURL = angularTemplateURL
+  $scope.version     = window.version;
 
   $scope.debugMessages = []
   $scope.debug = (msg) ->
@@ -231,6 +247,9 @@ MainCtrl = ($scope,
       pwgFlash.info $scope.flashAfterRouteChange
       $scope.flashAfterRouteChange = null
 
+  $scope.routeIsActive  = (name) ->
+    pwgRoutes.routeIsActive(name)
+
   $scope.$on '$locationChangeStart', (e) ->
     # Skip, while initializing. (Doing this during initialization screws
     # things up, causing multiple redirects that play games with Angular.)
@@ -252,7 +271,7 @@ MainCtrl = ($scope,
       log.trace (new Error("Debug stack trace").stack)
       $location.path(url)
     else
-      console.log "(BUG) No URL for route #{name}"
+      pwgError.showStackTrace "(BUG) No URL for route #{name}"
 
   $scope.loggedIn = ->
     $scope.loggedInUser?
@@ -320,6 +339,7 @@ pwguardApp.controller 'MainCtrl', ['$scope',
                                    'pwgLogging',
                                    'pwgRoutes',
                                    'angularTemplateURL',
+                                   'pwgError',
                                    MainCtrl]
 
 # ---------------------------------------------------------------------------
@@ -946,3 +966,8 @@ pwguardApp.controller 'AdminUsersCtrl', ['$scope',
                                          'pwgFlash',
                                          'pwgModal',
                                          AdminUsersCtrl]
+
+AboutCtrl = ($scope) ->
+  return
+
+pwguardApp.controller 'AboutCtrl', ['$scope', AboutCtrl]

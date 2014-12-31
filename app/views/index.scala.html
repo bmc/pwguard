@@ -1,4 +1,4 @@
-@(browserLoggingLevel: String, mobile: Boolean = false)(implicit req: RequestHeader)
+@(browserLoggingLevel: String, mobile: Boolean = false, version: String)(implicit req: RequestHeader)
 
 <!DOCTYPE html>
 
@@ -73,6 +73,7 @@
     @scriptAsset("angular-directives.js")
     @scriptAsset("angular-services.js")
     @scriptAsset("angular-filters.js")
+    @scriptAsset("util.js")
     @scriptAsset("main.js")
 
     @helper.javascriptRouter("routes")(
@@ -108,6 +109,7 @@
 
       var browserLogLevel = "@browserLoggingLevel";
       var browserIsMobile = @mobile;
+      var version         = "@version";
     </script>
   </head>
 

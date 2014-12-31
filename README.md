@@ -2,7 +2,7 @@
 
 ## Overview
 
-PWGuard implements a simple web-based password vault, using the
+PWGuard is a simple web-based password vault, using the
 [Play Framework][] and [AngularJS][]. PWGuard allows for
 a relatively secure deployment, by providing the following capabilities:
 
@@ -247,10 +247,11 @@ See **Upgrading**, above.
 I use this application myself, to store my own web (and other) passwords.
 Thus, I have an incentive to ensure that it works and is relatively secure.
 _However_, if you use this application and your passwords are compromised
-as a result, _I will not be held liable_. If you use this application, you
-automatically agree to indemnify and hold harmless me, and my company, from and
-against any damage, injury, loss, claim, or liability incurred as a result of
-using this application, even if such damages arise from bugs in the code.
+as a result, _neither I nor my company will be held liable_. If you use this
+application, you automatically agree to indemnify and hold harmless ArdenTex,
+Inc., and me, personally, from and against any damage, injury, loss, claim, or
+liability incurred as a result of using this application, even if such damages
+arise from bugs in the code.
 
 I have done my best to ensure that the application is safe and secure, but
 you use it at your own risk.
@@ -288,8 +289,8 @@ uses many excellent open source packages, most of which are listed below.
 * [Underscore.js](http://documentcloud.github.io/underscore/)
 * [WebJars](http://www.webjars.org/)
 
-[Play Framework]: http://playframework.org/
-[AngularJS]: http://angularjs.org/
+[Play Framework]: https://playframework.com/
+[AngularJS]: https://angularjs.org/
 [SQLite]: http://www.sqlite.org/
 [Nginx]: http://nginx.org/
 [JBCrypt]: http://www.mindrot.org/projects/jBCrypt/
