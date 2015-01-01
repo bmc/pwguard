@@ -26,6 +26,8 @@ object PasswordEntryController extends BaseController {
 
   override val logger = Logger("pwguard.controllers.PasswordEntryController")
 
+  class SaveFailed(msg: String) extends Exception(msg)
+
   import DAO.passwordEntryDAO
 
   // -------------------------------------------------------------------------
@@ -76,9 +78,20 @@ object PasswordEntryController extends BaseController {
       }
     }
 
-    val f = for { pwe   <- decodeJSON(None, user, request.body)
-                  saved <- doSave(pwe)
-                  json  <- jsonPasswordEntry(user, saved) }
+    def checkForExisting(name: String): Future[Boolean] = {
+      passwordEntryDAO.findByName(user, name) map { opt =>
+        logger.error(s"$opt")
+        if (opt.isDefined)
+          throw new SaveFailed(s"The name " + '"' + name + '"' +
+                               "is already in use.")
+        true
+      }
+    }
+
+    val f = for { pwe      <- decodeJSON(None, user, request.body)
+                  okToSave <- checkForExisting(pwe.name) if okToSave
+                  saved    <- doSave(pwe)
+                  json     <- jsonPasswordEntry(user, saved) }
             yield json
 
     f.map { json => Ok(json) }

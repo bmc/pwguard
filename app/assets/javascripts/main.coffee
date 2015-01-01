@@ -513,7 +513,6 @@ InnerSearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
       pw.editing = false
       reissueLastSearch()
 
-    console.log "Posting #{JSON.stringify(pw)} to #{url}"
     pwgAjax.post url, pw, onSuccess
 
   reissueLastSearch = ->
@@ -545,10 +544,7 @@ InnerSearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
         $scope.newPasswordEntry = null
         reissueLastSearch()
 
-      onFailure = (data) ->
-        pwgFlash.error "Save failed. #{data.error?.message}"
-
-      pwgAjax.post url, $scope.newPasswordEntry, onSuccess, onFailure
+      pwgAjax.post url, $scope.newPasswordEntry, onSuccess
 
   $scope.editingAny = ->
     if $scope.searchResults?

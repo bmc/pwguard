@@ -59,6 +59,92 @@ pwgError = ->
 pwgServices.factory 'pwgError', [pwgError]
 
 # ----------------------------------------------------------------------------
+# Simple flash service. Use in conjunction with the pwg-flash directive.
+#
+# This service sets or clears the following variables in the root scope:
+#
+# flash.message.info    - info alert message
+# flash.message.error   - error messages
+# flash.message.warning - warning alert messages
+#
+# The service provides the following functions. These functions are also
+# available on the $rootScope.flash object, for use in HTML.
+#
+# init()             - CALL THIS FIRST at application startup.
+# warn(msg)          - issue a warning message
+# info(msg)          - issue an info message
+# error(msg)         - issue an error message
+# message(type, msg) - issue a message of the specified type. The types can
+#                      be 'warn', 'info', 'error', 'all'
+# clear(type)        - clear message(s) of the specified type. The types can
+#                      be 'warn', 'info', 'error', 'all'
+# clearInfo()        - convenience
+# clearWarning()     - convenience
+# clearError()       - convenience
+# clearAll()         - convenience
+# ----------------------------------------------------------------------------
+
+pwgFlash = ($alert) ->
+
+  infoAlert     = null
+  errorAlert    = null
+  warningAlert  = null
+
+  clearError = ->
+    if errorAlert?
+      errorAlert.hide()
+      errorAlert = null
+
+  clearWarning = ->
+    if warningAlert?
+      warningAlert.hide()
+      warningAlert = null
+
+  clearInfo = ->
+    if infoAlert?
+      infoAlert.hide()
+      infoAlert = null
+
+  doAlert = (content, type) ->
+    cfg =
+      title:     ""
+      content:   content
+      placement: 'top-right'
+      type:      type
+      show:      true
+      template:  routes.staticAsset("AngularTemplates/alert.html")
+      container: '.navbar'
+    $alert cfg
+
+  warn: (msg) ->
+    clearWarning()
+    warningAlert = doAlert msg, 'warning'
+
+  error: (msg) ->
+    clearError()
+    errorAlert = doAlert msg, 'danger'
+
+  info: (msg) ->
+    clearInfo()
+    infoAlert = doAlert msg, 'info'
+
+  clearError: ->
+    clearError()
+
+  clearInfo: ->
+    clearInfo()
+
+  clearWarning: ->
+    clearWarning()
+
+  clearAll: ->
+    clearError()
+    clearInfo()
+    clearWarning()
+
+pwgServices.factory 'pwgFlash', ['$alert', pwgFlash]
+
+# ----------------------------------------------------------------------------
 # Front-end service for AJAX calls. Handles errors in a consistent way, and
 # fires up a spinner.
 # ----------------------------------------------------------------------------
@@ -104,6 +190,7 @@ pwgAjax = ($http, $rootScope, pwgSpinner, pwgFlash, pwgError) ->
       pwgSpinner.stop()
       handleSuccess data, status, onSuccess, onFailure
 
+    pwgFlash.clearAll()
     pwgSpinner.start()
     $http(config).success(succeeded).error(failed)
 
@@ -207,92 +294,6 @@ pwgTimeout = ($timeout) ->
     $timeout callback, timeout
 
 pwgServices.factory 'pwgTimeout', ['$timeout', pwgTimeout]
-
-# ----------------------------------------------------------------------------
-# Simple flash service. Use in conjunction with the pwg-flash directive.
-#
-# This service sets or clears the following variables in the root scope:
-#
-# flash.message.info    - info alert message
-# flash.message.error   - error messages
-# flash.message.warning - warning alert messages
-#
-# The service provides the following functions. These functions are also
-# available on the $rootScope.flash object, for use in HTML.
-#
-# init()             - CALL THIS FIRST at application startup.
-# warn(msg)          - issue a warning message
-# info(msg)          - issue an info message
-# error(msg)         - issue an error message
-# message(type, msg) - issue a message of the specified type. The types can
-#                      be 'warn', 'info', 'error', 'all'
-# clear(type)        - clear message(s) of the specified type. The types can
-#                      be 'warn', 'info', 'error', 'all'
-# clearInfo()        - convenience
-# clearWarning()     - convenience
-# clearError()       - convenience
-# clearAll()         - convenience
-# ----------------------------------------------------------------------------
-
-pwgFlash = ($alert) ->
-
-  infoAlert     = null
-  errorAlert    = null
-  warningAlert  = null
-
-  clearError = ->
-    if errorAlert?
-      errorAlert.hide()
-      errorAlert = null
-
-  clearWarning = ->
-    if warningAlert?
-      warningAlert.hide()
-      warningAlert = null
-
-  clearInfo = ->
-    if infoAlert?
-      infoAlert.hide()
-      infoAlert = null
-
-  doAlert = (content, type) ->
-    cfg =
-      title:     ""
-      content:   content
-      placement: 'top-right'
-      type:      type
-      show:      true
-      template:  routes.staticAsset("AngularTemplates/alert.html")
-      container: '.navbar'
-    $alert cfg
-
-  warn: (msg) ->
-    clearWarning()
-    warningAlert = doAlert msg, 'warning'
-
-  error: (msg) ->
-    clearError()
-    errorAlert = doAlert msg, 'danger'
-
-  info: (msg) ->
-    clearInfo()
-    infoAlert = doAlert msg, 'info'
-
-  clearError: ->
-    clearError()
-
-  clearInfo: ->
-    clearInfo()
-
-  clearWarning: ->
-    clearWarning()
-
-  clearAll: ->
-    clearError()
-    clearInfo()
-    clearWarning()
-
-pwgServices.factory 'pwgFlash', ['$alert', pwgFlash]
 
 # ----------------------------------------------------------------------------
 # Get info about the currently logged-in user
