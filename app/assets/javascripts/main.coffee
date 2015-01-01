@@ -852,28 +852,19 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash, pwgModal) ->
           loadUsers()
 
   $scope.passwordsMismatch = (user) ->
-    console.log "*** passwordsMismatch"
-    console.log user
     !$scope.passwordsMatch(user)
 
   $scope.passwordsMatch = (user) ->
     user.password1 is user.password2
 
   createUser = (u) ->
-    msg = checkSave u
-    if msg?
-      pwgFlash.error msg
-    else
-      url = routes.controllers.UserController.create().url
+    url = routes.controllers.UserController.create().url
 
-      onSuccess = ->
-        loadUsers()
-        $scope.addingUser = null
+    onSuccess = ->
+      loadUsers()
+      $scope.addingUser = null
 
-      onFailure = (data) ->
-        pwgFlash.error data.error.message
-
-      pwgAjax.post url, $scope.addingUser, onSuccess, onFailure
+    pwgAjax.post url, $scope.addingUser, onSuccess
 
   $scope.editingAny = ->
     if $scope.users?
