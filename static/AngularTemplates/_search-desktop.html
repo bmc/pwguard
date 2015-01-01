@@ -124,7 +124,7 @@
               </div>
 
               <div class="col-md-2">
-                <span ng-hide="pw.editing">
+                <span ng-hide="pw.editing || !pw.loginID">
                   <input type="text" readonly="readonly"
                          pwg-select-on-click
                          ng-model="pw.loginID"/>

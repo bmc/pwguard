@@ -507,18 +507,14 @@ InnerSearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
 
   saveEntry = (pw) ->
     url = routes.controllers.PasswordEntryController.save(pw.id).url
-    data =
-      name:        pw.name
-      description: pw.description
-      password:    pw.plaintextPassword
-      notes:       pw.notes
-      url:         pw.url
+    pw.password = pw.plaintextPassword
 
     onSuccess = ->
       pw.editing = false
       reissueLastSearch()
 
-    pwgAjax.post url, data, onSuccess
+    console.log "Posting #{JSON.stringify(pw)} to #{url}"
+    pwgAjax.post url, pw, onSuccess
 
   reissueLastSearch = ->
     if $scope.lastSearch?

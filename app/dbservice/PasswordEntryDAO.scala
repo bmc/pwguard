@@ -143,11 +143,12 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
 
     Future {
       val q = for { pwe <- PasswordEntries if pwe.id === pwEntry.id.get }
-              yield (pwe.userID, pwe.name, pwe.description,
+              yield (pwe.userID, pwe.name, pwe.description, pwe.loginID,
                      pwe.encryptedPassword, pwe.notes, pwe.url)
       q.update((pwEntry.userID,
                 pwEntry.name,
                 pwEntry.description,
+                pwEntry.loginID,
                 pwEntry.encryptedPassword,
                 pwEntry.notes,
                 pwEntry.url))
