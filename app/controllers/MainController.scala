@@ -25,7 +25,19 @@ import scala.util.{Success, Try}
   * @param date      Date of commit
   * @param revision  Revision hash
   */
-case class GitInfo(branch: String, date: DateTime, revision: String)
+case class GitInfo(branch:    String,
+                   date:      DateTime,
+                   revision:  String,
+                   cleanRepo: Boolean) {
+  val toVersion = {
+    val fmt = DateTimeFormat.forPattern("yyyyMMdd")
+    val d = fmt.print(date)
+    val dirtyFlag = if (cleanRepo) "" else "*"
+    s"${d}.${revision.take(7)}/${branch}${dirtyFlag}"
+  }
+
+}
+
 
 /** Main controller.
   */
@@ -67,12 +79,7 @@ object MainController extends BaseController {
 
     def getVersionInfo(): Future[String] = {
       getGitInfo() map { gitInfoOpt =>
-        gitInfoOpt.map { g: GitInfo =>
-          val fmt = DateTimeFormat.forPattern("yyyyMMdd")
-          val d = fmt.print(g.date)
-          s"${d}.${g.revision.take(7)}/${g.branch}"
-        }.
-        getOrElse("dev")
+        gitInfoOpt.map { _.toVersion }.getOrElse("dev")
       }
     }
 
@@ -218,19 +225,26 @@ object MainController extends BaseController {
     import org.joda.time.format.ISODateTimeFormat
     import util.JarHelpers.matchingManifest
 
-    matchingManifest("Implementation-Version", "pwguard") map { manifestOpt =>
+    def matches(key: String, value: String): Boolean = {
+      val lcKey = key.toLowerCase
+      (lcKey == "implementation-title") && (value.indexOf("pwguard") >= 0)
+    }
 
-      manifestOpt flatMap { manifest =>
+    matchingManifest(matches) map { manifestOpt =>
 
-        for { rev     <- manifest.get("Git-Head-Rev")
-              branch  <- manifest.get("Git-Branch")
-              dateStr <- manifest.get("Git-Build-Date") }
+      manifestOpt flatMap { man =>
+
+        for { rev     <- man.get("Git-Head-Rev")
+              branch  <- man.get("Git-Branch")
+              dateStr <- man.get("Git-Build-Date")
+              clean   <- man.get("Git-Repo-Is-Clean").orElse(Some("false")) }
         yield {
           val dateParser = ISODateTimeFormat.dateTimeParser()
 
-          GitInfo(branch = branch,
-                  date = dateParser.parseDateTime(dateStr),
-                  revision = rev)
+          GitInfo(branch    = branch,
+                  date      = dateParser.parseDateTime(dateStr),
+                  revision  = rev,
+                  cleanRepo = clean == "true")
         }
       }
     }

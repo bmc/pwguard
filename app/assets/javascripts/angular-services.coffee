@@ -236,23 +236,23 @@ pwgServices.factory 'pwgTimeout', ['$timeout', pwgTimeout]
 
 pwgFlash = ($alert) ->
 
-  infoAlert  = null
-  errorAlert = null
-  infoAlert  = null
+  infoAlert     = null
+  errorAlert    = null
+  warningAlert  = null
 
   clearError = ->
     if errorAlert?
-      errorAlert.$hide()
+      errorAlert.hide()
       errorAlert = null
 
   clearWarning = ->
     if warningAlert?
-      warningAlert.$hide()
+      warningAlert.hide()
       warningAlert = null
 
   clearInfo = ->
     if infoAlert?
-      infoAlert.$hide()
+      infoAlert.hide()
       infoAlert = null
 
   doAlert = (content, type) ->
@@ -268,16 +268,15 @@ pwgFlash = ($alert) ->
 
   warn: (msg) ->
     clearWarning()
-    doAlert msg, 'warning'
+    warningAlert = doAlert msg, 'warning'
 
   error: (msg) ->
-    console.log "Setting error to #{msg}"
     clearError()
-    doAlert msg, 'danger'
+    errorAlert = doAlert msg, 'danger'
 
   info: (msg) ->
     clearInfo()
-    doAlert msg, 'info'
+    infoAlert = doAlert msg, 'info'
 
   clearError: ->
     clearError()

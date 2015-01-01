@@ -12,17 +12,24 @@ object JarHelpers {
 
   /** Find the Jar Manifest that contains a specific key/value.
     *
-    * @param key   the key
-    * @param value the value
+    * @param matches  function that takes a key and value and returns a
+    *                 true/false value. This function will be used to
+    *                 test the manifests. The first matching manifest
+    *                 will be returned, as a map of keys to values.
     *
     * @return a Future containing an Option of a Map, the map representing
     *         the keys and values of the located manifest
     */
-  def matchingManifest(key: String, value: String):
+  def matchingManifest(matches: (String, String) => Boolean):
     Future[Option[Map[String, String]]] = {
 
+    def matchesWrapper(t: (String, String)): Boolean = {
+      val (k, v) = t
+      matches(k, v)
+    }
+
     def isCorrectManifest(m: Map[String, String]): Boolean = {
-      m.get(key).map { _ == value }.getOrElse(false)
+      m.exists(matchesWrapper)
     }
 
     Future {
