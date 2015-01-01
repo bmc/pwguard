@@ -665,7 +665,10 @@ pwguardApp.controller 'ProfileCtrl', ['$scope',
 ImportExportCtrl = ($scope,
                     $timeout,
                     pwgAjax,
-                    pwgFlash) ->
+                    pwgFlash,
+                    pwgLogging) ->
+
+  log = pwgLogging.logger "ImportExportCtrl"
 
   #######################
   # Export              #
@@ -705,6 +708,7 @@ ImportExportCtrl = ($scope,
     $scope.importFilename = name
     $scope.importFile = contents
     $scope.mimeType   = mimeType
+    log.debug "Dropped: filename=#{name}, MIME type=#{mimeType}"
 
   $scope.upload = ->
     url = routes.controllers.ImportExportController.importDataUpload().url
@@ -830,6 +834,7 @@ pwguardApp.controller 'ImportExportCtrl', ['$scope',
                                            '$timeout',
                                            'pwgAjax',
                                            'pwgFlash',
+                                           'pwgLogging',
                                            ImportExportCtrl]
 
 # ---------------------------------------------------------------------------

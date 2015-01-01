@@ -127,7 +127,14 @@ pwgDropFile = ->
       e = getEvent(event)
       e?.preventDefault()
 
-      e?.dataTransfer?.effectAllowed = 'copy'
+      # As noted at http://stackoverflow.com/a/27256625/53495, "if you decide
+      # to set the the effectAllowed and dropEffect in the dragstart event
+      # handler, you need to also set the dropEffect in the dragenter and
+      # dragover event handlers. Failing to do so will prevent the drop event
+      # from firing."
+      #
+      # It's easier to skip the setting altogether.
+      #e?.dataTransfer?.effectAllowed = 'copy'
       element.addClass('drag-over')
       false
 
@@ -183,6 +190,7 @@ pwgDropFile = ->
       e?.preventDefault()
       reader = new FileReader()
       file   = e?.dataTransfer.files[0]
+      console.log e
       name   = file.name
       type   = file.type
       size   = file.size
