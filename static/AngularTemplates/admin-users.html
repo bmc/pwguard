@@ -1,83 +1,81 @@
 <div id="admin-users">
 
-  <div class="row" ng-if="addingUser">
+  <div class="row" ng-if="addingUser" id="new-user">
     <div class="col-md-3" ng-if="!isMobile"></div>
     <div ng-class="{'col-md-6': !isMobile, 'col-md-12': isMobile}">
 
     <!-- For creating a new user. -->
 
       <form name="newUser" ng-submit="addingUser.save()">
-        <div class="form-field">
-          <div class="label">
-            <label for="email">Email:</label>
-          </div>
-          <div class="input">
-            <input class="standalone" ng-model="addingUser.email"
-                   type="email" placeholder="Email" required/>
-          </div>
-        </div>
-
-        <div class="form-field">
-          <div class="label">
-            <label for="password1">Password:</label>
-          </div>
-          <div class="input">
-            <input class="standalone" ng-model="addingUser.password1"
-                   name="password1" type="password" placeholder="Password"
-                   required/>
+        <div class="form-group" pwg-bootstrap-form-error="email">
+          <label for="email" class="control-label">Email:</label>
+          <input class="form-control" ng-model="addingUser.email" id="email"
+                 type="email" placeholder="Email" required name="email"/>
+          <div class="help-block" ng-show="newUser.email.$error.required">
+            Email is required.
           </div>
         </div>
 
-        <div class="form-field">
-          <div class="label">
-            <label for="password2">Password (again):</label>
+        <div class="form-group" pwg-bootstrap-form-error="password1">
+          <label for="password1" class="control-label">Password:</label>
+          <input class="form-control" ng-model="addingUser.password1"
+                 name="password1" type="password" placeholder="Password"
+                 required id="password1"/>
+          <div class="help-block"
+               ng-show="newUser.password1.$error.required && newUser.password1.$dirty">
+            Password is required.
           </div>
-          <div class="input">
-            <input class="standalone" ng-model="addingUser.password2"
-                   name="password2" type="password"
+        </div>
+
+        <div class="form-group"
+             ng-class="{'has-error': passwordsMismatch(addingUser)}">
+          <label for="password2" class="control-label">Password (again):</label>
+          <input class="form-control" ng-model="addingUser.password2"
+                   name="password2" type="password" id="password2"
                    placeholder="Password (again)" required/>
+          <div class="help-block" ng-show="passwordsMismatch(addingUser)">
+            Passwords must match.
           </div>
         </div>
 
-        <div class="form-field">
-          <div class="label">
-            <label for="first-name">First name:</label>
-          </div>
-          <div class="input">
-            <input class="standalone" ng-model="addingUser.firstName"
-                   name="first-name" type="text" placeholder="First name"/>
-          </div>
-        </div>
-
-        <div class="form-field">
-          <div class="label">
-            <label for="last-name">Last name:</label>
-          </div>
-          <div class="input">
-            <input class="standalone" ng-model="addingUser.lastName"
-                   name="last-name" type="text" placeholder="Last name"/>
+        <div class="form-group">
+          <label for="first-name" class="control-label">First name:</label>
+          <input class="form-control" ng-model="addingUser.firstName"
+                 name="first-name" type="text" placeholder="First name"
+                 id="firstName" required/>
+          <div class="help-block"
+               ng-show="newUser.firstName.$error.required && newUser.firstName.$dirty">
+            First name is required.
           </div>
         </div>
 
-        <div class="form-field">
-          <div class="input">
-            <input class="standalone" type="checkbox" name="active"
-                   ng-model="addingUser.active"/>
-            <label for="active">Active</label>
+        <div class="form-group">
+          <label for="last-name" class="control-label">Last name:</label>
+          <input class="form-control" ng-model="addingUser.lastName"
+                 name="last-name" type="text" placeholder="Last name"
+                 id="lastName" required/>
+          <div class="help-block"
+               ng-show="newUser.lastName.$error.required && newUser.lastName.$dirty">
+            Last name is required.
           </div>
         </div>
-        <div class="form-field">
-          <div class="input">
-            <input class="standalone" type="checkbox" name="admin"
+
+        <div class="form-group checkbox">
+          <input class="form-control" type="checkbox" name="active"
+                 ng-model="addingUser.active" id="active"/>
+          <label for="active" class="control-label">Active</label>
+        </div>
+
+        <div class="form-group checkbox">
+          <input class="form-control" type="checkbox" name="admin"
                    ng-model="addingUser.admin"/>
-            <label for="admin">Admin</label>
-          </div>
+          <label for="admin" class="control-label">Admin</label>
         </div>
 
         <div class="button-bar left">
           <div class="buttons">
             <button class="btn btn-primary"
-                    ng-disabled="addingUser.canSave()"
+                    ng-disabled="newUser.$invalid"
                     type="submit">
               Save
             </button>

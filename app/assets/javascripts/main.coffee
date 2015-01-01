@@ -171,14 +171,6 @@ pwguardApp.factory 'pwgRoutes', ['pwgLogging',
 # Local functions
 ###############################################################################
 
-fieldsMatch = (v1, v2) ->
-  normalizeValue(v1) is normalizeValue(v2)
-
-normalizeValue = (v) ->
-  if v? then v else ""
-
-passwordsOkay = (pw1, pw2) ->
-  normalizeValue(pw1) is normalizeValue(pw2)
 
 ellipsize = (input, max=30) ->
   if input?
@@ -535,16 +527,13 @@ InnerSearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
     reissueLastSearch()
 
   createNew = (pw) ->
-    if normalizeValue(pw.name) == ""
-      pwgFlash.error "Missing name."
-    else
-      url = routes.controllers.PasswordEntryController.create().url
+    url = routes.controllers.PasswordEntryController.create().url
 
-      onSuccess = ->
-        $scope.newPasswordEntry = null
-        reissueLastSearch()
+    onSuccess = ->
+      $scope.newPasswordEntry = null
+      reissueLastSearch()
 
-      pwgAjax.post url, $scope.newPasswordEntry, onSuccess
+    pwgAjax.post url, $scope.newPasswordEntry, onSuccess
 
   $scope.editingAny = ->
     if $scope.searchResults?
@@ -836,21 +825,17 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash, pwgModal) ->
   originalUsers = {}
 
   saveUser = (u) ->
-    u.passwordsMatch = passwordsOkay u.password1, u.password2
-    if u.passwordsMatch
-      url = routes.controllers.UserController.save(u.id).url
+    url = routes.controllers.UserController.save(u.id).url
 
-      onFailure = ->
-        pwgFlash.error "Save failed."
+    onFailure = ->
+      pwgFlash.error "Save failed."
 
-      onSuccess = ->
-        originalUsers[u.email] = _.omit 'save', 'cancel', 'edit', 'editing'
-        u.editing = false
-        loadUsers()
+    onSuccess = ->
+      originalUsers[u.email] = _.omit 'save', 'cancel', 'edit', 'editing'
+      u.editing = false
+      loadUsers()
 
-      pwgAjax.post url, u, onSuccess, onFailure
-    else
-      pwgFlash.error "Passwords don't match."
+    pwgAjax.post url, u, onSuccess, onFailure
 
   cancelEdit = (u) ->
     _.extend u, originalUsers[u.email]
@@ -866,15 +851,13 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash, pwgModal) ->
         pwgAjax.delete url, ->
           loadUsers()
 
-  checkSave = (u) ->
-    msg = if normalizeValue(u.email) == ""
-      "Missing email address."
-    else if normalizeValue(u.password1) == ""
-      "Missing password."
-    else if (not passwordsOkay(u.password1, u.password2))
-      "Passwords don't match."
-    else
-      null
+  $scope.passwordsMismatch = (user) ->
+    console.log "*** passwordsMismatch"
+    console.log user
+    !$scope.passwordsMatch(user)
+
+  $scope.passwordsMatch = (user) ->
+    user.password1 is user.password2
 
   createUser = (u) ->
     msg = checkSave u
