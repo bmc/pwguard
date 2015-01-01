@@ -14,6 +14,8 @@ import scala.concurrent.Future
 class PasswordEntryDAO(_dal: DAL, _logger: Logger)
   extends BaseDAO[PasswordEntry](_dal, _logger) {
 
+  override val logger = Logger("dbservice.PasswordEntryDAO")
+
   import dal.profile.simple._
   import dal.{PasswordEntriesTable, PasswordEntries}
 
@@ -117,6 +119,38 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
       // fashion. So, we need to filter here.
       Future {
         qFinal.list.toSet
+      }
+    }
+  }
+
+  /** Delete many entries.
+    *
+    * @param user the user who owns the password entries
+    * @param ids  the IDs. Any IDs not belonging to the user are ignored.
+    *
+    * @return A future containing the actual number deleted
+    */
+  def deleteMany(user: User, ids: Set[Int]): Future[Int] = {
+    withTransaction { implicit session =>
+      val qIDs = for { pw <- PasswordEntries if (pw.id inSet ids) &&
+                                                (pw.userID === user.id) }
+                 yield pw.id
+
+      val actualIDs: Set[Int] = qIDs.list.toSet
+      val removed = ids -- actualIDs
+      if (removed.size > 0) {
+        val sIDs = removed.map {_.toString}.mkString(",")
+        logger.error(s"User ${user.email} attempted to delete password " +
+                     s"entries ${sIDs}, but they belong to someone else.")
+      }
+
+      if (actualIDs.size == 0) {
+        logger.error(s"No legitimate IDs to be deleted.")
+        Future.successful(0)
+      }
+      else {
+        val qDel = for { pw <- PasswordEntries if pw.id inSet ids } yield pw
+        Future { qDel.delete }
       }
     }
   }

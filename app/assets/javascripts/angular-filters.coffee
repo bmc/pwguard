@@ -3,6 +3,27 @@
 pwgFilters = angular.module('pwguard-filters', [])
 
 # ----------------------------------------------------------------------------
+# Extremely simple pluralization/singularization filter.
+# ----------------------------------------------------------------------------
+
+pwgInflector = ->
+  (count, singular, plural) ->
+    n = if typeof count is 'number'
+          count
+        else if typeof count is 'string'
+          c = parseInt count
+          c = 0 if isNaN(c)
+          c
+        else
+          0
+    switch n
+      when 0 then "no #{plural}"
+      when 1 then "one #{singular}"
+      else "#{n} #{plural}"
+
+pwgFilters.filter 'pwgInflector', [pwgInflector]
+
+# ----------------------------------------------------------------------------
 # Filter to convert boolean values to strings.
 # ----------------------------------------------------------------------------
 

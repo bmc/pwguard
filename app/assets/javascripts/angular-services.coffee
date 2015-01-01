@@ -235,12 +235,16 @@ pwgAjax = ($http, $rootScope, pwgSpinner, pwgFlash, pwgError) ->
   # Parameters:
   #
   # url       - the URL to retrieve
+  # data      - data to post with the DELETE, or null
   # onSuccess - Callback to invoke, with the response, on success
   # onFailure - Optional failure callback, invoked AFTER the regular one.
-  delete: (url, onSuccess, onFailure = null) ->
+  delete: (url, data, onSuccess, onFailure = null) ->
     params =
       method: 'DELETE'
       url:    url
+      data:   data
+      headers:
+        'Content-Type': 'application/json'
     http(params, onSuccess, onFailure)
 
   # Specify a function to call when a 401 (Unauthorized) error occurs.

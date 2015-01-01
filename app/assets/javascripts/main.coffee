@@ -420,13 +420,14 @@ SearchCtrl = ($scope) ->
 
 pwguardApp.controller 'SearchCtrl', ['$scope', 'pwgFlash', SearchCtrl]
 
-InnerSearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
+InnerSearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal, $filter) ->
   $scope.searchTerm     = null
   $scope.searchResults  = null
   $scope.lastSearch     = null
   $scope.activePanel    = -1 # mobile only
-
   $scope.URLPattern = /^(ftp|http|https):\/\/[^ "]+$/
+
+  inflector = $filter('pwgInflector')
 
   SEARCH_ALL_MARKER = "-*-all-*-"
 
@@ -516,9 +517,9 @@ InnerSearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
         doSearch()
 
   deleteEntry = (pw) ->
-    pwgModal.confirm("Really delete #{pw.name}", "Confirm deletion").then ->
+    pwgModal.confirm("Really delete #{pw.name}?", "Confirm deletion").then ->
       url = routes.controllers.PasswordEntryController.delete(pw.id).url
-      pwgAjax.delete url, ->
+      pwgAjax.delete url, null, ->
         reissueLastSearch()
 
   cancelEdit = (pw) ->
@@ -535,12 +536,36 @@ InnerSearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
 
     pwgAjax.post url, $scope.newPasswordEntry, onSuccess
 
+  $scope.selectedAny = ->
+    if $scope.searchResults?
+      first = _.find $scope.searchResults, (pw) -> pw.selected
+      first?
+    else
+      false
+
   $scope.editingAny = ->
     if $scope.searchResults?
       first = _.find $scope.searchResults, (pw) -> pw.editing
       first?
     else
       false
+
+  $scope.deleteSelected = ->
+    if $scope.searchResults?
+      toDelete = _.filter $scope.searchResults, (pw) -> pw.selected
+      count = toDelete.length
+      if count > 0
+        pl = inflector(count, "entry", "entries")
+        msg = "You are about to delete #{pl}. Are you sure?"
+        pwgModal.confirm(msg, "Confirm deletion").then ->
+          ids = _.map toDelete, (pw) -> pw.id
+          url = routes.controllers.PasswordEntryController.deleteMany().url
+          data =
+            ids: ids
+          pwgAjax.delete url, data, (response) ->
+            pl = inflector(response.total, "entry", "entries")
+            pwgFlash.info "Deleted #{pl}."
+            reissueLastSearch()
 
   $scope.editNewEntry = ->
     $scope.newPasswordEntry =
@@ -567,6 +592,7 @@ InnerSearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal) ->
       pw.previewAvailable = pw.notes isnt pw.notesPreview
       pw.showPreview      = pw.previewAvailable
       pw.passwordVisible  = false
+      pw.selected         = false
       pw.toggleVisibility = ->
         pw.passwordVisible = !pw.passwordVisible
 
@@ -584,6 +610,7 @@ pwguardApp.controller 'InnerSearchCtrl', ['$scope',
                                           'pwgFlash',
                                           'pwgTimeout',
                                           'pwgModal',
+                                          '$filter',
                                           InnerSearchCtrl]
 
 # ---------------------------------------------------------------------------
@@ -848,7 +875,7 @@ AdminUsersCtrl = ($scope, pwgAjax, pwgFlash, pwgModal) ->
     else
       pwgModal.confirm("Really delete #{u.email}?", "Confirm deletion").then ->
         url = routes.controllers.UserController.delete(u.id).url
-        pwgAjax.delete url, ->
+        pwgAjax.delete url, null, ->
           loadUsers()
 
   $scope.passwordsMismatch = (user) ->

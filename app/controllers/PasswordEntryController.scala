@@ -111,6 +111,28 @@ object PasswordEntryController extends BaseController {
     }
   }
 
+  def deleteMany = SecuredJSONAction { authReq =>
+    Future {
+      val json = authReq.request.body
+      (json \ "ids").asOpt[Seq[Int]]
+
+    } flatMap { idsOpt =>
+      idsOpt map { ids =>
+        passwordEntryDAO.deleteMany(authReq.user, ids.toSet) map { count =>
+          Ok(Json.obj("total" -> count))
+        }
+      } getOrElse {
+        throw new Exception("No IDs specified")
+      }
+
+    } recover {
+      case NonFatal(e) => {
+        logger.error(s"Unable to delete specified IDs", e)
+        BadRequest(jsonError(e.getMessage))
+      }
+    }
+  }
+
   def searchPasswordEntries = SecuredJSONAction { authReq =>
 
     implicit val request = authReq.request

@@ -99,6 +99,14 @@
           <div class="col-md-2">
             Notes
           </div>
+
+          <div class="col-md-1">
+            <button ng-show="selectedAny()" class="btn btn-danger btn-xs"
+                    ng-click="deleteSelected()">
+              Delete
+            </button>
+
+          </div>
         </div>
 
         <div class="results-body">
@@ -210,27 +218,27 @@
               </div>
 
               <div class="pw-buttons col-md-1">
-                <a href="javascript:void(0)"
-                   class="btn btn-borderless"
-                   ng-click="pw.edit()"
-                   ng-hide="pw.editing">
+                <button class="btn btn-borderless"
+                        ng-click="pw.edit()"
+                        ng-hide="pw.editing">
                   <i class="fa fa-pencil"></i>
-                </a>
-                <a href="javascript:void(0)"
-                   class="btn btn-borderless"
-                   ng-click="pw.delete()"
-                   ng-hide="pw.editing">
+                </button>
+                <button class="btn btn-borderless"
+                        ng-click="pw.delete()"
+                        ng-hide="pw.editing">
                   <i class="fa fa-trash-o"></i>
-                </a>
-                <a href="javascript:void(0)"
-                   class="btn btn-borderless save"
+                </button>
+                <button class="btn btn-borderless"
+                        ng-hide="pw.editing">
+                  <input type="checkbox" ng-model="pw.selected"/>
+                </button>
+                <a href="" class="btn btn-borderless save"
                    ng-click="pw.save()"
                    ng-disabled="pwForm{{$index}}.$invalid"
                    ng-show="pw.editing">
                   <i class="fa fa-save"></i>
                 </a>
-                <a href="javascript:void(0)"
-                   class="btn btn-borderless cancel"
+                <a href="" class="btn btn-borderless cancel"
                    ng-click="pw.cancel()"
                    ng-show="pw.editing">
                   <i class="fa fa-times"></i>
