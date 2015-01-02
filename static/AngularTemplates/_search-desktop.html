@@ -228,10 +228,9 @@
                         ng-hide="pw.editing">
                   <i class="fa fa-trash-o"></i>
                 </button>
-                <button class="btn btn-borderless"
-                        ng-hide="pw.editing">
+                <div class="select-checkbox">
                   <input type="checkbox" ng-model="pw.selected"/>
-                </button>
+                </div>
                 <a href="" class="btn btn-borderless save"
                    ng-click="pw.save()"
                    ng-disabled="pwForm{{$index}}.$invalid"
