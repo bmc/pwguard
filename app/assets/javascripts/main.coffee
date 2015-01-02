@@ -536,6 +536,10 @@ InnerSearchCtrl = ($scope, pwgAjax, pwgFlash, pwgTimeout, pwgModal, $filter) ->
 
     pwgAjax.post url, $scope.newPasswordEntry, onSuccess
 
+  $scope.toggleSelectForAll = ->
+    for pw in $scope.searchResults
+      pw.selected = !pw.selected
+
   $scope.selectedAny = ->
     if $scope.searchResults?
       first = _.find $scope.searchResults, (pw) -> pw.selected

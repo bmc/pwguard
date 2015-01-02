@@ -101,11 +101,14 @@
           </div>
 
           <div class="col-md-1">
+            <button ng-click="toggleSelectForAll()"
+                    class="btn btn-default btn-xs">
+              <i class="fa fa-check"></i>
+            </button>
             <button ng-show="selectedAny()" class="btn btn-danger btn-xs"
                     ng-click="deleteSelected()">
               Delete
             </button>
-
           </div>
         </div>
 
@@ -218,6 +221,9 @@
               </div>
 
               <div class="pw-buttons col-md-1">
+                <div class="select-checkbox">
+                  <input type="checkbox" ng-model="pw.selected"/>
+                </div>
                 <button class="btn btn-borderless"
                         ng-click="pw.edit()"
                         ng-hide="pw.editing">
@@ -228,9 +234,6 @@
                         ng-hide="pw.editing">
                   <i class="fa fa-trash-o"></i>
                 </button>
-                <div class="select-checkbox">
-                  <input type="checkbox" ng-model="pw.selected"/>
-                </div>
                 <a href="" class="btn btn-borderless save"
                    ng-click="pw.save()"
                    ng-disabled="pwForm{{$index}}.$invalid"
