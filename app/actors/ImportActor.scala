@@ -91,6 +91,7 @@ class ImportActor extends Actor {
     } recover {
       case NonFatal(e) => {
         logger.error("Error processing import", e)
+        data.promise.failure(e)
       }
     }
 

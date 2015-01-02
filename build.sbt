@@ -2,7 +2,7 @@ name := """pwguard"""
 
 version := "1.0-SNAPSHOT"
 
-lazy val root = (project in file(".")).enablePlugins(PlayScala)
+lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 
 scalaVersion := "2.11.1"
 
@@ -77,3 +77,8 @@ mappings in Universal ++= (file("static") ** "*").get map { f =>
 
 // Override the "dist" command to build a tarball, instead of a zip file.
 addCommandAlias("dist", "universal:package-zip-tarball")
+
+TraceurKeys.sourceFileNames := Seq("javascripts/main.js")
+
+
+TraceurKeys.outputFileName := "javascripts/pwguard.js"

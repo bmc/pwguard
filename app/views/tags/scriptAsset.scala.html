@@ -5,6 +5,10 @@
   path. If you want to point to a non-asset script, use the @script tag.
 *@
 
-@(assetPath: String, mimeType: String = "text/javascript")
+@(assetPath:     String,
+  mimeType:      String = "text/javascript",
+  includePrefix: Boolean = true)
 
-@script(routes.Assets.at(s"javascripts/$assetPath").toString, mimeType)
+@defining(if (includePrefix) "javascripts/" else "") { prefix =>
+  @script(routes.Assets.at(s"$prefix$assetPath").toString, mimeType)
+}

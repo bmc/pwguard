@@ -19,5 +19,7 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-digest" % "1.0.0")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-mocha" % "1.0.0")
 
+addSbtPlugin("com.typesafe.sbt" % "sbt-traceur" % "1.0.0")
+
 // git-stamp: Add Git commit information to generated MANIFEST.MF
 addSbtPlugin("com.atlassian.labs" % "sbt-git-stamp" % "0.1.2")

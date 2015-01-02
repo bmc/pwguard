@@ -73,8 +73,13 @@
     @scriptAsset("angular-directives.js")
     @scriptAsset("angular-services.js")
     @scriptAsset("angular-filters.js")
-    @scriptAsset("util.js")
-    @scriptAsset("main.js")
+
+    @*
+      traceur compiles main.js down to pwguard.js. For some reason, the
+      place sbt-traceur puts the compiled file doesn't allow a "javascripts"
+      prefix on the path, hence the second argument, below.
+    *@
+    @scriptAsset("pwguard.js", includePrefix=false)
 
     @helper.javascriptRouter("routes")(
       routes.javascript.SessionController.getLoggedInUser,
@@ -97,7 +102,6 @@
       routes.javascript.Assets.at,
       routes.javascript.MainController.static
     );
-
 
     <script type="text/javascript">
       routes.staticAsset = function(path) {
