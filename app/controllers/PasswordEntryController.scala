@@ -3,6 +3,7 @@ package controllers
 import java.net.URL
 
 import dbservice.DAO
+import exceptions._
 import models.{UserHelpers, User, PasswordEntry}
 import models.PasswordEntryHelper.json.implicits._
 
@@ -25,8 +26,6 @@ import scala.util.control.NonFatal
 object PasswordEntryController extends BaseController {
 
   override val logger = Logger("pwguard.controllers.PasswordEntryController")
-
-  class SaveFailed(msg: String) extends Exception(msg)
 
   import DAO.passwordEntryDAO
 

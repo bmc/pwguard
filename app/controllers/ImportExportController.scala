@@ -1,8 +1,10 @@
 package controllers
 
+import akka.actor.Props
 import dbservice.DAO
 import models.{UserHelpers, User, PasswordEntry}
 import org.apache.poi.ss.usermodel.Sheet
+import play.api.libs.concurrent.Akka
 import util.EitherOptionHelpers._
 
 import com.github.tototoshi.csv._
@@ -19,34 +21,18 @@ import play.api.cache.Cache
 import play.api.Play.current
 
 import pwguard.global.Globals.ExecutionContexts.Default._
+import actors.{ImportFieldMapping, ImportData, ImportActor}
+import exceptions._
 
-import scala.concurrent.Future
+import scala.concurrent.{Promise, Future}
 import scala.util.control.NonFatal
-
-class UploadFailed(msg: String) extends Exception(msg)
-class ImportFailed(msg: String) extends Exception(msg)
-class ExportFailed(msg: String) extends Exception(msg)
 
 object ImportExportController extends BaseController {
 
   override val logger = Logger("pwguard.controllers.ImportExportController")
 
   import DAO.passwordEntryDAO
-
-  object Field extends Enumeration {
-    type Field = Value
-
-    val Name        = Value
-    val Description = Value
-    val Login       = Value
-    val Password    = Value
-    val URL         = Value
-    val Notes       = Value
-
-    val Required = Set(Name, Description)
-
-    val valuesInOrder = values.toList.sorted
-  }
+  import ImportFieldMapping._
 
   val XSLXContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   val CSVContentType  = "text/csv"
@@ -66,6 +52,9 @@ object ImportExportController extends BaseController {
 
   private val BaseExportFilename = "passwords"
 
+  private val importActor = Akka.system(current).actorOf(Props[ImportActor],
+                                                         "import-actor")
+
   // -------------------------------------------------------------------------
   // Public methods
   // -------------------------------------------------------------------------
@@ -73,7 +62,7 @@ object ImportExportController extends BaseController {
   def exportData(format: String) = SecuredAction { authReq =>
 
     def unpackEntry(user: User, e: PasswordEntry):
-      Future[Map[Field.Value, String]] = {
+      Future[Map[ImportFieldMapping.Value, String]] = {
 
       val PasswordEntry(_, _, name, descriptionOpt, loginIDOpt,
                         encryptedPasswordOpt, urlOpt, notesOpt) = e
@@ -89,12 +78,12 @@ object ImportExportController extends BaseController {
         Future.successful("")
 
       } map { pwString =>
-        Map(Field.Name        -> name,
-            Field.Password    -> pwString,
-            Field.Description -> description,
-            Field.Login       -> loginID,
-            Field.URL         -> url,
-            Field.Notes       -> notes)
+        Map(ImportFieldMapping.Name        -> name,
+            ImportFieldMapping.Password    -> pwString,
+            ImportFieldMapping.Description -> description,
+            ImportFieldMapping.Login       -> loginID,
+            ImportFieldMapping.URL         -> url,
+            ImportFieldMapping.Notes       -> notes)
       }
     }
 
@@ -186,13 +175,12 @@ object ImportExportController extends BaseController {
         val jsonOpt = for { h  <- header(reader) }
         yield {
           Cache.set(FileCacheKey, f2.getPath)
-          logger.error(s"--- f2=${f2.getPath}, exists=${f2.exists}")
           Ok(
             Json.obj(
               "headers" -> h,
-              "fields"  -> Field.values.map { field =>
+              "fields"  -> ImportFieldMapping.values.map { field =>
                 Json.obj("name" -> field.toString,
-                         "required" -> Field.Required.contains(field))
+                         "required" -> ImportFieldMapping.isRequired(field))
               }
             )
           )
@@ -220,7 +208,6 @@ object ImportExportController extends BaseController {
           throw new ImportFailed("No previously uploaded file.")
         }
         val f = new File(path)
-        logger.error(s"file=${f.getPath}, exists=${f.exists}")
         f
       }
     }
@@ -234,108 +221,23 @@ object ImportExportController extends BaseController {
       }
     }
 
-    def getReader(file: File): Future[CSVReader] = {
-      Future {
-        logger.error(s"getReader: f=${file.getPath}, exists=${file.exists}")
-        CSVReader.open(file)
-      }
-    }
+    // Create a promise. The import actor will complete it.
+    val p = Promise[Int]
 
-    def mappingFor(key: Field.Value, mappings: Map[String, String]):
-      Option[String] = {
-
-      val sKey = key.toString
-      val opt = mappings.get(sKey)
-      if ((Field.Required contains key) && opt.isEmpty)
-        throw new ImportFailed(s"Required mapping $sKey not found")
-      opt
-    }
-
-    def maybeEncryptPW(password: Option[String]): Future[Option[String]] = {
-      password map { pw =>
-        UserHelpers.encryptStoredPassword(authReq.user, pw) map { Some(_) }
-      } getOrElse {
-        Future.successful(noneT[String])
-      }
-    }
-
-    def saveIfNew(name:     String,
-                  desc:     Option[String],
-                  login:    Option[String],
-                  password: Option[String],
-                  urlOpt:   Option[String],
-                  notes:    Option[String]): Future[Option[PasswordEntry]] = {
-      val user = authReq.user
-
-      val futureFuture: Future[Future[Option[PasswordEntry]]] =
-        for { epwOpt   <- maybeEncryptPW(password)
-              entryOpt <- passwordEntryDAO.findByName(user, name) }
-        yield {
-          if (entryOpt.isDefined) {
-            logger.debug(s"Won't update existing $name entry for ${user.email}")
-            Future.successful(None)
-          }
-          else {
-            val entry = PasswordEntry(id                = None,
-                                      userID            = user.id.get,
-                                      name              = name,
-                                      description       = desc,
-                                      loginID           = login,
-                                      encryptedPassword = epwOpt,
-                                      url               = urlOpt,
-                                      notes             = notes)
-            passwordEntryDAO.save(entry) map { Some(_) }
-          }
-        }
-
-      futureFuture.flatMap {f => f}
-    }
-
-
-    // Get the mappings, find the uploaded file, and open a reader.
+    // Get the mappings, find the uploaded file, and send the data over to
+    // the actor. This approach allows the actor to single-thread updates
+    // to the database, avoiding locking issues.
     val f =
       for { file     <- getFile()
-            mappings <- getMappings()
-            reader   <- getReader(file) }
-      yield (mappings, reader)
-
-    // If none of those failed, save the mappings in the CSV file, but only
-    // if they're new.
-    val result = f flatMap {
-      case (mappings, reader) => {
-        // Use the mappings to find the appropriate headings.
-        val nameHeader  = mappingFor(Field.Name, mappings)
-        val descHeader  = mappingFor(Field.Description, mappings)
-        val loginHeader = mappingFor(Field.Login, mappings)
-        val notesHeader = mappingFor(Field.Notes, mappings)
-        val pwHeader    = mappingFor(Field.Password, mappings)
-        val urlHeader   = mappingFor(Field.URL, mappings)
-
-        Future.sequence {
-          // Load each row and map it to an Option[PasswordEntry]. The
-          // None entries will correspond to existing DB entries whose names
-          // match names in the uploaded file. The Some entries will be the
-          // new entries.
-          for { map <- reader.allWithHeaders() }
-          yield {
-            val name = map.get(nameHeader.get).getOrElse {
-              throw new ImportFailed("Missing required name field.")
-            }
-            saveIfNew(name     = name,
-                      password = pwHeader.flatMap(map.get(_)),
-                      desc     = descHeader.flatMap(map.get(_)),
-                      login    = loginHeader.flatMap(map.get(_)),
-                      urlOpt   = urlHeader.flatMap(map.get(_)),
-                      notes    = notesHeader.flatMap(map.get(_)))
-
-          }
-        }
+            mappings <- getMappings() }
+      yield {
+        importActor ! ImportData(file, mappings, authReq.user, p)
       }
 
-    } map { seq: Seq[Option[PasswordEntry]] =>
+    p.future map  { total =>
       // Get rid of the entries that weren't saved because they weren't
       // new.
-      Ok(Json.obj("total" -> seq.flatten.length))
+      Ok(Json.obj("total" -> total))
 
     } recover {
       case NonFatal(e) => {
@@ -350,15 +252,14 @@ object ImportExportController extends BaseController {
         }
       }
     }
-
-    result
   }
 
   // -------------------------------------------------------------------------
   // Private Methods
   // -------------------------------------------------------------------------
 
-  private def writeExcel(out: File, entries: Seq[Map[Field.Value, String]]):
+  private def writeExcel(out:     File,
+                         entries: Seq[Map[ImportFieldMapping, String]]):
     Future[File] = {
 
     import java.io.FileOutputStream
@@ -376,7 +277,7 @@ object ImportExportController extends BaseController {
         style.setFont(font)
 
         val row = sheet.createRow(0.asInstanceOf[Short])
-        for ((cellValue, i) <- Field.valuesInOrder.zipWithIndex) {
+        for ((cellValue, i) <- ImportFieldMapping.valuesInOrder.zipWithIndex) {
           val cell = row.createCell(i)
           cell.setCellValue(cellValue.toString)
           cell.setCellStyle(style)
@@ -386,7 +287,7 @@ object ImportExportController extends BaseController {
         for { (rowMap, rI)  <- entries.zipWithIndex
               rowNum         = rI + 1
               row            = sheet.createRow(rowNum.asInstanceOf[Short])
-              (name, cI)    <- Field.valuesInOrder.zipWithIndex } {
+              (name, cI)    <- ImportFieldMapping.valuesInOrder.zipWithIndex } {
           val cellNum = cI + 1
           val cell    = row.createCell(cI.asInstanceOf[Short])
           cell.setCellValue(rowMap.getOrElse(name, ""))
@@ -398,7 +299,8 @@ object ImportExportController extends BaseController {
     }
   }
 
-  private def writeCSV(out: File, entries: Seq[Map[Field.Value, String]]):
+  private def writeCSV(out:     File,
+                       entries: Seq[Map[ImportFieldMapping, String]]):
     Future[File] = {
 
     Future {
@@ -408,11 +310,13 @@ object ImportExportController extends BaseController {
         withCloseable(CSVWriter.open(fOut)) { csv =>
 
           // Write the header.
-          csv.writeRow(Field.valuesInOrder.map(_.toString).toList)
+          csv.writeRow(ImportFieldMapping.valuesInOrder.map(_.toString).toList)
 
           // Now the data.
           for ( rowMap <- entries ) {
-            val row = Field.valuesInOrder.map { rowMap.getOrElse(_, "") }.toList
+            val row = ImportFieldMapping.valuesInOrder
+                                        .map { rowMap.getOrElse(_, "") }
+                                        .toList
             csv.writeRow(row)
           }
 
