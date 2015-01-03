@@ -9,6 +9,7 @@
 
 import * as util from './util';
 import * as filters from './filters';
+import * as services from './services';
 
 util.init()
 
@@ -139,9 +140,13 @@ pwGuardApp.config(['$routeProvider', function($routeProvider) {
 // Services
 // ##########################################################################
 
-var pwgRoutes = pwGuardApp.factory('pwgRoutes',
-  ['pwgLogging', 'pwgError', 'pwgFlash', '$location', '$route',
-   function(pwgLogging, pwgError, pwgFlash, $location, $route) {
+var pwgRoutes = pwGuardApp.factory('pwgRoutes', ['$injector', function($injector) {
+
+     var pwgLogging = $injector.get('pwgLogging');
+     var pwgError   = $injector.get('pwgError');
+     var pwgFlash   = $injector.get('pwgFlash');
+     var $location  = $injector.get('$location');
+     var $route     = $injector.get('$route');
 
      var log = pwgLogging.logger("pwgRoutes");
      var URL_RE = /^.*#(.*)$/;
