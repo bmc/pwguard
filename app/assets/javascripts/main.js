@@ -10,6 +10,7 @@
 import * as util from './util';
 import * as filters from './filters';
 import * as services from './services';
+import * as directives from './directives';
 
 util.init()
 
@@ -512,7 +513,7 @@ pwGuardApp.controller('InnerSearchCtrl',
       return trimmed.length >= 2;
     }
 
-     $scope.pluralizeResults = (n) => { return pluralizeCount(n); }
+     $scope.pluralizeResults = function(n) { return pluralizeCount(n); }
 
      var clearResults = () => {
        originalEntries = {};
