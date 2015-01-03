@@ -265,18 +265,17 @@ uses many excellent open source packages, most of which are listed below.
 * The [Scala][] programming language
 * [Akka](http://akka.io/)
 * [Angular.js](http://angularjs.org)
-* [Angular File Upload](https://github.com/nervgh/angular-file-upload)
 * [AngularStrap](http://mgcrea.github.io/angular-strap/)
 * Portions of [Apache Commons Math](http://commons.apache.org/proper/commons-math/)
 * Portions of [Apache POI](https://poi.apache.org/)
 * Portions of [Apache Commons Codec](http://commons.apache.org/proper/commons-codec/)
 * Twitter [Bootstrap][bootstrap]
-* [CoffeeScript](http://coffeescript.org/)
 * [excanvas](http://excanvas.sourceforge.net/)
 * [Font Awesome](http://fontawesome.io/)
 * Portions of [Google Guava](https://code.google.com/p/guava-libraries/)
 * [Grizzled Scala](http://software.clapper.org/grizzled-scala/)
 * [html5shiv](https://github.com/aFarkas/html5shiv)
+* [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 * [JBcrypt][]
 * [JodaTime](http://www.joda.org/)
 * [jQuery](https://jquery.org/)
@@ -285,6 +284,9 @@ uses many excellent open source packages, most of which are listed below.
 * [Modernizr](http://modernizr.com/)
 * [scala-csv](https://github.com/tototoshi/scala-csv)
 * [SQLite](http://sqlite.org/)
+* [Traceur](https://github.com/google/traceur-compiler) and
+  [sbt-traceur](https://github.com/google/traceur-compiler) (for translating
+  ECMAScript 6 to "regular" JavaScript)
 * [UADetector](http://uadetector.sourceforge.net/)
 * [Underscore.js](http://documentcloud.github.io/underscore/)
 * [WebJars](http://www.webjars.org/)
