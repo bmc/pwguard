@@ -158,7 +158,7 @@
                     <div ng-show="pw.plaintextPassword">
 
                       <span class="show-hide-password">
-                        <a href="" ng-click="pw.toggleVisibility()"
+                        <a href="" ng-click="pw.togglePasswordVisibility()"
                            class="toggle-password">
                           <span class="fa fa-toggle-on"
                                 ng-show="pw.passwordVisible"></span>
@@ -209,17 +209,31 @@
               </div>
 
               <div class="col-md-2">
-                <span ng-hide="pw.editing"
-                      ng-class="{clickable: pw.previewAvailable}">
-                  <span ng-click="pw.showPreview=!pw.showPreview">
-                    <span ng-show="pw.showPreview">{{pw.notesPreview}}</span>
-                    <!--
-                      ng-bind-html sanitizes any HTML in the field. The
-                      linky filter then converts any links embedded in the
-                      text.
-                    -->
-                    <span ng-hide="pw.showPreview"
-                          ng-bind-html="pw.notes | linky:'newPage'"/>
+                <span ng-hide="pw.editing">
+                  <span ng-show="pw.previewAvailable">
+                    <button type="button"
+                            class="btn btn-default btn-xs pull-right"
+                            ng-click="pw.toggleNotesPreview()">
+                      <i ng-show="pw.showPreview" class="fa fa-plus"></i>
+                      <i ng-hide="pw.showPreview" class="fa fa-minus"></i>
+                    </button>
+
+                    <span ng-show="pw.showPreview">
+                      {{pw.notesPreview}}
+                    </span>
+                    <span ng-hide="pw.showPreview">
+                      <!--
+                        ng-bind-html sanitizes any HTML in the field. The
+                        linky filter then converts any links embedded in the
+                        text.
+                      -->
+                      <span ng-bind-html="pw.notes | linky:'newPage' | pwgNewlinesToBRs">
+                      </span>
+                    </span>
+                  </span>
+                  <span ng-hide="pw.previewAvailable">
+                    <span ng-bind-html="pw.notes | linky:'newPage' | pwgNewlinesToBRs">
+                    </span>
                   </span>
                 </span>
                 <span ng-show="pw.editing">

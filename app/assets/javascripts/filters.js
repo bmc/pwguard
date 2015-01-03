@@ -80,4 +80,22 @@ pwgFilters.filter('pwgReplace', function() {
   }
 });
 
+// ----------------------------------------------------------------------------
+// Converted embedded newlines to <br/>
+// ----------------------------------------------------------------------------
+
+pwgFilters.filter('pwgNewlinesToBRs', ['$filter', function($filter) {
+  var NEWLINES = ["\n", "&#10;", "&#x0a;"];
+
+  return function(input) {
+    let rep = $filter("pwgReplace");
+    let res = input;
+    for (let s of NEWLINES) {
+      res = rep(res, s, "<br/>", true);
+    }
+
+    return res;
+  }
+}]);
+
 /* jshint ignore:end */

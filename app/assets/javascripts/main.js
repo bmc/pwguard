@@ -759,8 +759,13 @@ pwGuardApp.controller('InnerSearchCtrl',
         pw.showPreview      = pw.previewAvailable;
         pw.passwordVisible  = false;
         pw.selected         = false;
-        pw.toggleVisibility = () => {
+
+        pw.togglePasswordVisibility = () => {
           pw.passwordVisible = !pw.passwordVisible;
+        }
+
+        pw.toggleNotesPreview = () => {
+          pw.showPreview = !pw.showPreview;
         }
 
         originalEntries[pw.id] = pw;
