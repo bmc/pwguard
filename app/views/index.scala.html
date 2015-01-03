@@ -65,11 +65,12 @@
     @* This <script> block MUST precede other local stuff. *@
     <script type="text/javascript">
       window.ANGULAR_TEMPLATE_URL = "@routes.MainController.getAngularTemplate("TOKEN")";
+      window.angularTemplateURL = function(filename) {
+        return window.ANGULAR_TEMPLATE_URL.replace("TOKEN", filename);
+      }
     </script>
 
     @stylesheetAsset("main.css")
-
-    @scriptAsset("angular-util.js")
 
     @*
       traceur compiles main.js down to pwguard.js. For some reason, the
