@@ -651,11 +651,8 @@ pwGuardApp.controller('InnerSearchCtrl',
         }
       }
 
-      console.log(`lastSearch=${lastSearch}, ${typeof lastSearch}`)
       if (! lastSearch)
         $scope.searchTerm = "";
-
-      console.log($scope.searchTerm);
     }
 
     var saveEntry = (pw) => {
