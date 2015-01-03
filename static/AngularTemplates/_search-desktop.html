@@ -27,12 +27,13 @@
       <div class="col-md-6">
         <div class="search-options mobile pull-right">
           <span class="button">
-            <button class="btn btn-small" ng-click="showAll()">
+            <button type="button" class="btn btn-small" ng-click="showAll()">
               All
             </button>
-            <button class="btn btn-small btn-info" ng-click="editNewEntry()">
+            <button type="button" class="btn btn-small btn-info"
+                    ng-click="newEntry()">
               New
-            </button>
+            </a>
           </span>
         </div>
       </div>
@@ -257,102 +258,6 @@
         </div>
       </div>
     </div>
-
-
   </div>
 
-  <!-- Box for creating new entry -->
-
-  <div class="row" ng-show="newPasswordEntry" id="new-password-entry">
-    <div class="col-md-3"></div>
-    <div class="col-md-7">
-      <header>New Password Entry</header>
-      <form name="newEntry" ng-submit="newPasswordEntry.save()"
-            id="new-password-entry-form" novalidate class="">
-        <div class="form-group"
-             ng-class="{'has-error': newEntry.name.$invalid && newEntry.name.$dirty}">
-          <label for="name" class="control-label">Name:</label>
-          <input class="form-control"
-                 name="name"
-                 ng-model="newPasswordEntry.name"
-                 id="name"
-                 type="text"
-                 ng-trim="true"
-                 placeholder="Name"
-                 ng-required="true"/>
-          <p class="help-block"
-             ng-show="newEntry.name.$error.required && newEntry.name.$dirty">
-            Name is required.
-          </p>
-        </div>
-
-        <div class="form-group" pwg-bootstrap-form-error="description">
-          <label for="description" class="control-label">Description</label>
-          <input class="form-control"
-                 name="description"
-                 id="description"
-                 ng-model="newPasswordEntry.description"
-                 type="text"
-                 placeholder="Description"/>
-        </div>
-
-        <div class="form-group">
-          <label for="password" class="control-label">Password</label>
-          <input class="form-control"
-                 name="password"
-                 id="password"
-                 ng-model="newPasswordEntry.password"
-                 type="text"
-                 placeholder="Password"/>
-        </div>
-
-        <div class="form-group">
-          <label for="loginID" class="control-label">ID</label>
-          <input class="form-control"
-                 name="loginID"
-                 id="loginID"
-                 ng-model="newPasswordEntry.loginID"
-                 type="text"
-                 ng-trim="true"
-                 placeholder="Login ID"/>
-        </div>
-
-        <div class="form-group" pwg-bootstrap-form-error="url">
-          <label class="control-label" for="url">URL</label>
-          <input class="form-control"
-                 name="url"
-                 id="url"
-                 ng-model="newPasswordEntry.url"
-                 type="text"
-                 ng-trim="true"
-                 ng-pattern="URLPattern"
-                 placeholder="URL"/>
-          <p class="help-block"
-             ng-show="newEntry.url.$error.pattern && newEntry.url.$dirty">
-            Invalid URL.
-          </p>
-        </div>
-
-        <div class="form-group">
-          <label for="notes" class="control-label">Notes</label>
-          <textarea class="form-control" name="notes" id="notes"
-                    ng-model="newPasswordEntry.notes"
-                    ng-trim="true" placeholder="Notes"/>
-        </div>
-
-        <div class="button-bar left">
-          <div class="buttons">
-            <button class="btn btn-primary"
-                    ng-disabled="newEntry.$invalid"
-                    type="submit">
-              Save
-            </button>
-            <button class="btn" ng-click="newPasswordEntry.cancel()">
-              Cancel
-            </button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
 </div>

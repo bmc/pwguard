@@ -152,12 +152,12 @@ pwgServices.factory('pwgFlash', ['$alert', function($alert) {
 
     error: function(msg) {
       clearError();
-      errorAlert = doAlert(msg, 'error');
+      errorAlert = doAlert(msg, 'danger');
     },
 
     info: function(msg) {
       clearInfo();
-      infoAlert = doAlert(msg, 'error');
+      infoAlert = doAlert(msg, 'info');
     },
 
     clearError: clearError,
