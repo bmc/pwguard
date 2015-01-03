@@ -584,6 +584,7 @@ pwGuardApp.controller('InnerSearchCtrl',
     }
 
     $scope.pluralizeResults = function(n) { return pluralizeCount(n); }
+
     var clearResults = () => {
       originalEntries = {};
       $scope.searchResults = null;
