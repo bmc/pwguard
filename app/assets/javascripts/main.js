@@ -500,7 +500,6 @@ pwGuardApp.controller('NewPasswordEntryCtrl',
     }
 
     var cancel = function(form) {
-      console.log("Cancel");
       let doCancel = function() {
         pwgRoutes.redirectToNamedRoute('search');
       }
@@ -552,7 +551,7 @@ pwGuardApp.controller('SearchCtrl',
 pwGuardApp.controller('InnerSearchCtrl',
   ['$scope', '$injector', function($scope, $injector) {
 
-    $scope.searchTerm    = null;
+    $scope.searchTerm    = "";
     $scope.searchResults = null;
     $scope.activePanel   = -1; // mobile only
     $scope.sortColumn    = 'name';
@@ -569,7 +568,7 @@ pwGuardApp.controller('InnerSearchCtrl',
     var $cookies   = $injector.get('$cookies');
 
     var SEARCH_ALL_MARKER = '-*-all-*-';
-    var lastSearch = null;
+    var lastSearch = "";
     var originalEntries = {};
 
     var pluralizeCount = (count) => {
@@ -651,6 +650,12 @@ pwGuardApp.controller('InnerSearchCtrl',
           doSearch();
         }
       }
+
+      console.log(`lastSearch=${lastSearch}, ${typeof lastSearch}`)
+      if (! lastSearch)
+        $scope.searchTerm = "";
+
+      console.log($scope.searchTerm);
     }
 
     var saveEntry = (pw) => {
