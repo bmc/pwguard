@@ -116,7 +116,6 @@ class ImportActor extends Actor {
     val name = row.get(headers.nameHeader).getOrElse {
       throw new ImportFailed("Missing required name field.")
     }
-
     val entry = PasswordEntry(
       id                = None,
       userID            = user.id.get,

@@ -363,8 +363,18 @@ object ImportExportController extends BaseController {
       val writer = CSVWriter.open(csvFile)
 
       for (row <- sheet.iterator) {
-        val cells = row.cellIterator.map { _.toString }.toList
-        writer.writeRow(cells)
+        // Can't use the row.cellIterator call, because it only returns
+        // the non-null cells.
+        val firstCellNum = row.getFirstCellNum
+        if (firstCellNum >= 0) {
+          val lastCellNum = row.getLastCellNum
+          val cells = for (i <- firstCellNum to lastCellNum) yield {
+            val cell = Option(row.getCell(i))
+            cell.map { _.toString }.getOrElse("")
+          }
+
+          writer.writeRow(cells)
+        }
       }
 
       writer.close()

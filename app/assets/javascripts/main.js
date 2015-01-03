@@ -139,8 +139,8 @@ pwGuardApp.config(['$routeProvider', function($routeProvider) {
 // ##########################################################################
 
 var pwgRoutes = pwGuardApp.factory('pwgRoutes',
-  ['pwgLogging', 'pwgError', '$location', '$route',
-   function(pwgLogging, pwgError, $location, $route) {
+  ['pwgLogging', 'pwgError', 'pwgFlash', '$location', '$route',
+   function(pwgLogging, pwgError, pwgFlash, $location, $route) {
 
      var log = pwgLogging.logger("pwgRoutes");
      var URL_RE = /^.*#(.*)$/;
@@ -163,6 +163,7 @@ var pwgRoutes = pwGuardApp.factory('pwgRoutes',
        var url = REVERSE_ROUTES[name];
        if (url) {
          log.debug(`Redirecting to ${url}`)
+         pwgFlash.clearAll();
          $location.path(url);
        }
        else {
@@ -303,8 +304,6 @@ pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
          if (useRoute !== routeName)
            pwgRoutes.redirectToNamedRoute(useRoute);
        }
-
-       pwgFlash.clearAll();
      });
 
      $scope.loggedIn = () => {
@@ -407,7 +406,7 @@ pwGuardApp.controller('NavbarCtrl',
 
               function(response) {
                 // Failure
-                console.logout(`WARNING: Server logout error: ${response.status}`)
+                console.log(`WARNING: Server logout error: ${response.status}`)
                 always();
               }
             )
@@ -583,7 +582,6 @@ pwGuardApp.controller('InnerSearchCtrl',
      }
 
      var deleteEntry = (pw) => {
-       console.log(pw);
        pwgModal.confirm(`Really delete ${pw.name}?`, "Confirm deletion").then(
          function() {
            var url = routes.controllers.PasswordEntryController.delete(pw.id).url;
@@ -678,7 +676,6 @@ pwGuardApp.controller('InnerSearchCtrl',
          pw.showPassword     = false;
          pw.editing          = false;
          pw.notesPreview     = util.ellipsize(pw.notes);
-         console.log(`notesPreview=${pw.notesPreview}`);
          pw.previewAvailable = ! (pw.notes === pw.notesPreview);
          pw.showPreview      = pw.previewAvailable;
          pw.passwordVisible  = false;
@@ -696,7 +693,7 @@ pwGuardApp.controller('InnerSearchCtrl',
 
          return pw;
        });
-       console.log(r);
+
        return r;
      }
    }]

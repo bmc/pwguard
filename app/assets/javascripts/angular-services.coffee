@@ -114,6 +114,7 @@ pwgFlash = ($alert) ->
       show:      true
       template:  routes.staticAsset("AngularTemplates/alert.html")
       container: '.navbar'
+      duration:  5
     $alert cfg
 
   warn: (msg) ->
