@@ -591,7 +591,6 @@ pwGuardApp.controller('InnerSearchCtrl',
      }
 
      var deleteEntry = (pw) => {
-       console.log("Delete"); console.log(pw);
        pwgModal.confirm(`Really delete ${pw.name}?`, "Confirm deletion").then(
          function() {
            var url = routes.controllers.PasswordEntryController.delete(pw.id).url;
