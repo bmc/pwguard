@@ -277,7 +277,7 @@ pwgServices.factory('pwgAjax', ['$injector', function($injector) {
 
     delete: function(url, data, onSuccess, onFailure = null) {
       var params = {
-        method:  'GET',
+        method:  'DELETE',
         url:     url,
         data:    data,
         headers: null
@@ -402,31 +402,31 @@ pwgServices.factory('pwgModal', ['$injector', function($injector) {
 
         // Use in-browser one.
 
-        var modal = $modal({
+        let modal = $modal({
           title:    title,
-          template: routes.staticAsset("AngularTemplates.confirmModal.html"),
+          template: routes.staticAsset("AngularTemplates/confirmModal.html"),
           backdrop: 'static',
           content:  message,
           show:     false
         });
 
-        function confirmed() {
+        // Bound to values in the template.
+        $rootScope.modalConfirmOK = function() {
           deferred.resolve();
           modal.hide();
         }
 
-        function canceled() {
+        $rootScope.modalConfirmCancel = function() {
           deferred.reject();
           modal.hide();
         }
 
-        // Bound to values in the template.
-        $rootScope.modalConfirmOK = confirmed
-        $rootScope.modalConfirmCancel = canceled
         $rootScope.modalConfirmKeyPressed = function($event) {
           if ($event.keyCode === 13) // ENTER
-            canceled();
+            $scope.modalConfirmCancel();
         }
+
+        modal.$promise.then(modal.show)
       }
 
       return deferred.promise;

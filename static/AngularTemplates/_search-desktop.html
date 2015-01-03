@@ -40,10 +40,14 @@
   </div>
 
   <div id="desktop-results">
-    <div class="row">
-      <div class="col-md-12" ng-show="searchResults != null">
+    <div class="row" ng-show="searchResults && (searchResults.length === 0)">
+      <div class="col-md-3"></div>
+      <div class="col-md-6">No results.</div>
+    </div>
+    <div class="row" ng-show="searchResults && (searchResults.length > 0)">
+      <div class="col-md-12">
         <div class="desktop-results-header">
-          <div>{{pluralizeResults(searchResults.length)}}</div>
+          <div>Found {{pluralizeResults(searchResults.length)}}.</div>
           <div ng-show="(searchResults.length > 0)">
               <span class="hint" ng-hide="newPasswordEntry">
                 You can click on a password to show it or hide it. You
