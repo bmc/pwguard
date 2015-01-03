@@ -789,7 +789,6 @@ pwGuardApp.controller('ImportExportCtrl',
     $scope.exportFormat = 'csv';
     $scope.formatPlaceholder = 'XXX';
     $scope.exportURLTemplate = routes.controllers.ImportExportController.exportData($scope.formatPlaceholder).url;
-console.log($scope.exportURLTemplate);
 
     $scope.startDownload = function() {
       $scope.downloading = true;
