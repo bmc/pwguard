@@ -40,7 +40,7 @@ pwgFilters.filter('pwgInflector', function() {
         break
     }
 
-    return n;
+    return res;
   }
 });
 
