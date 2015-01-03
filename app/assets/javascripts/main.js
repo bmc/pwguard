@@ -289,6 +289,8 @@ pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
      $scope.initializing          = true;
      $scope.flashAfterRouteChange = null;
      $scope.isMobile              = window.browserIsMobile;
+console.log(pwgRoutes);
+     $scope.routeIsActive = pwgRoutes.routeIsActive;
 
      pwgAjax.on401(function() {
        if ($scope.loggedInUser) {
