@@ -123,7 +123,7 @@
                ng-class="{even: $even, odd: $odd}"
                ng-repeat="pw in searchResults | orderBy:sortColumn:reverse">
 
-            <form name="pwForm{{$index}}">
+            <form name="pwForm" novalidate ng-submit="pw.save()">
               <div class="col-md-1">
                 <span ng-hide="pw.editing">{{pw.name}}</span>
                 <span ng-show="pw.editing">
@@ -202,7 +202,7 @@
                 <span ng-show="pw.editing" pwg-bootstrap-form-error="url">
                   <input type="text" ng-model="pw.url" name="url"
                          ng-pattern="URLPattern"/>
-                  <div class="error" ng-show="pwForm{{$index}}.url.$error.pattern">
+                  <div class="error" ng-show="pwForm.url.$error.pattern">
                     Invalid URL.
                   </div>
                 </span>
@@ -231,27 +231,31 @@
                 <div class="select-checkbox">
                   <input type="checkbox" ng-model="pw.selected"/>
                 </div>
-                <button class="btn btn-borderless"
+                <button type="button"
+                        class="btn btn-borderless"
                         ng-click="pw.edit()"
                         ng-hide="pw.editing">
                   <i class="fa fa-pencil"></i>
                 </button>
-                <button class="btn btn-borderless"
+                <button type="button"
+                        class="btn btn-borderless"
                         ng-click="pw.delete()"
                         ng-hide="pw.editing">
                   <i class="fa fa-trash-o"></i>
                 </button>
-                <a href="" class="btn btn-borderless save"
-                   ng-click="pw.save()"
-                   ng-disabled="pwForm{{$index}}.$invalid"
-                   ng-show="pw.editing">
+                <button type="submit"
+                        class="btn btn-borderless save"
+                        ng-click="pw.save()"
+                        ng-disabled="pwForm.$invalid"
+                        ng-show="pw.editing">
                   <i class="fa fa-save"></i>
-                </a>
-                <a href="" class="btn btn-borderless cancel"
-                   ng-click="pw.cancel()"
-                   ng-show="pw.editing">
+                </button>
+                <button type="button"
+                        class="btn btn-borderless cancel"
+                        ng-click="pw.cancel(pwForm)"
+                        ng-show="pw.editing">
                   <i class="fa fa-times"></i>
-                </a>
+                </button>
               </div>
             </form>
           </div>

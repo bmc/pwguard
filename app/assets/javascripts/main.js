@@ -485,13 +485,17 @@ pwGuardApp.controller('LoginCtrl',
 pwGuardApp.controller('NewPasswordEntryCtrl',
   ['$scope', '$injector', function($scope, $injector) {
 
-    var pwgRoutes = $injector.get('pwgRoutes');
-    var pwgModal  = $injector.get('pwgModal');
-    var pwgAjax   = $injector.get('pwgAjax');
-    var pwgFlash  = $injector.get('pwgFlash');
+    var pwgRoutes  = $injector.get('pwgRoutes');
+    var pwgModal   = $injector.get('pwgModal');
+    var pwgAjax    = $injector.get('pwgAjax');
+    var pwgFlash   = $injector.get('pwgFlash');
+    var pwgLogging = $injector.get('pwgLogging');
+
+    var log = pwgLogging.logger('NewPasswordEntryCtrl');
 
     var createNew = (pw) => {
       let url = routes.controllers.PasswordEntryController.create().url;
+      log.debug(`Saving new entry, name=${$scope.newPasswordEntry.name}`);
       pwgAjax.post(url, $scope.newPasswordEntry,
         function() {
           pwgFlash.info("Saved.")
@@ -571,6 +575,8 @@ pwGuardApp.controller('InnerSearchCtrl',
     var lastSearch = "";
     var originalEntries = {};
 
+    var log = pwgLogging.logger('InnerSearchCtrl');
+
     var pluralizeCount = (count) => {
       return inflector(count, "entry", "entries");
     }
@@ -604,6 +610,7 @@ pwGuardApp.controller('InnerSearchCtrl',
       originalEntries = {};
       $scope.newPasswordEntry = null;
       let url = routes.controllers.PasswordEntryController.searchPasswordEntries().url;
+      log.debug(`Issuing search: ${$scope.searchTerm}`);
       pwgAjax.post(url, {searchTerm: $scope.searchTerm}, function(response) {
         lastSearch = $scope.searchTerm;
         $scope.searchResults = adjustResults(response.results);
@@ -722,6 +729,26 @@ pwGuardApp.controller('InnerSearchCtrl',
       }
     }
 
+    var cancelEdit = function(form, pw) {
+      let doCancel = function() {
+        _.extend(pw, originalEntries[pw.id]);
+        pw.editing = false;
+        reissueLastSearch();
+      }
+
+      if (form.$dirty) {
+        pwgModal.confirm("You've changed this entry. Really cancel?",
+                         "Confirm cancel").then(
+          function() {
+            doCancel();
+          }
+        )
+      }
+      else {
+        doCancel();
+      }
+    }
+
     var adjustResults = (results) => {
       originalEntries = {};
       let r = _.map(results, (pw) => {
@@ -735,9 +762,11 @@ pwGuardApp.controller('InnerSearchCtrl',
         pw.toggleVisibility = () => {
           pw.passwordVisible = !pw.passwordVisible;
         }
+
         originalEntries[pw.id] = pw;
+
         pw.edit   = function() { this.editing = true; }
-        pw.cancel = function() { cancelEdit(this); }
+        pw.cancel = function(form) { cancelEdit(form, this); }
         pw.save   = function() { saveEntry(this); }
         pw.delete = function() { deleteEntry(this); }
         return pw;
@@ -1039,6 +1068,8 @@ pwGuardApp.controller('AdminUsersCtrl',
     var pwgFlash   = $injector.get('pwgFlash');
     var pwgLogging = $injector.get('pwgLogging');
     var pwgModal   = $injector.get('pwgModal');
+
+    var log = pwgLogging.logger('AdminUsersCtrl');
 
     $scope.users      = null;
     $scope.addingUser = null;
