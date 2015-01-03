@@ -782,15 +782,16 @@ pwGuardApp.controller('ImportExportCtrl',
     // Export //
     // ****** //
 
-    $scope.isExcel = () => { return $scope.exportFormat === 'xlsx'; }
-    $scope.isCSV   = () => { return $scope.exportFormat === 'csv'; }
+    $scope.isExcel = function() { return $scope.exportFormat === 'xlsx'; }
+    $scope.isCSV   = function() { return $scope.exportFormat === 'csv'; }
 
     $scope.downloading = false;
     $scope.exportFormat = 'csv';
     $scope.formatPlaceholder = 'XXX';
     $scope.exportURLTemplate = routes.controllers.ImportExportController.exportData($scope.formatPlaceholder).url;
+console.log($scope.exportURLTemplate);
 
-    $scope.startDownload = () => {
+    $scope.startDownload = function() {
       $scope.downloading = true;
       $timeout(function() { $scope.downloading = false; }, 3000);
     }

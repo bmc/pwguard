@@ -64,18 +64,19 @@ pwgFilters.filter('pwgBoolean', function() {
 // ----------------------------------------------------------------------------
 
 pwgFilters.filter('pwgReplace', function() {
-  return function(input, from, to, all) {
+  return function(input, fromString, toString, all) {
     var res = input;
     if (input && (typeof input === 'string')) {
-      res = input.replace(from, to);
+      res = input.replace(fromString, toString);
       if (all) {
         var prev = input;
         while (prev !== res) {
           prev = res;
-          res = res.replace(from, to);
+          res = res.replace(fromString, toString);
         }
       }
     }
+    return res;
   }
 });
 
