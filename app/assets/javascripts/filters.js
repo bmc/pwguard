@@ -98,4 +98,60 @@ pwgFilters.filter('pwgNewlinesToBRs', ['$filter', function($filter) {
   }
 }]);
 
+// ----------------------------------------------------------------------------
+// Shorten a string, adding a ellipsis, if it exceeds a certain length.
+// ----------------------------------------------------------------------------
+
+pwgFilters.filter('pwgEllipsize', [function() {
+  return function(input, max = 30) {
+    var res = input;
+    if (input) {
+      if (typeof max === 'string') {
+        max = parseInt(max)
+        if (isNaN(max))
+          max = 30;
+      }
+
+      var trimmed = input.slice(0, max);
+      if (input === trimmed)
+        res = input;
+      else
+        res = `${trimmed}...`;
+    }
+
+    return res;
+  }
+}]);
+
+// ----------------------------------------------------------------------------
+// Shorten a URL to a preview.
+// ----------------------------------------------------------------------------
+
+pwgFilters.filter('pwgUrlPreview', ['$filter', function($filter) {
+  let ellipsize = $filter('pwgEllipsize');
+  // Note: The ".*?" construct means "match .*, but non-greedily". This
+  // is necessary to prevent the ".*" from capturing trailing "/" characters
+  // that we prefer to exclude. See
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
+  let r = new RegExp("^https?://(www.)?(.*?)/*$")
+
+  return function(input, max = 30) {
+    let res = input;
+
+    if (input) {
+      // First, remove any leading protocol and "www" portion. Note that we
+      // only care about HTTP and HTTPS URLs. Anything else is unlikely and
+      // untouched.
+
+      let m = r.exec(input)
+      if (m) res = m[2];
+
+      res = ellipsize(res, max)
+    }
+
+    return res;
+  }
+
+}]);
+
 /* jshint ignore:end */

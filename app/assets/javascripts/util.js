@@ -17,25 +17,5 @@ export function init() {
   }
 }
 
-export function ellipsize(input, max = 30) {
-  var res = input;
-  if (input) {
-    if (typeof max === 'string') {}
-    max = parseInt(max)
-    if (isNaN(max))
-      max = 30;
-
-    var trimmed = input.slice(0, max);
-    if (input === trimmed)
-      res = input;
-    else
-      res = `${trimmed}...`;
-  }
-
-  return res;
-}
-
-
-
 /* jshint ignore:end */
 

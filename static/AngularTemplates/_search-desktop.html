@@ -196,8 +196,24 @@
                   linky filter then converts any links embedded in the
                   text.
                 -->
-                <span ng-hide="pw.editing"
-                      ng-bind-html="pw.url | linky:'newPage'">
+                <span ng-hide="pw.editing">
+                  <span ng-show="pw.urlPreview">
+                    <button type="button"
+                            class="btn btn-default btn-xs pull-right"
+                            ng-click="pw.toggleUrlPreview()">
+                      <i ng-show="pw.showUrlPreview" class="fa fa-plus"></i>
+                      <i ng-hide="pw.showUrlPreview" class="fa fa-minus"></i>
+                    </button>
+                    <span ng-show="pw.showUrlPreview">
+                      <a ng-href="{{pw.url}}">{{pw.urlPreview}}</a>
+                    </span>
+                    <span ng-hide="pw.showUrlPreview"
+                          ng-bind-html="pw.url | linky:'newPage'">
+                    </span>
+                  </span>
+                  <span ng-hide="pw.urlPreview">
+                    <span ng-bind-html="pw.url | linky:'newPage'"></span>
+                  </span>
                 </span>
                 <span ng-show="pw.editing" pwg-bootstrap-form-error="url">
                   <input type="text" ng-model="pw.url" name="url"
@@ -210,18 +226,18 @@
 
               <div class="col-md-2">
                 <span ng-hide="pw.editing">
-                  <span ng-show="pw.previewAvailable">
+                  <span ng-show="pw.notesPreviewAvailable">
                     <button type="button"
                             class="btn btn-default btn-xs pull-right"
                             ng-click="pw.toggleNotesPreview()">
-                      <i ng-show="pw.showPreview" class="fa fa-plus"></i>
-                      <i ng-hide="pw.showPreview" class="fa fa-minus"></i>
+                      <i ng-show="pw.showNotesPreview" class="fa fa-plus"></i>
+                      <i ng-hide="pw.showNotesPreview" class="fa fa-minus"></i>
                     </button>
 
-                    <span ng-show="pw.showPreview">
+                    <span ng-show="pw.showNotesPreview">
                       {{pw.notesPreview}}
                     </span>
-                    <span ng-hide="pw.showPreview">
+                    <span ng-hide="pw.showNotesPreview">
                       <!--
                         ng-bind-html sanitizes any HTML in the field. The
                         linky filter then converts any links embedded in the
@@ -231,7 +247,7 @@
                       </span>
                     </span>
                   </span>
-                  <span ng-hide="pw.previewAvailable">
+                  <span ng-hide="pw.notesPreviewAvailable">
                     <span ng-bind-html="pw.notes | linky:'newPage' | pwgNewlinesToBRs">
                     </span>
                   </span>

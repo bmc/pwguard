@@ -27,8 +27,6 @@ var pwGuardApp = angular.module("PWGuardApp", ['ngRoute',
 // Utility functions
 // ##########################################################################
 
-
-
 // ##########################################################################
 // Initialization logic
 // ##########################################################################
@@ -561,15 +559,17 @@ pwGuardApp.controller('InnerSearchCtrl',
     $scope.sortColumn    = 'name';
     $scope.reverse       = false;
 
-    var pwgAjax    = $injector.get('pwgAjax');
-    var pwgFlash   = $injector.get('pwgFlash');
-    var pwgTimeout = $injector.get('pwgTimeout');
-    var pwgModal   = $injector.get('pwgModal');
-    var pwgLogging = $injector.get('pwgLogging');
-    var pwgRoutes  = $injector.get('pwgRoutes');
-    var $filter    = $injector.get('$filter');
-    var inflector  = $filter('pwgInflector');
-    var $cookies   = $injector.get('$cookies');
+    var pwgAjax        = $injector.get('pwgAjax');
+    var pwgFlash       = $injector.get('pwgFlash');
+    var pwgTimeout     = $injector.get('pwgTimeout');
+    var pwgModal       = $injector.get('pwgModal');
+    var pwgLogging     = $injector.get('pwgLogging');
+    var pwgRoutes      = $injector.get('pwgRoutes');
+    var $filter        = $injector.get('$filter');
+    var inflector      = $filter('pwgInflector');
+    var ellipsize      = $filter('pwgEllipsize');
+    var makeUrlPreview = $filter('pwgUrlPreview');
+    var $cookies       = $injector.get('$cookies');
 
     var SEARCH_ALL_MARKER = '-*-all-*-';
     var lastSearch = "";
@@ -752,20 +752,33 @@ pwGuardApp.controller('InnerSearchCtrl',
     var adjustResults = (results) => {
       originalEntries = {};
       let r = _.map(results, (pw) => {
-        pw.showPassword     = false;
-        pw.editing          = false;
-        pw.notesPreview     = util.ellipsize(pw.notes);
-        pw.previewAvailable = ! (pw.notes === pw.notesPreview);
-        pw.showPreview      = pw.previewAvailable;
-        pw.passwordVisible  = false;
-        pw.selected         = false;
+        pw.showPassword          = false;
+        pw.editing               = false;
+        pw.notesPreview          = ellipsize(pw.notes);
+        pw.notesPreviewAvailable = ! (pw.notes === pw.notesPreview);
+        pw.showNotesPreview      = pw.notesPreviewAvailable;
+        pw.passwordVisible       = false;
+        pw.selected              = false;
+
+        if (pw.url) {
+          pw.urlPreview     = makeUrlPreview(pw.url, 20);
+          pw.showUrlPreview = true;
+        }
+        else {
+          pw.urlPreview     = null;
+          pw.showUrlPreview = false;
+        }
 
         pw.togglePasswordVisibility = () => {
           pw.passwordVisible = !pw.passwordVisible;
         }
 
         pw.toggleNotesPreview = () => {
-          pw.showPreview = !pw.showPreview;
+          pw.showNotesPreview = !pw.showNotesPreview;
+        }
+
+        pw.toggleUrlPreview = () => {
+          pw.showUrlPreview = !pw.showUrlPreview;
         }
 
         originalEntries[pw.id] = pw;
