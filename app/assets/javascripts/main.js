@@ -1071,6 +1071,9 @@ pwGuardApp.controller('ImportExportCtrl',
     $scope.reset = () => {
       $scope.importState = 'new';
       pwgFlash.clearAll();
+      $scope.importFilename = null;
+      $scope.mimeType       = null;
+      $scope.importFile     = null;
     }
   }]
 )
