@@ -12,6 +12,8 @@ resolvers += "Spy Repository" at "http://files.couchbase.com/maven2"
 
 seq(gitStampSettings: _*)
 
+pipelineStages := Seq(uglify, digest, gzip)
+
 libraryDependencies ++= Seq(
   jdbc,
   cache,
@@ -30,6 +32,7 @@ libraryDependencies ++= Seq(
   "org.apache.poi"        % "poi"                        % "3.11",
   "org.apache.poi"        % "poi-ooxml"                  % "3.11",
   "com.github.mumoshu"   %% "play2-memcached"            % "0.6.0",
+  "org.scalatestplus"    %% "play"                       % "1.1.0" % "test",
   "org.webjars"           % "bootstrap"                  % "3.2.0",
   "org.webjars"           % "modernizr"                  % "2.8.3",
   "org.webjars"           % "excanvas"                   % "3",
@@ -48,7 +51,8 @@ libraryDependencies ++= Seq(
   "org.webjars"           % "font-awesome"               % "4.2.0",
   "org.webjars"           % "jquery"                     % "1.11.2",
   "org.webjars"           % "log4javascript"             % "1.4.10",
-  "org.webjars"           % "underscorejs"               % "1.7.0-1"
+  "org.webjars"           % "underscorejs"               % "1.7.0-1",
+  "org.webjars"           % "jasmine"                    % "2.1.3" % "test"
 )
 
 // Some components aren't available in WebJars, so we use Bower. Note that
@@ -78,7 +82,9 @@ mappings in Universal ++= (file("static") ** "*").get map { f =>
 // Override the "dist" command to build a tarball, instead of a zip file.
 addCommandAlias("dist", "universal:package-zip-tarball")
 
-TraceurKeys.sourceFileNames := Seq("javascripts/main.js")
+TraceurKeys.sourceFileNames in Assets := Seq("javascripts/main.js")
 
+TraceurKeys.sourceFileNames in TestAssets := Seq.empty[String]
+//TraceurKeys.sourceFileNames in TestAssets := Seq("javascript-tests/main.js")
 
-TraceurKeys.outputFileName := "javascripts/pwguard.js"
+includeFilter in uglify := GlobFilter("main.js")

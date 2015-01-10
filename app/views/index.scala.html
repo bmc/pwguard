@@ -73,11 +73,11 @@
     @stylesheetAsset("main.css")
 
     @*
-      traceur compiles main.js down to pwguard.js. For some reason, the
+      traceur compiles main.js down to main.js. For some reason, the
       place sbt-traceur puts the compiled file doesn't allow a "javascripts"
       prefix on the path, hence the second argument, below.
     *@
-    @scriptAsset("pwguard.js", includePrefix=false)
+    @scriptAsset("main.js", includePrefix=false)
 
     @helper.javascriptRouter("routes")(
       routes.javascript.SessionController.getLoggedInUser,
