@@ -12,7 +12,7 @@ resolvers += "Spy Repository" at "http://files.couchbase.com/maven2"
 
 seq(gitStampSettings: _*)
 
-pipelineStages := Seq(uglify, digest, gzip)
+pipelineStages := Seq(digest, gzip)
 
 libraryDependencies ++= Seq(
   jdbc,
@@ -87,4 +87,4 @@ TraceurKeys.sourceFileNames in Assets := Seq("javascripts/main.js")
 TraceurKeys.sourceFileNames in TestAssets := Seq.empty[String]
 //TraceurKeys.sourceFileNames in TestAssets := Seq("javascript-tests/main.js")
 
-includeFilter in uglify := GlobFilter("main.js")
+//includeFilter in uglify := GlobFilter("main.js")
