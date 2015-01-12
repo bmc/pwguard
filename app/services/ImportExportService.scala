@@ -249,6 +249,7 @@ object ImportExportService {
           csvFile <- createPseudoTempFile("pwguard", ".csv") }
     yield {
       val writer = CSVWriter.open(csvFile)
+      val reBackslash = """\\""".r
 
       for (row <- sheet.iterator) {
         // Can't use the row.cellIterator call, because it only returns
@@ -258,7 +259,12 @@ object ImportExportService {
           val lastCellNum = row.getLastCellNum
           val cells = for (i <- firstCellNum to lastCellNum) yield {
             val cell = Option(row.getCell(i))
-            cell.map { _.toString }.getOrElse("")
+            // Map to string and escape any embedded backslashes.
+            cell.map { c =>
+              val s = c.toString
+              reBackslash.replaceAllIn(s, """\\\\""")
+            }.
+            getOrElse("")
           }
 
           writer.writeRow(cells)
