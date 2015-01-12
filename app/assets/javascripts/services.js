@@ -132,15 +132,15 @@ pwgServices.factory('pwgFlash', ['$alert', function($alert) {
   }
 
   function doAlert(content, type) {
-    $alert({
+    return $alert({
       title:     "",
       content:   content,
       placement: 'top-right',
       type:      type,
       show:      true,
       template:  routes.staticAsset("AngularTemplates/alert.html"),
-      container: '.navbar',
-      duration:  5
+      container: '.navbar'
+      //duration:  5
     });
   }
 

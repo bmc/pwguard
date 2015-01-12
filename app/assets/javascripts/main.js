@@ -1043,10 +1043,16 @@ pwGuardApp.controller('ImportExportCtrl',
       }
 
       let url = routes.controllers.ImportExportController.completeImport().url;
-      pwgAjax.post(url, data, (response) => {
-        $scope.importState = 'complete';
-        handleCompletion(response.total);
-      })
+      pwgAjax.post(url, data,
+        (response) => {
+          $scope.importState = 'complete';
+          handleCompletion(response.total);
+        },
+        (errorData) => {
+          // Error already handled.
+          $scope.importState = 'new';
+        }
+      )
     }
 
     // ------------------------------
