@@ -82,7 +82,7 @@ object PasswordEntryController extends BaseController {
         logger.error(s"$opt")
         if (opt.isDefined)
           throw new SaveFailed(s"The name " + '"' + name + '"' +
-                               "is already in use.")
+                               " is already in use.")
         true
       }
     }
@@ -268,7 +268,7 @@ object PasswordEntryController extends BaseController {
     }.
     recover {
       case NonFatal(e) =>
-        Json.obj("error" -> "Unableto decrypt one or more passwords.")
+        Json.obj("error" -> "Unable to decrypt one or more passwords.")
     }
   }
 

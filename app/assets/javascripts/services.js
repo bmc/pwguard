@@ -131,7 +131,7 @@ pwgServices.factory('pwgFlash', ['$alert', function($alert) {
     }
   }
 
-  function doAlert(content, type) {
+  function doAlert(content, type, timeout=0) {
     return $alert({
       title:     "",
       content:   content,
@@ -139,25 +139,25 @@ pwgServices.factory('pwgFlash', ['$alert', function($alert) {
       type:      type,
       show:      true,
       template:  routes.staticAsset("AngularTemplates/alert.html"),
-      container: '.navbar'
-      //duration:  5
+      container: '.navbar',
+      duration:  timeout
     });
   }
 
   return {
-    warn: function(msg) {
+    warn: function(msg, timeout=0) {
       clearWarning();
-      warningAlert = doAlert(msg, 'warning');
+      warningAlert = doAlert(msg, 'warning', timeout);
     },
 
-    error: function(msg) {
+    error: function(msg, timeout=0) {
       clearError();
-      errorAlert = doAlert(msg, 'danger');
+      errorAlert = doAlert(msg, 'danger', timeout);
     },
 
-    info: function(msg) {
+    info: function(msg, timeout=0) {
       clearInfo();
-      infoAlert = doAlert(msg, 'info');
+      infoAlert = doAlert(msg, 'info', timeout);
     },
 
     clearError: clearError,

@@ -496,7 +496,8 @@ pwGuardApp.controller('NewPasswordEntryCtrl',
       log.debug(`Saving new entry, name=${$scope.newPasswordEntry.name}`);
       pwgAjax.post(url, $scope.newPasswordEntry,
         function() {
-          pwgFlash.info("Saved.")
+          pwgFlash.info("Saved.", 5 /* second timeout */)
+          pwgRoutes.redirectToNamedRoute('search');
         }
       )
     }
