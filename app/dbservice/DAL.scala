@@ -1,5 +1,7 @@
 package dbservice
 
+import models.PasswordEntryExtraField
+
 import scala.slick.driver.JdbcProfile
 import java.sql.{ ResultSet, Timestamp }
 import java.net.URL
@@ -16,6 +18,7 @@ class DAL(override val profile: JdbcProfile)
   extends Profile
   with    UsersComponent
   with    PasswordEntriesComponent
+  with    PasswordEntriesExtraFieldsComponent
 
 trait UsersComponent {
   self: Profile =>
@@ -72,4 +75,31 @@ trait PasswordEntriesComponent {
   }
 
   val PasswordEntries = TableQuery[PasswordEntriesTable]
+}
+
+trait PasswordEntriesExtraFieldsComponent {
+  self: Profile with PasswordEntriesComponent =>
+
+  import profile.simple._
+  import models.PasswordEntry
+
+  class PasswordEntryExtraFieldsTable(tag: Tag)
+    extends Table[PasswordEntryExtraField](tag, "password_entry_extra_fields") {
+
+    def id              = column[Int]("id", O.PrimaryKey, O.AutoInc)
+    def passwordEntryID = column[Int]("password_entry_id")
+    def fieldName       = column[String]("field_name")
+    def fieldValue      = column[String]("field_value")
+
+    def passwordEntry = foreignKey("pweef_id_fk", passwordEntryID, PasswordEntries)(
+      _.id, onUpdate = ForeignKeyAction.Restrict
+    )
+
+    def idIndex = index("pweef_ix_id", passwordEntryID, unique=false)
+
+    def * = (id.?, passwordEntryID, fieldName, fieldValue) <>
+            (PasswordEntryExtraField.tupled, PasswordEntryExtraField.unapply)
+  }
+
+  val PasswordEntryExtraFields = TableQuery[PasswordEntryExtraFieldsTable]
 }

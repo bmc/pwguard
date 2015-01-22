@@ -1,11 +1,8 @@
 package dbservice
 
-import java.net.URL
-
-import models.{PasswordEntry, User}
+import models.{PasswordEntry, FullPasswordEntry, User}
 import play.api.Logger
 import pwguard.global.Globals.ExecutionContexts.DB._
-import util.RegexHelpers.Implicits._
 
 import scala.concurrent.Future
 
@@ -21,14 +18,14 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
 
   private type PWEntryQuery = Query[PasswordEntriesTable, PasswordEntry, Seq]
 
-  // --------------------------------------------------------------------------
-  // Public methods
-  // ------------------------------------------------------------------------
-
   private val compiledAllQuery = Compiled{ (userID: Column[Int]) =>
     val q = for { pwe <- PasswordEntries if pwe.userID === userID } yield pwe
     q.sorted(_.name)
   }
+
+  // --------------------------------------------------------------------------
+  // Public methods
+  // ------------------------------------------------------------------------
 
   /** Get all entries for a particular user.
     *
@@ -43,8 +40,8 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
     }
   }
 
-  /** Find all users with the specified IDs.
-
+  /** Find all password entries with the specified IDs.
+    *
     * @param idSet the IDs
     *
     * @return A future containing the results, or a failed future.
@@ -54,6 +51,29 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
       val q = for { pwe <- PasswordEntries if pwe.id inSet idSet } yield pwe
       Future { q.list.toSet }
     }
+  }
+
+  /** Map a set of `PasswordEntry` objects into their `FullPasswordEntry`
+    * counterparts.
+    *
+    * @param passwordEntries the base entries
+    *
+    * @return a future of the mapped values
+    */
+  def fullEntries(passwordEntries: Set[PasswordEntry]):
+    Future[Set[FullPasswordEntry]] = {
+
+    Future.sequence { passwordEntries.map(loadDependents(_)) }
+  }
+
+  /** Map a `PasswordEntry` object into its `FullPasswordEntry` counterpart.
+    *
+    * @param passwordEntry the base entry
+    *
+    * @return a future of the mapped entry
+    */
+  def fullEntry(passwordEntry: PasswordEntry): Future[FullPasswordEntry] = {
+    loadDependents(passwordEntry)
   }
 
   /** Find a password entry by user and entry name.
@@ -160,7 +180,7 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
   // ------------------------------------------------------------------------
 
   protected def queryByID(id: Int): PWEntryQuery = {
-    for {p <- PasswordEntries if p.id === id } yield p
+    for (p <- PasswordEntries if p.id === id) yield p
   }
 
   protected def insert(pwEntry: PasswordEntry)(implicit session: SlickSession):
@@ -194,4 +214,9 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
   // Private methods
   // ------------------------------------------------------------------------
 
+  private def loadDependents(pw: PasswordEntry): Future[FullPasswordEntry] = {
+    DAO.passwordEntryExtraFieldsDAO.findForPasswordEntry(pw) map { extras =>
+      pw.toFullEntry(extras)
+    }
+  }
 }
