@@ -4,7 +4,7 @@ import java.net.URL
 
 import dbservice.DAO
 import exceptions._
-import models.{UserHelpers, User, PasswordEntry}
+import models.{FullPasswordEntry, UserHelpers, User, PasswordEntry}
 import models.PasswordEntryHelper.json.implicits._
 
 import play.api._
@@ -51,7 +51,8 @@ object PasswordEntryController extends BaseController {
                   pwe    <- pweOpt.toFuture("Password entry not found")
                   pwe2   <- decodeJSON(Some(pwe), user, request.body)
                   saved  <- doSave(pwe2)
-                  json   <- jsonPasswordEntry(user, saved) }
+saved2 <- passwordEntryDAO.fullEntry(saved)
+                  json   <- jsonPasswordEntry(user, saved2) }
             yield json
 
     f.map { json => Ok(json) }
@@ -90,7 +91,8 @@ object PasswordEntryController extends BaseController {
     val f = for { pwe      <- decodeJSON(None, user, request.body)
                   okToSave <- checkForExisting(pwe.name) if okToSave
                   saved    <- doSave(pwe)
-                  json     <- jsonPasswordEntry(user, saved) }
+saved2 <- passwordEntryDAO.fullEntry(saved)
+                  json     <- jsonPasswordEntry(user, saved2) }
             yield json
 
     f.map { json => Ok(json) }
@@ -166,8 +168,10 @@ object PasswordEntryController extends BaseController {
     implicit val request = authReq.request
     val user = authReq.user
 
-    entriesToJSON(user) { passwordEntryDAO.allForUser(user) } map { json =>
-      Ok(json)
+    entriesToJSON(user) {
+      passwordEntryDAO.allForUser(user)
+    } map {
+      json => Ok(json)
     } recover {
       case NonFatal(e) => Ok(jsonError(s"Failed for $user", e))
     }
@@ -245,17 +249,20 @@ object PasswordEntryController extends BaseController {
                            (getEntries: => Future[Set[PasswordEntry]]):
     Future[JsValue] = {
 
-    for { entries   <- getEntries
-          jsEntries <- jsonPasswordEntries(user, entries) }
+    for { entries     <- getEntries
+          fullEntries <- passwordEntryDAO.fullEntries(entries)
+          jsEntries   <- jsonPasswordEntries(user, fullEntries) }
     yield Json.obj("results" -> jsEntries)
   }
 
   // Decrypt the encrypted passwords and produce the final JSON.
   private def jsonPasswordEntries(user:            User,
-                                  passwordEntries: Set[PasswordEntry]):
+                                  passwordEntries: Set[FullPasswordEntry]):
     Future[JsValue] = {
 
-    val mapped: Seq[Future[JsValue]] = passwordEntries.toSeq.map { jsonPasswordEntry(user, _) }
+    val mapped: Seq[Future[JsValue]] = passwordEntries.toSeq.map {
+      jsonPasswordEntry(user, _)
+    }
 
     // We now have a sequence of futures. Map it to a future of a sequence.
     val fSeq = Future.sequence(mapped)
@@ -272,7 +279,7 @@ object PasswordEntryController extends BaseController {
     }
   }
 
-  private def jsonPasswordEntry(user: User, pwEntry: PasswordEntry):
+  private def jsonPasswordEntry(user: User, pwEntry: FullPasswordEntry):
     Future[JsValue] = {
 
     val json = Json.toJson(pwEntry)

@@ -94,7 +94,6 @@ object PasswordEntryHelper {
       implicit val fullPasswordEntryReads = new Reads[FullPasswordEntry] {
         def reads(json: JsValue): JsResult[FullPasswordEntry] = {
           json.validate[PasswordEntry].flatMap { p =>
-
             (json \ "extras").validate[Array[PasswordEntryExtraField]].map { e =>
               p.toFullEntry(e.toSet)
             }
