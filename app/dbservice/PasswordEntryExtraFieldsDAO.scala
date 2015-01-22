@@ -4,6 +4,7 @@ import models.{PasswordEntryExtraField, PasswordEntry}
 import play.api.Logger
 import pwguard.global.Globals.ExecutionContexts.DB._
 import scala.concurrent.Future
+import scala.util.Try
 
 class PasswordEntryExtraFieldsDAO(_dal: DAL, _logger: Logger)
   extends BaseDAO[PasswordEntryExtraField](_dal, _logger){
@@ -28,7 +29,7 @@ class PasswordEntryExtraFieldsDAO(_dal: DAL, _logger: Logger)
     * @return A future containing the results, or a failed future.
     */
   def findByIDs(idSet: Set[Int]): Future[Set[PasswordEntryExtraField]] = {
-    withTransaction { implicit session =>
+    withSession { implicit session =>
       val q = for (p <- PasswordEntryExtraFields if p.id inSet idSet) yield p
       Future { q.list.toSet }
     }
@@ -44,11 +45,24 @@ class PasswordEntryExtraFieldsDAO(_dal: DAL, _logger: Logger)
   def findForPasswordEntry(pwe: PasswordEntry):
     Future[Set[PasswordEntryExtraField]] = {
 
-    withTransaction { implicit session =>
-      val q = for (p <- PasswordEntryExtraFields
-                   if p.passwordEntryID === pwe.id.get) yield p
+    withSession { implicit session =>
+      Future {
+        loadForPasswordEntry(pwe)
+      }
+    }
+  }
 
-      Future { q.list.toSet }
+  // --------------------------------------------------------------------------
+  // Package-visible methods
+  // ------------------------------------------------------------------------
+
+  private[dbservice] def findForPasswordEntrySync(pwe: PasswordEntry):
+    Try[Set[PasswordEntryExtraField]] = {
+
+    withSessionSync { implicit session =>
+      Try {
+        loadForPasswordEntry(pwe)
+      }
     }
   }
 
@@ -80,5 +94,19 @@ class PasswordEntryExtraFieldsDAO(_dal: DAL, _logger: Logger)
       q.update((item.fieldName, item.fieldValue, item.passwordEntryID))
       item
     }
+  }
+
+  // --------------------------------------------------------------------------
+  // Private methods
+  // ------------------------------------------------------------------------
+
+  private def loadForPasswordEntry(pwe: PasswordEntry)
+                                  (implicit session: SlickSession):
+    Set[PasswordEntryExtraField] = {
+
+    val q = for (p <- PasswordEntryExtraFields
+                 if p.passwordEntryID === pwe.id.get) yield p
+
+    q.list.toSet
   }
 }

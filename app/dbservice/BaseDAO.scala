@@ -10,7 +10,7 @@ import pwguard.global.Globals.ExecutionContexts.DB._
 
 import scala.reflect.runtime.{universe => ru}
 import scala.concurrent.Future
-import scala.util.{Success, Failure}
+import scala.util.{Try, Success, Failure}
 import scala.util.control.NonFatal
 
 class DAOException(msg: String) extends Exception(msg)
@@ -25,6 +25,7 @@ class DAOException(msg: String) extends Exception(msg)
 abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
   import dal.profile.simple._
   import scala.slick.jdbc.JdbcBackend
+  import pwguard.global.Globals.DB
 
   type SlickSession = JdbcBackend#Session
 
@@ -116,11 +117,10 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
   /** Run the specified code within a session.
     *
     * @param code  The code to run
-    * @tparam T    The type parameter
+    * @tparam T    The code's return type
     * @return      Whatever the code block returns
     */
   protected def withSession[T](code: SlickSession => Future[T]): Future[T] = {
-    import pwguard.global.Globals.DB
 
     val session = DB.createSession()
     code(session) map { result =>
@@ -134,16 +134,35 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     }
   }
 
+  /** Run the specified code within a session, synchronously.
+    *
+    * @param  code  The code to run
+    * @tparam T     The code's return type
+    * @return       whatever the code block returns
+    */
+  protected def withSessionSync[T](code: SlickSession => Try[T]): Try[T] = {
+    val session = DB.createSession()
+    code(session) map { result =>
+      session.close()
+      result
+    } recoverWith {
+      case NonFatal(e) => {
+        session.close()
+        Failure(e)
+      }
+    }
+  }
+
   /** Execute a block of code within a Slick transaction, committing the
     * transaction if the code completes normally and rolling the transaction
     * back if the code throws any kind of exception.
     *
     * @param code  The partial function to run. The function takes a
-    *        Slick Session object (and should mark it as implicit)
-    *        and returns an `Either`.
-    * @tparam T    The type for the `Right` part of the `Either`.
+    *              Slick Session object (and should mark it as implicit)
+    *              and returns an `Either`.
+    * @tparam T    The code's return type
     * @return      `Left(error)` if an exception occurs or if the code block
-    *               returns a `Left`; `Right` otherwise.
+    *              returns a `Left`; `Right` otherwise.
     */
   protected def withTransaction[T](code: SlickSession => Future[T]):
     Future[T] = {

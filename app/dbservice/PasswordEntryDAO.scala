@@ -1,10 +1,11 @@
 package dbservice
 
-import models.{PasswordEntry, FullPasswordEntry, User}
+import models.{PasswordEntryExtraField, PasswordEntry, FullPasswordEntry, User}
 import play.api.Logger
 import pwguard.global.Globals.ExecutionContexts.DB._
 
 import scala.concurrent.Future
+import scala.util.{Success, Failure, Try}
 
 /** DAO for interacting with User objects.
   */
@@ -32,7 +33,7 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
     * @return A future containing the results, or a failed future.
     */
   def allForUser(user: User): Future[Set[PasswordEntry]] = {
-    withTransaction { implicit session =>
+    withSession { implicit session =>
       user.id.map { userID =>
         Future { compiledAllQuery(userID).run.toSet }
       }.
@@ -47,7 +48,7 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
     * @return A future containing the results, or a failed future.
     */
   def findByIDs(idSet: Set[Int]): Future[Set[PasswordEntry]] = {
-    withTransaction { implicit session =>
+    withSession { implicit session =>
       val q = for { pwe <- PasswordEntries if pwe.id inSet idSet } yield pwe
       Future { q.list.toSet }
     }
@@ -63,7 +64,7 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
   def fullEntries(passwordEntries: Set[PasswordEntry]):
     Future[Set[FullPasswordEntry]] = {
 
-    Future.sequence { passwordEntries.map(loadDependents(_)) }
+    loadDependents(passwordEntries)
   }
 
   /** Map a `PasswordEntry` object into its `FullPasswordEntry` counterpart.
@@ -217,6 +218,41 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
   private def loadDependents(pw: PasswordEntry): Future[FullPasswordEntry] = {
     DAO.passwordEntryExtraFieldsDAO.findForPasswordEntry(pw) map { extras =>
       pw.toFullEntry(extras)
+    }
+  }
+
+  /** Load all dependents for a set of password entries. To prevent SQLite
+    * lock issues, this function loads them serially, returning a future
+    * that completes when all are loaded.
+    *
+    * @param entries the password entries
+    */
+  private def loadDependents(entries: Set[PasswordEntry]):
+    Future[Set[FullPasswordEntry]] = {
+
+    import DAO.{passwordEntryExtraFieldsDAO => dao}
+
+    Future {
+      val tries: Seq[Try[(PasswordEntry, Set[PasswordEntryExtraField])]] =
+        for (entry <- entries.toSeq) yield {
+          dao.findForPasswordEntrySync(entry) map { set =>
+            (entry, set)
+          }
+        }
+
+      // If there are any errors, fail with the first one.
+      val firstError = tries.filter { _.isFailure }.headOption
+      firstError map {
+        case Failure(e) => throw e
+        case Success(_) => throw new Exception("BUG: Expected Failure, not Success")
+      }
+
+      tries.filter { _.isSuccess }
+           .map {
+             case Success((entry, extras)) => entry.toFullEntry(extras)
+             case Failure(e)               => throw e
+           }
+           .toSet
     }
   }
 }
