@@ -159,10 +159,9 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     *
     * @param code  The partial function to run. The function takes a
     *              Slick Session object (and should mark it as implicit)
-    *              and returns an `Either`.
+    *              and returns a `Future`
     * @tparam T    The code's return type
-    * @return      `Left(error)` if an exception occurs or if the code block
-    *              returns a `Left`; `Right` otherwise.
+    * @return      whatever the code returns, or a failed future on exception
     */
   protected def withTransaction[T](code: SlickSession => Future[T]):
     Future[T] = {
@@ -171,7 +170,6 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     // source shows that it most likely doesn't handle futures properly.
     // It could commit the transaction, or roll it back, before the
     // future completes.
-    import pwguard.global.Globals.DB
     implicit val session = DB.createSession()
 
     val conn = session.conn
@@ -185,6 +183,28 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
       case _ => {
         conn.setAutoCommit(true)
         session.close()
+      }
+    }
+  }
+
+  /** Execute a block of code within a Slick transaction, committing the
+    * transaction if the code completes normally and rolling the transaction
+    * back if the code throws any kind of exception. Instead of running in
+    * a future, this version runs synchronously.
+    *
+    * @param code  The partial function to run. The function takes a
+    *              Slick Session object (and should mark it as implicit)
+    *              and returns a `Try`
+    * @tparam T    The code's return type
+    * @return      A `Try` containing the result (`Success`) or the exception
+    *              (`Failure`)
+    */
+  protected def withTransactionSync[T](code: SlickSession => Try[T]):
+    Try[T] = {
+
+    withSessionSync { session =>
+      session.withTransaction {
+        code(session)
       }
     }
   }
