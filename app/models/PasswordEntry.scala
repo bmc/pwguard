@@ -69,14 +69,36 @@ object PasswordEntryHelper {
         (JsPath \ "notes").write[Option[String]]
       )(unlift(PasswordEntry.unapply))
 
+      implicit val passwordEntryReads: Reads[PasswordEntry] = (
+        (JsPath \ "id").read[Option[Int]] and
+        (JsPath \ "userID").read[Int] and
+        (JsPath \ "name").read[String] and
+        (JsPath \ "description").read[Option[String]] and
+        (JsPath \ "loginID").read[Option[String]] and
+        (JsPath \ "encryptedPassword").read[Option[String]] and
+        (JsPath \ "url").read[Option[String]] and
+        (JsPath \ "notes").read[Option[String]]
+      )(PasswordEntry.apply _)
+
       import PasswordEntryExtraFieldHelper.json.implicits._
 
-      implicit val fullPasswordEntryWrites: Writes[FullPasswordEntry] = new Writes[FullPasswordEntry] {
+      implicit val fullPasswordEntryWrites = new Writes[FullPasswordEntry] {
         def writes(o: FullPasswordEntry): JsValue = {
           // JsValue doesn't have a "+", but JsObject does. This downcast,
           // while regrettable, is pretty much the only option.
-          val x: JsObject = Json.toJson(o.toBaseEntry).asInstanceOf[JsObject]
-          x + ("extras" -> Json.toJson(o.extraFields.toArray))
+          val j: JsObject = Json.toJson(o.toBaseEntry).asInstanceOf[JsObject]
+          j + ("extras" -> Json.toJson(o.extraFields.toArray))
+        }
+      }
+
+      implicit val fullPasswordEntryReads = new Reads[FullPasswordEntry] {
+        def reads(json: JsValue): JsResult[FullPasswordEntry] = {
+          json.validate[PasswordEntry].flatMap { p =>
+
+            (json \ "extras").validate[Array[PasswordEntryExtraField]].map { e =>
+              p.toFullEntry(e.toSet)
+            }
+          }
         }
       }
     }
