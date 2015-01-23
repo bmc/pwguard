@@ -101,7 +101,8 @@ function initializeRouting($routeProvider) {
     }).
     otherwise({
       redirectTo:  "/search",
-      defaultName: "search"
+      defaultName: "search",
+      isDefault:   true
     });
 }
 
@@ -136,16 +137,21 @@ var pwgRoutes = pwGuardApp.factory('pwgRoutes',
     var pwgFlash                = $injector.get('pwgFlash');
     var $location               = $injector.get('$location');
     var $route                  = $injector.get('$route');
-    var DEFAULT_ROUTE           = null;
+    var DEFAULT_ROUTE_NAME      = null;
     var POST_LOGIN_ROUTES       = [];
     var ADMIN_ONLY_ROUTES       = [];
     var ALWAYS_AVAILABLE_ROUTES = [];
     var REVERSE_ROUTES          = {};
 
+    var log = pwgLogging.logger("pwgRoutes");
+
     for (var pattern in $route.routes) {
       let route = $route.routes[pattern];
-      if (pattern === null) { // This is the default route
-        DEFAULT_ROUTE = route.defaultName;
+      if (!route)
+        continue;
+
+      if (route.isDefault) { // This is the default route
+        DEFAULT_ROUTE_NAME = route.defaultName;
       }
       else if (route.name) {
         // AngularJS adds routes. If the name field is present, it's one
@@ -158,7 +164,6 @@ var pwgRoutes = pwGuardApp.factory('pwgRoutes',
       }
     }
 
-    var log = pwgLogging.logger("pwgRoutes");
     var URL_RE = /^.*#(.*)$/;
 
     var isPostLoginRoute = (name) => {
@@ -188,12 +193,19 @@ var pwgRoutes = pwGuardApp.factory('pwgRoutes',
       }
     }
 
+    var hrefForRouteName = (name, params = {}) => {
+      return "#" + pathForRouteName(name, params);
+    }
+
     var redirectToNamedRoute = (name, params = {}) => {
      let url = pathForRouteName(name, params);
      log.debug(`Redirecting to ${url}`)
      pwgFlash.clearAll();
      $location.path(url);
     }
+
+    var DEFAULT_ROUTE_PATH = pathForRouteName(DEFAULT_ROUTE_NAME);
+    var DEFAULT_ROUTE_HREF = hrefForRouteName(DEFAULT_ROUTE_NAME);
 
     return {
       isAdminOnlyRoute: (name) => {
@@ -208,18 +220,23 @@ var pwgRoutes = pwGuardApp.factory('pwgRoutes',
         return isPreLoginRoute(name);
       },
 
-      hrefForRouteName: (name) => {
-        return "#" + pathForRouteName(name);
+      hrefForRouteName: (name, params = {}) => {
+        return hrefForRouteName(name, params);
       },
 
       pathForRouteName: (name) => {
         return pathForRouteName(name);
       },
 
-      defaultRoute: () => { return DEFAULT_ROUTE; },
+      // These are functions to ensure no one can modify the values.
+      defaultRouteName: () => { return DEFAULT_ROUTE_NAME; },
+
+      defaultRoutePath: () => { return pathForRouteName(DEFAULT_ROUTE_NAME); },
+
+      defaultRouteHref: () => { return hrefForRouteName(DEFAULT_ROUTE_NAME); },
 
       redirectToDefaultRoute: () => {
-        redirectToNamedRoute(DEFAULT_ROUTE);
+        redirectToNamedRoute(DEFAULT_ROUTE_NAME);
       },
 
       routeIsActive: (name) => {
@@ -227,8 +244,8 @@ var pwgRoutes = pwGuardApp.factory('pwgRoutes',
         return (path && $location.path().endsWith(path));
       },
 
-      redirectToNamedRoute: (name) => {
-        redirectToNamedRoute(name);
+      redirectToNamedRoute: (name, params = {}) => {
+        redirectToNamedRoute(name, params);
       },
 
       routeNameForURL: (url) => {
@@ -241,9 +258,14 @@ var pwgRoutes = pwGuardApp.factory('pwgRoutes',
           strippedURL = url;
 
         let result = null;
-        for (var r in REVERSE_ROUTES) {
-          if (REVERSE_ROUTES[r] === strippedURL) {
-            result = r;
+        for (var pattern in $route.routes) {
+          let r = $route.routes[pattern];
+          if (! r.name)
+            continue;
+          if (! r.regexp)
+            continue;
+          if (r.regexp.test(strippedURL)) {
+            result = r.name;
             break;
           }
         }
@@ -284,6 +306,7 @@ pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
      var pwgRoutes          = $injector.get('pwgRoutes');
      var angularTemplateURL = $injector.get('angularTemplateURL');
      var pwgError           = $injector.get('pwgError');
+     var pwgModal           = $injector.get('pwgModal');
 
      // Put the template URL in the scope, because it's used inside templates
      // (e.g., within ng-include directives).
@@ -302,10 +325,11 @@ pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
      $scope.dialogConfirmTitle    = null;
      $scope.dialogConfirmMessage  = null;
      $scope.loggedInUser          = null;
-     $scope.routeOnLoad           = pwgRoutes.routeNameForURL($location.path());
+     $scope.urlOnLoad             = $location.path();
      $scope.initializing          = true;
      $scope.flashAfterRouteChange = null;
      $scope.isMobile              = window.browserIsMobile;
+     $scope.defaultHref           = pwgRoutes.defaultRouteHref();
 
      $scope.routeIsActive = pwgRoutes.routeIsActive;
 
@@ -320,15 +344,14 @@ pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
        }
      });
 
-     $scope.$on('$routeChangeSuccess', () => {
+     $scope.$on('$routeChangeStart', () => {
        // Skip, while initializing. (Doing this during initialization screws
        // things up, causing multiple redirects that play games with Angular.)
        if(! $scope.initializing) {
-         let routeName = pwgRoutes.routeNameForURL($location.path());
-         let useRoute = validateLocationChange(routeName);
-         log.debug(`routeName=${routeName}, useRoute=${useRoute}`);
-         if (useRoute !== routeName)
-           pwgRoutes.redirectToNamedRoute(useRoute);
+         let url = $location.path();
+         let useUrl = validateLocationChange(url);
+         if (useUrl !== url)
+           $location.path(useUrl);
        }
      });
 
@@ -346,34 +369,54 @@ pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
          $scope.loggedInUser = null;
      }
 
+
+     // Check a form. If it's been edited, prompt the user for cancellation.
+     // If the user confirms, or if the form is pristine, route to the named
+     // location.
+     $scope.validateFormCancellation = function(form, routeName) {
+       let doCancel = function() {
+         pwgRoutes.redirectToNamedRoute('search');
+       }
+
+       if (form.$dirty) {
+         pwgModal.confirm("You've modified the form. Really cancel?",
+                          "Confirm cancel.").then(doCancel);
+       }
+       else {
+         doCancel();
+       }
+     }
+
      // On initial load or reload, we need to determine whether the user is
      // still logged in, since a reload clears everything in the browser.
 
-     function validateLocationChange(routeName) {
-       let useRoute = null;
+     function validateLocationChange(url) {
+       let useUrl = null;
+       let routeName = pwgRoutes.routeNameForURL(url);
+
        if ($scope.loggedInUser) {
          // Ensure that the segment is valid for the logged in user.
-         useRoute = pwgRoutes.defaultRoute();
-         if (routeName && pwgRoutes.isPostLoginRoute(routeName)) {
+         useUrl = pwgRoutes.defaultRouteName();
+         if (url && pwgRoutes.isPostLoginRoute(routeName)) {
            if ($scope.loggedInUser.admin) {
              // Admins can go anywhere.
-             useRoute = routeName;
+             useUrl = url;
            }
            else if (! pwgRoutes.isAdminOnlyRoute(routeName)) {
              // Non-admins can go to non-admin segments only.
-             useRoute = routeName;
+             useUrl = url;
            }
          }
        }
        else {
-         // #nsure that the segment is valid for a non-logged in user.
+         // Ensure that the segment is valid for a non-logged in user.
          if (routeName && pwgRoutes.isPreLoginRoute(routeName))
-           useRoute = routeName;
+           useUrl = url;
          else
-           useRoute = 'login';
+           useUrl = pwgRoutes.hrefForRouteName('login');
        }
 
-       return useRoute;
+       return useUrl;
      }
 
      pwgRoutes.redirectToNamedRoute('initializing');
@@ -388,8 +431,8 @@ pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
          else
            $scope.setLoggedInUser(null);
 
-         let useRoute = validateLocationChange($scope.routeOnLoad);
-         pwgRoutes.redirectToNamedRoute(useRoute);
+         let useUrl = validateLocationChange($scope.urlOnLoad);
+         $location.path(useUrl);
          $scope.routeOnLoad = null;
        },
        function(response) {
@@ -496,12 +539,40 @@ pwGuardApp.controller('LoginCtrl',
 pwGuardApp.controller('EditPasswordEntryCtrl',
   ['$scope', '$injector', function($scope, $injector) {
 
-    var pwgRoutes  = $injector.get('pwgRoutes');
-    var pwgLogging = $injector.get('pwgLogging');
+    var pwgRoutes    = $injector.get('pwgRoutes');
+    var pwgLogging   = $injector.get('pwgLogging');
+    var $routeParams = $injector.get('$routeParams');
+    var pwgAjax      = $injector.get('pwgAjax');
+    var pwgFlash     = $injector.get('pwgFlash');
 
     var log = pwgLogging.logger("EditPasswordEntryCtrl");
-    log.debug("entry");
-    $scope.passwordEntry = {};
+    $scope.passwordEntry = null;
+
+    var url = routes.controllers.PasswordEntryController.getEntry($routeParams.id).url;
+    pwgAjax.get(url,
+      function(data) {
+        $scope.passwordEntry = data.passwordEntry;
+      },
+      function(error) {
+        console.log(error);
+      }
+    );
+
+    $scope.cancel = function() {
+      $scope.validateFormCancellation($scope.entryForm, 'search');
+    }
+
+    $scope.save = function() {
+      let id = $scope.passwordEntry.id;
+      let url = routes.controllers.PasswordEntryController.save(id).url;
+      log.debug(`Saving existing entry, name=${$scope.passwordEntry.name}`);
+      pwgAjax.post(url, $scope.passwordEntry,
+                   function() {
+                     pwgFlash.info("Saved.", 5 /* second timeout */)
+                     pwgRoutes.redirectToNamedRoute('search');
+                   }
+      )
+    }
   }
 ]);
 
@@ -513,7 +584,6 @@ pwGuardApp.controller('NewPasswordEntryCtrl',
   ['$scope', '$injector', function($scope, $injector) {
 
     var pwgRoutes  = $injector.get('pwgRoutes');
-    var pwgModal   = $injector.get('pwgModal');
     var pwgAjax    = $injector.get('pwgAjax');
     var pwgFlash   = $injector.get('pwgFlash');
     var pwgLogging = $injector.get('pwgLogging');
@@ -521,31 +591,22 @@ pwGuardApp.controller('NewPasswordEntryCtrl',
     var log = pwgLogging.logger('NewPasswordEntryCtrl');
 
     var createNew = (pw) => {
+    }
+
+    $scope.cancel = function() {
+      console.log($scope);
+      $scope.validateFormCancellation($scope.entryForm, 'search');
+    }
+
+    $scope.save = function() {
       let url = routes.controllers.PasswordEntryController.create().url;
       log.debug(`Saving new entry, name=${$scope.passwordEntry.name}`);
       pwgAjax.post(url, $scope.passwordEntry,
-        function() {
-          pwgFlash.info("Saved.", 5 /* second timeout */)
-          pwgRoutes.redirectToNamedRoute('search');
-        }
+                   function() {
+                     pwgFlash.info("Saved.", 5 /* second timeout */)
+                     pwgRoutes.redirectToNamedRoute('search');
+                   }
       )
-    }
-
-    var cancel = function(form) {
-      let doCancel = function() {
-        pwgRoutes.redirectToNamedRoute('search');
-      }
-
-      if (form.$dirty) {
-        pwgModal.confirm("You've modified the form. Really cancel?",
-                         "Confirm cancel.").then(function() {
-            doCancel();
-          }
-        )
-      }
-      else {
-        doCancel();
-      }
     }
 
     $scope.passwordEntry = {
@@ -555,9 +616,7 @@ pwGuardApp.controller('NewPasswordEntryCtrl',
       password:     "",
       description:  "",
       url:          "",
-      notes:        "",
-      save:         () => { createNew(this); },
-      cancel:       cancel
+      notes:        ""
     }
   }
 
@@ -805,7 +864,9 @@ pwGuardApp.controller('InnerSearchCtrl',
 
         originalEntries[pw.id] = pw;
 
-        pw.edit   = function() { this.editing = true; }
+        pw.edit   = function() {
+          pwgRoutes.redirectToNamedRoute("edit-entry", {id: pw.id});
+        }
         pw.cancel = function(form) { cancelEdit(form, this); }
         pw.save   = function() { saveEntry(this); }
         pw.delete = function() { deleteEntry(this); }

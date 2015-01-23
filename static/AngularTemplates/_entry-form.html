@@ -1,88 +1,90 @@
+<!--
+     For some reason, putting the <form> inside this file, which is pulled in
+     via ng-include, doesn't trigger the form directive to add the form to
+     the scope. So the form has to be in the template that's doing the
+     including.
+-->
+<div class="form-group"
+     ng-class="{'has-error': entryForm.name.$invalid && entryForm.name.$dirty}">
+  <label for="name" class="control-label">Name:</label>
+  <input class="form-control"
+         name="name"
+         ng-model="passwordEntry.name"
+         id="name"
+         type="text"
+         ng-trim="true"
+         placeholder="Name"
+         ng-required="true"/>
+  <p class="help-block"
+     ng-show="entryForm.name.$error.required && entryForm.name.$dirty">
+    Name is required.
+  </p>
+</div>
 
-<form name="entryForm" ng-submit="passwordEntry.save()"
-      id="new-password-entry-form" novalidate class="">
-  <div class="form-group"
-       ng-class="{'has-error': entryForm.name.$invalid && entryForm.name.$dirty}">
-    <label for="name" class="control-label">Name:</label>
-    <input class="form-control"
-           name="name"
-           ng-model="passwordEntry.name"
-           id="name"
-           type="text"
-           ng-trim="true"
-           placeholder="Name"
-           ng-required="true"/>
-    <p class="help-block"
-       ng-show="entryForm.name.$error.required && entryForm.name.$dirty">
-      Name is required.
-    </p>
-  </div>
+<div class="form-group" pwg-bootstrap-form-error="description">
+  <label for="description" class="control-label">Description</label>
+  <input class="form-control"
+         name="description"
+         id="description"
+         ng-model="passwordEntry.description"
+         type="text"
+         placeholder="Description"/>
+</div>
 
-  <div class="form-group" pwg-bootstrap-form-error="description">
-    <label for="description" class="control-label">Description</label>
-    <input class="form-control"
-           name="description"
-           id="description"
-           ng-model="passwordEntry.description"
-           type="text"
-           placeholder="Description"/>
-  </div>
+<div class="form-group">
+  <label for="password" class="control-label">Password</label>
+  <input class="form-control"
+         name="password"
+         id="password"
+         ng-model="passwordEntry.password"
+         type="text"
+         placeholder="Password"/>
+</div>
 
-  <div class="form-group">
-    <label for="password" class="control-label">Password</label>
-    <input class="form-control"
-           name="password"
-           id="password"
-           ng-model="passwordEntry.password"
-           type="text"
-           placeholder="Password"/>
-  </div>
+<div class="form-group">
+  <label for="loginID" class="control-label">ID</label>
+  <input class="form-control"
+         name="loginID"
+         id="loginID"
+         ng-model="passwordEntry.loginID"
+         type="text"
+         ng-trim="true"
+         placeholder="Login ID"/>
+</div>
 
-  <div class="form-group">
-    <label for="loginID" class="control-label">ID</label>
-    <input class="form-control"
-           name="loginID"
-           id="loginID"
-           ng-model="passwordEntry.loginID"
-           type="text"
-           ng-trim="true"
-           placeholder="Login ID"/>
-  </div>
+<div class="form-group" pwg-bootstrap-form-error="url">
+  <label class="control-label" for="url">URL</label>
+  <input class="form-control"
+         name="url"
+         id="url"
+         ng-model="passwordEntry.url"
+         type="text"
+         ng-trim="true"
+         ng-pattern="URLPattern"
+         placeholder="URL"/>
+  <p class="help-block"
+     ng-show="entryForm.url.$error.pattern && entryForm.url.$dirty">
+    Invalid URL.
+  </p>
+</div>
 
-  <div class="form-group" pwg-bootstrap-form-error="url">
-    <label class="control-label" for="url">URL</label>
-    <input class="form-control"
-           name="url"
-           id="url"
-           ng-model="passwordEntry.url"
-           type="text"
-           ng-trim="true"
-           ng-pattern="URLPattern"
-           placeholder="URL"/>
-    <p class="help-block"
-       ng-show="entryForm.url.$error.pattern && entryForm.url.$dirty">
-      Invalid URL.
-    </p>
-  </div>
+<div class="form-group">
+  <label for="notes" class="control-label">Notes</label>
+        <textarea class="form-control" name="notes" id="notes"
+                  ng-model="passwordEntry.notes"
+                  ng-trim="true" placeholder="Notes"/>
+</div>
 
-  <div class="form-group">
-    <label for="notes" class="control-label">Notes</label>
-          <textarea class="form-control" name="notes" id="notes"
-                    ng-model="passwordEntry.notes"
-                    ng-trim="true" placeholder="Notes"/>
+<div class="button-bar left">
+  <div class="buttons">
+    <button class="btn btn-primary"
+            ng-disabled="entryForm.$invalid"
+            type="submit">
+      Save
+    </button>
+    <button type="button" class="btn btn-default"
+            ng-click="cancel()">
+      Cancel
+    </button>
   </div>
-
-  <div class="button-bar left">
-    <div class="buttons">
-      <button class="btn btn-primary"
-              ng-disabled="entryForm.$invalid"
-              type="submit">
-        Save
-      </button>
-      <button type="button" class="btn btn-default"
-              ng-click="passwordEntry.cancel(entryForm)">
-        Cancel
-      </button>
-    </div>
-  </div>
-</form>
+</div>

@@ -41,6 +41,23 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
     }
   }
 
+  /** Find by (id, user) combination.
+    *
+    * @param user  the user
+    * @param id    the ID
+    *
+
+    * @return `Future(Some(entry))` if found, `Future(None)` if not
+    */
+  def findByUserAndId(user: User, id: Int): Future[Option[PasswordEntry]] = {
+    withTransaction { implicit session =>
+      val q = for { pwe <- PasswordEntries
+                    if (pwe.id === id) && (pwe.userID === user.id.get) }
+              yield pwe
+      loadOneModel(q)
+    }
+  }
+
   /** Find all password entries with the specified IDs.
     *
     * @param idSet the IDs

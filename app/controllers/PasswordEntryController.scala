@@ -51,7 +51,7 @@ object PasswordEntryController extends BaseController {
                   pwe    <- pweOpt.toFuture("Password entry not found")
                   pwe2   <- decodeJSON(Some(pwe), user, request.body)
                   saved  <- doSave(pwe2)
-saved2 <- passwordEntryDAO.fullEntry(saved)
+                  saved2 <- passwordEntryDAO.fullEntry(saved)
                   json   <- jsonPasswordEntry(user, saved2) }
             yield json
 
@@ -91,7 +91,7 @@ saved2 <- passwordEntryDAO.fullEntry(saved)
     val f = for { pwe      <- decodeJSON(None, user, request.body)
                   okToSave <- checkForExisting(pwe.name) if okToSave
                   saved    <- doSave(pwe)
-saved2 <- passwordEntryDAO.fullEntry(saved)
+                  saved2   <- passwordEntryDAO.fullEntry(saved)
                   json     <- jsonPasswordEntry(user, saved2) }
             yield json
 
@@ -130,6 +130,24 @@ saved2 <- passwordEntryDAO.fullEntry(saved)
       case NonFatal(e) => {
         logger.error(s"Unable to delete specified IDs", e)
         BadRequest(jsonError(e.getMessage))
+      }
+    }
+  }
+
+  def getEntry(id: Int) = SecuredAction { authReq =>
+    val user = authReq.user
+    passwordEntryDAO.findByUserAndId(user, id) flatMap { opt =>
+      opt map { pwe =>
+        passwordEntryDAO.fullEntry(pwe) map {
+          f => Ok(Json.obj("passwordEntry" -> f))
+        }
+      } getOrElse {
+        Future.successful(NotFound)
+      } recover {
+        case NonFatal(e) => {
+          logger.error(s"Can't load entry with ID $id for user ${user.email}")
+          BadRequest(jsonError(e.getMessage))
+        }
       }
     }
   }
