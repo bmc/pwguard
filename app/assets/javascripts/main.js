@@ -31,96 +31,78 @@ var pwGuardApp = angular.module("PWGuardApp", ['ngRoute',
 // Initialization logic
 // ##########################################################################
 
-var ROUTES                  = {};
-var POST_LOGIN_ROUTES       = [];
-var ADMIN_ONLY_ROUTES       = [];
-var ALWAYS_AVAILABLE_ROUTES = [];
-var REVERSE_ROUTES          = {};
-var DEFAULT_ROUTE           = null;
-
 function initializeRouting($routeProvider) {
   var templateURL = angularTemplateURL;
 
-  ROUTES = {
-    "/initializing": {
+  $routeProvider.
+    when("/initializing", {
       templateUrl:  templateURL("initializing.html"),
       controller:   'InitCtrl',
       name:         'initializing',
       admin:        false,
       alwaysActive: true
-    },
-    "/login": {
+    }).
+    when(
+    "/login", {
       templateUrl: templateURL("login.html"),
       controller:  'LoginCtrl',
       name:        'login',
       admin:       false,
       postLogin:   false
-    },
-    "/search": {
+    }).
+    when("/search", {
       templateUrl: templateURL("search.html"),
       controller:  'SearchCtrl',
       name:        'search',
       admin:       false,
       postLogin:   true,
-      defaultURL:  true
-    },
-    "/new-entry": {
+    }).
+    when("/edit/:id", {
+      templateUrl: templateURL("edit-password-entry.html"),
+      controller:  'EditPasswordEntryCtrl',
+      name:        'edit-entry',
+      admin:       false,
+      postLogin:   true
+    }).
+    when("/new-entry", {
       templateUrl: templateURL("new-password-entry.html"),
       controller:  'NewPasswordEntryCtrl',
       name:        'new-entry',
       admin:       false,
       postLogin:   true
-    },
-    "/profile": {
+    }).
+    when("/profile", {
       templateUrl: templateURL("profile.html"),
       controller:  'ProfileCtrl',
       name:        'profile',
       admin:       false,
       postLogin:   true
-    },
-    "/admin/users": {
+    }).
+    when("/admin/users", {
       templateUrl: templateURL("admin-users.html"),
       controller:  'AdminUsersCtrl',
       name:        'admin-users',
       admin:       true,
       postLogin:   true
-    },
-    "/import-export": {
+    }).
+    when("/import-export", {
       templateUrl: templateURL("ImportExport.html"),
       controller:  'ImportExportCtrl',
       name:        'import-export',
       admin:       false,
       postLogin:   true
-    },
-    "/about": {
+    }).
+    when("/about", {
       templateUrl: templateURL("about.html"),
       controller:  'AboutCtrl',
       name:        'about',
       admin:       false,
       postLogin:   true
-    }
-  }
-
-  for (var url in ROUTES) {
-    var r = ROUTES[url];
-    REVERSE_ROUTES[r.name] = url;
-
-    $routeProvider.when(url, {
-      templateUrl: r.templateUrl,
-      controller:  r.controller
+    }).
+    otherwise({
+      redirectTo:  "/search",
+      defaultName: "search"
     });
-
-    if (r.defaultURL) DEFAULT_ROUTE = r.name;
-    if (r.postLogin) POST_LOGIN_ROUTES.push(r.name);
-    if (r.admin) ADMIN_ONLY_ROUTES.push(r.name);
-    if (r.alwaysActive) ALWAYS_AVAILABLE_ROUTES.push(r.name);
-  }
-
-  if (DEFAULT_ROUTE) {
-    $routeProvider.otherwise({
-      redirectTo: DEFAULT_ROUTE
-    });
-  }
 }
 
 function checkMissingFeatures() {
@@ -146,102 +128,131 @@ pwGuardApp.config(['$routeProvider', function($routeProvider) {
 // Services
 // ##########################################################################
 
-var pwgRoutes = pwGuardApp.factory('pwgRoutes', ['$injector', function($injector) {
+var pwgRoutes = pwGuardApp.factory('pwgRoutes',
+  ['$injector', function($injector) {
 
-     var pwgLogging = $injector.get('pwgLogging');
-     var pwgError   = $injector.get('pwgError');
-     var pwgFlash   = $injector.get('pwgFlash');
-     var $location  = $injector.get('$location');
-     var $route     = $injector.get('$route');
+    var pwgLogging              = $injector.get('pwgLogging');
+    var pwgError                = $injector.get('pwgError');
+    var pwgFlash                = $injector.get('pwgFlash');
+    var $location               = $injector.get('$location');
+    var $route                  = $injector.get('$route');
+    var DEFAULT_ROUTE           = null;
+    var POST_LOGIN_ROUTES       = [];
+    var ADMIN_ONLY_ROUTES       = [];
+    var ALWAYS_AVAILABLE_ROUTES = [];
+    var REVERSE_ROUTES          = {};
 
-     var log = pwgLogging.logger("pwgRoutes");
-     var URL_RE = /^.*#(.*)$/;
+    for (var pattern in $route.routes) {
+      let route = $route.routes[pattern];
+      if (pattern === null) { // This is the default route
+        DEFAULT_ROUTE = route.defaultName;
+      }
+      else if (route.name) {
+        // AngularJS adds routes. If the name field is present, it's one
+        // we added.
+        REVERSE_ROUTES[route.name] = pattern;
 
-     var isPostLoginRoute = (name) => {
-       return (POST_LOGIN_ROUTES.indexOf(name) >= 0) ||
-              (ALWAYS_AVAILABLE_ROUTES.indexOf(name) >= 0);
-     }
+        if (route.postLogin) POST_LOGIN_ROUTES.push(route.name);
+        if (route.admin) ADMIN_ONLY_ROUTES.push(route.name);
+        if (route.alwaysActive) ALWAYS_AVAILABLE_ROUTES.push(route.name);
+      }
+    }
 
-     var isPreLoginRoute = (name) => {
-       return (POST_LOGIN_ROUTES.indexOf(name) < 0) ||
-              (ALWAYS_AVAILABLE_ROUTES.indexOf(name) >= 0);
-     }
+    var log = pwgLogging.logger("pwgRoutes");
+    var URL_RE = /^.*#(.*)$/;
 
-     var pathForRouteName = (name) => {
-       return REVERSE_ROUTES[name];
-     }
+    var isPostLoginRoute = (name) => {
+      return (POST_LOGIN_ROUTES.indexOf(name) >= 0) ||
+             (ALWAYS_AVAILABLE_ROUTES.indexOf(name) >= 0);
+    }
 
-     var redirectToNamedRoute = (name) => {
-       let url = REVERSE_ROUTES[name];
-       if (url) {
-         log.debug(`Redirecting to ${url}`)
-         pwgFlash.clearAll();
-         $location.path(url);
-       }
-       else {
-         pwgError.showStackTrace(`(BUG) No URL for route ${name}`)
-       }
-     }
+    var isPreLoginRoute = (name) => {
+      return (POST_LOGIN_ROUTES.indexOf(name) < 0) ||
+             (ALWAYS_AVAILABLE_ROUTES.indexOf(name) >= 0);
+    }
 
-     return {
-       isAdminOnlyRoute: (name) => {
-         return ADMIN_ONLY_ROUTES.indexOf(name) >= 0;
-       },
+    var substituteParams = (url, params) => {
+      for (let k in params) {
+        url = url.replace(":" + k, params[k]);
+      }
+      return url;
+    }
 
-       isPostLoginRoute: (name) => {
-         return isPostLoginRoute(name);
-       },
+    var pathForRouteName = (name, params = {}) => {
+      let urlPattern = REVERSE_ROUTES[name];
+      if (urlPattern) {
+        return substituteParams(urlPattern, params);
+      }
+      else {
+        throw new Error(`(BUG) No URL for route ${name}`)
+      }
+    }
 
-       isPreLoginRoute: (name) => {
-         return isPreLoginRoute(name);
-       },
+    var redirectToNamedRoute = (name, params = {}) => {
+     let url = pathForRouteName(name, params);
+     log.debug(`Redirecting to ${url}`)
+     pwgFlash.clearAll();
+     $location.path(url);
+    }
 
-       hrefForRouteName: (name) => {
-         return "#" + pathForRouteName(name);
-       },
+    return {
+      isAdminOnlyRoute: (name) => {
+        return ADMIN_ONLY_ROUTES.indexOf(name) >= 0;
+      },
 
-       pathForRouteName: (name) => {
-         return pathForRouteName(name);
-       },
+      isPostLoginRoute: (name) => {
+        return isPostLoginRoute(name);
+      },
 
-       defaultRoute: () => { return DEFAULT_ROUTE; },
+      isPreLoginRoute: (name) => {
+        return isPreLoginRoute(name);
+      },
 
-       redirectToDefaultRoute: () => {
-         redirectToNamedRoute(DEFAULT_ROUTE);
-       },
+      hrefForRouteName: (name) => {
+        return "#" + pathForRouteName(name);
+      },
 
-       routeIsActive: (name) => {
-         let path = pathForRouteName(name);
-         return (path && $location.path().endsWith(path));
-       },
+      pathForRouteName: (name) => {
+        return pathForRouteName(name);
+      },
 
-       redirectToNamedRoute: (name) => {
-         redirectToNamedRoute(name);
-       },
+      defaultRoute: () => { return DEFAULT_ROUTE; },
 
-       routeNameForURL: (url) => {
-         if (!url) url = "";
-         let m = URL_RE.exec(url);
-         let strippedURL;
-         if (m)
-           strippedURL = m[1];
-         else
-           strippedURL = url;
+      redirectToDefaultRoute: () => {
+        redirectToNamedRoute(DEFAULT_ROUTE);
+      },
 
-         let result = null;
-         for (var r in REVERSE_ROUTES) {
-           if (REVERSE_ROUTES[r] === strippedURL) {
-             result = r;
-             break;
-           }
-         }
+      routeIsActive: (name) => {
+        let path = pathForRouteName(name);
+        return (path && $location.path().endsWith(path));
+      },
 
-         return result;
-       }
-     }
-   }
-  ]
-);
+      redirectToNamedRoute: (name) => {
+        redirectToNamedRoute(name);
+      },
+
+      routeNameForURL: (url) => {
+        if (!url) url = "";
+        let m = URL_RE.exec(url);
+        let strippedURL;
+        if (m)
+          strippedURL = m[1];
+        else
+          strippedURL = url;
+
+        let result = null;
+        for (var r in REVERSE_ROUTES) {
+          if (REVERSE_ROUTES[r] === strippedURL) {
+            result = r;
+            break;
+          }
+        }
+
+        return result;
+      }
+    }
+  }
+]);
 
 // ##########################################################################
 // Controllers
@@ -313,8 +324,8 @@ pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
        // Skip, while initializing. (Doing this during initialization screws
        // things up, causing multiple redirects that play games with Angular.)
        if(! $scope.initializing) {
-         var routeName = pwgRoutes.routeNameForURL($location.path());
-         var useRoute = validateLocationChange(routeName);
+         let routeName = pwgRoutes.routeNameForURL($location.path());
+         let useRoute = validateLocationChange(routeName);
          log.debug(`routeName=${routeName}, useRoute=${useRoute}`);
          if (useRoute !== routeName)
            pwgRoutes.redirectToNamedRoute(useRoute);
@@ -370,6 +381,7 @@ pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
      pwgCheckUser.checkUser().then(
        function(response) {
          // Success
+         log.debug(`checkUser: Success. loggedIn=${response.loggedIn}`)
          $scope.initializing = false;
          if (response.loggedIn)
            $scope.setLoggedInUser(response.user);
@@ -382,6 +394,7 @@ pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
        },
        function(response) {
          // Failure.
+         log.error(response);
          $scope.initializing = false;
          $scope.setLoggedInUser(null);
          pwgRoutes.redirectToNamedRoute('login');
@@ -477,6 +490,22 @@ pwGuardApp.controller('LoginCtrl',
 )
 
 // --------------------------------------------------------------------------
+// Edit Entry Controller
+// --------------------------------------------------------------------------
+
+pwGuardApp.controller('EditPasswordEntryCtrl',
+  ['$scope', '$injector', function($scope, $injector) {
+
+    var pwgRoutes  = $injector.get('pwgRoutes');
+    var pwgLogging = $injector.get('pwgLogging');
+
+    var log = pwgLogging.logger("EditPasswordEntryCtrl");
+    log.debug("entry");
+    $scope.passwordEntry = {};
+  }
+]);
+
+// --------------------------------------------------------------------------
 // New Entry Controller
 // --------------------------------------------------------------------------
 
@@ -493,8 +522,8 @@ pwGuardApp.controller('NewPasswordEntryCtrl',
 
     var createNew = (pw) => {
       let url = routes.controllers.PasswordEntryController.create().url;
-      log.debug(`Saving new entry, name=${$scope.newPasswordEntry.name}`);
-      pwgAjax.post(url, $scope.newPasswordEntry,
+      log.debug(`Saving new entry, name=${$scope.passwordEntry.name}`);
+      pwgAjax.post(url, $scope.passwordEntry,
         function() {
           pwgFlash.info("Saved.", 5 /* second timeout */)
           pwgRoutes.redirectToNamedRoute('search');
@@ -519,7 +548,7 @@ pwGuardApp.controller('NewPasswordEntryCtrl',
       }
     }
 
-    $scope.newPasswordEntry = {
+    $scope.passwordEntry = {
       id:           null,
       name:         "",
       loginID:      "",
@@ -674,7 +703,6 @@ pwGuardApp.controller('InnerSearchCtrl',
     }
 
     $scope.newEntry = function() {
-      $cookies.savedSearch = lastSearch;
       pwgRoutes.redirectToNamedRoute('new-entry');
     }
 

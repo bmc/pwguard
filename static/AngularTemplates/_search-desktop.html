@@ -30,8 +30,8 @@
             <button type="button" class="btn btn-small" ng-click="showAll()">
               All
             </button>
-            <button type="button" class="btn btn-small btn-info"
-                    ng-click="newEntry()">
+            <a type="button" class="btn btn-small btn-info"
+               ng-click="newEntry()">
               New
             </a>
           </span>
@@ -120,7 +120,7 @@
 
         <div class="results-body">
           <div ng-repeat="pw in searchResults | orderBy:sortColumn:reverse">
-            <div class="row" ng-class="{even: $even, odd: $odd}"
+            <div class="row" ng-class="{even: $even, odd: $odd}">
               <form name="pwForm" novalidate ng-submit="pw.save()">
                 <div class="col-md-1">
                   <span ng-hide="pw.editing">{{pw.name}}</span>
