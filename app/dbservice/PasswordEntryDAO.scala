@@ -193,6 +193,47 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
     }
   }
 
+  /** Save a full password entry, with all its dependents.
+    *
+    * @param entry  the full password entry
+    *
+    * @return A future of the saved entry, which may be modified
+    */
+  def saveWithDependents(entry: FullPasswordEntry): Future[FullPasswordEntry] = {
+    withTransaction { implicit session =>
+      val baseEntry = entry.toBaseEntry
+      val extrasDAO = DAO.passwordEntryExtraFieldsDAO
+
+      def handleExtraFields(savedEntry:     PasswordEntry,
+                            existingExtras: Set[PasswordEntryExtraField]) = {
+
+        // This logic isn't 100% correct. A change in a field name will
+        // cause it to appear to be new, because the name is the only hash
+        // code. That's not optimal, but it isn't worth optimizing right now.
+        val existingByName = existingExtras.map { e => e.fieldName -> e }.toMap
+        val newExtras = entry.extraFields
+        val toDelete = existingExtras -- newExtras
+        val toAdd    = newExtras -- existingExtras
+        val toUpdate = newExtras filter { extra =>
+          existingByName.get(extra.fieldName).map { existing =>
+            existing.fieldValue != extra.fieldValue
+          }.
+          getOrElse(false)
+        }
+
+        for { total       <- extrasDAO.deleteMany(toDelete)
+              savedExtras <- extrasDAO.saveMany(toAdd ++ toUpdate) }
+        yield savedExtras
+      }
+
+
+      for { savedEntry     <- save(baseEntry)
+            existingExtras <- extrasDAO.findForPasswordEntry(baseEntry)
+            savedExtras    <- handleExtraFields(savedEntry, existingExtras) }
+      yield savedEntry.toFullEntry(savedExtras)
+    }
+  }
+
   // --------------------------------------------------------------------------
   // Protected methods
   // ------------------------------------------------------------------------
@@ -201,19 +242,21 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
     for (p <- PasswordEntries if p.id === id) yield p
   }
 
-  protected def insert(pwEntry: PasswordEntry)(implicit session: SlickSession):
-    Future[PasswordEntry] = {
+  protected val baseQuery = PasswordEntries
 
-    Future {
+  protected def insert(pwEntry: PasswordEntry)(implicit session: SlickSession):
+    Try[PasswordEntry] = {
+
+    Try {
       val id = PasswordEntries.insert(pwEntry)
       pwEntry.copy(id = Some(id))
     }
   }
 
   protected def update(pwEntry: PasswordEntry)(implicit session: SlickSession):
-    Future[PasswordEntry] = {
+    Try[PasswordEntry] = {
 
-    Future {
+    Try {
       val q = for { pwe <- PasswordEntries if pwe.id === pwEntry.id.get }
               yield (pwe.userID, pwe.name, pwe.description, pwe.loginID,
                      pwe.encryptedPassword, pwe.notes, pwe.url)
@@ -238,38 +281,18 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
     }
   }
 
-  /** Load all dependents for a set of password entries. To prevent SQLite
-    * lock issues, this function loads them serially, returning a future
-    * that completes when all are loaded.
+  /** Load all dependents for a set of password entries.
     *
     * @param entries the password entries
     */
   private def loadDependents(entries: Set[PasswordEntry]):
     Future[Set[FullPasswordEntry]] = {
 
-    import DAO.{passwordEntryExtraFieldsDAO => dao}
+    DAO.passwordEntryExtraFieldsDAO.findForPasswordEntries(entries) map { set =>
 
-    Future {
-      val tries: Seq[Try[(PasswordEntry, Set[PasswordEntryExtraField])]] =
-        for (entry <- entries.toSeq) yield {
-          dao.findForPasswordEntrySync(entry) map { set =>
-            (entry, set)
-          }
-        }
-
-      // If there are any errors, fail with the first one.
-      val firstError = tries.filter { _.isFailure }.headOption
-      firstError map {
-        case Failure(e) => throw e
-        case Success(_) => throw new Exception("BUG: Expected Failure, not Success")
+      set map {
+        case (passwordEntry, extras) => passwordEntry.toFullEntry(extras)
       }
-
-      tries.filter { _.isSuccess }
-           .map {
-             case Success((entry, extras)) => entry.toFullEntry(extras)
-             case Failure(e)               => throw e
-           }
-           .toSet
     }
   }
 }

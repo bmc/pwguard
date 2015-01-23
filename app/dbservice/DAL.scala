@@ -1,6 +1,6 @@
 package dbservice
 
-import models.PasswordEntryExtraField
+import models.{BaseModel, PasswordEntryExtraField}
 
 import scala.slick.driver.JdbcProfile
 import java.sql.{ ResultSet, Timestamp }
@@ -10,6 +10,14 @@ import java.net.URL
   */
 trait Profile {
   val profile: JdbcProfile
+
+  import profile.simple._
+
+  abstract class ModelTable[M <: BaseModel](tag: Tag, name: String)
+    extends Table[M](tag, name) {
+
+    def id: Column[Int]
+  }
 }
 
 /** Base implementation of the data access layer.
@@ -26,7 +34,7 @@ trait UsersComponent {
   import profile.simple._
   import models.User
 
-  class UsersTable(tag: Tag) extends Table[User](tag, "users") {
+  class UsersTable(tag: Tag) extends ModelTable[User](tag, "users") {
     def id                   = column[Int]("id", O.PrimaryKey, O.AutoInc)
     def email                = column[String]("email")
     def encryptedPassword    = column[String]("encrypted_password")
@@ -53,7 +61,7 @@ trait PasswordEntriesComponent {
   import models.PasswordEntry
 
   class PasswordEntriesTable(tag: Tag)
-    extends Table[PasswordEntry](tag, "password_entries") {
+    extends ModelTable[PasswordEntry](tag, "password_entries") {
 
     def id                   = column[Int]("id", O.PrimaryKey, O.AutoInc)
     def userID               = column[Int]("user_id")
@@ -84,7 +92,7 @@ trait PasswordEntriesExtraFieldsComponent {
   import models.PasswordEntry
 
   class PasswordEntryExtraFieldsTable(tag: Tag)
-    extends Table[PasswordEntryExtraField](tag, "password_entry_extra_fields") {
+    extends ModelTable[PasswordEntryExtraField](tag, "password_entry_extra_fields") {
 
     def id              = column[Int]("id", O.PrimaryKey, O.AutoInc)
     def passwordEntryID = column[Int]("password_entry_id")

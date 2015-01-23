@@ -3,6 +3,11 @@
      via ng-include, doesn't trigger the form directive to add the form to
      the scope. So the form has to be in the template that's doing the
      including.
+
+     This template assumes:
+
+     - the form is called "entryForm"
+     - the password entry is stored in "passwordEntry"
 -->
 <div class="form-group"
      ng-class="{'has-error': entryForm.name.$invalid && entryForm.name.$dirty}">
@@ -70,15 +75,56 @@
 
 <div class="form-group">
   <label for="notes" class="control-label">Notes</label>
-        <textarea class="form-control" name="notes" id="notes"
-                  ng-model="passwordEntry.notes"
-                  ng-trim="true" placeholder="Notes"/>
+  <textarea class="form-control" name="notes" id="notes"
+            ng-model="passwordEntry.notes"
+            ng-trim="true" placeholder="Notes"/>
+</div>
+
+<div id="extra-fields">
+  <header>Custom Fields</header>
+  <table>
+    <thead>
+      <tr>
+        <th>Field Name</th>
+        <th>Field Value</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr ng-repeat="extra in passwordEntry.extras | filter:fieldNotDeleted()">
+        <td>
+          <input ng-model="extra.fieldName" class="form-control field-name"
+                 placeholder="field name"/>
+        </td>
+        <td>
+          <input ng-model="extra.fieldValue" class="form-control field-value"
+                 placeholder="field value"/>
+        </td>
+        <td>
+          <button type="button" class="btn btn-danger btn-sm delete-button"
+                  ng-click="extra.delete()">
+            <i class="fa fa-times"></i>
+          </button>
+        </td>
+      </tr>
+      <tr>
+        <td></td>
+        <td></td>
+        <td>
+          <button type="button" class="btn btn-primary btn-sm add-button"
+                  ng-click="addExtra()">
+            <i class="fa fa-plus"></i>
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
 </div>
 
 <div class="button-bar left">
   <div class="buttons">
     <button class="btn btn-primary"
-            ng-disabled="entryForm.$invalid"
+            ng-disabled="entryForm.$invalid || entryForm.$pristine"
             type="submit">
       Save
     </button>

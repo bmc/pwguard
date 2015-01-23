@@ -1,21 +1,19 @@
 package controllers
 
-import java.net.URL
-
 import dbservice.DAO
 import exceptions._
 import models.{FullPasswordEntry, UserHelpers, User, PasswordEntry}
 import models.PasswordEntryHelper.json.implicits._
 
 import play.api._
-import play.api.libs.json.{JsString, Json, JsValue}
+import play.api.libs.json._
 import play.api.mvc.Request
 import play.api.mvc.Results._
 import play.api.mvc.BodyParsers._
 
-import util.JsonHelpers
-import util.EitherOptionHelpers.Implicits._
-import util.EitherOptionHelpers._
+import _root_.util.JsonHelpers
+import _root_.util.EitherOptionHelpers._
+import _root_.util.EitherOptionHelpers.Implicits._
 import pwguard.global.Globals.ExecutionContexts.Default._
 
 import scala.concurrent.Future
@@ -38,21 +36,21 @@ object PasswordEntryController extends BaseController {
     implicit val request = authReq.request
     val user = authReq.user
 
-    def doSave(pwe: PasswordEntry): Future[PasswordEntry] = {
+    def doSave(pwe: FullPasswordEntry): Future[FullPasswordEntry] = {
       Future {
         logger.debug { s"Saving existing password entry ${pwe.name} " +
                        s"for ${user.email}" }
       } flatMap {
-        case _ => passwordEntryDAO.save(pwe)
+        case _ => passwordEntryDAO.saveWithDependents(pwe)
       }
     }
 
     val f = for { pweOpt <- passwordEntryDAO.findByID(id)
                   pwe    <- pweOpt.toFuture("Password entry not found")
-                  pwe2   <- decodeJSON(Some(pwe), user, request.body)
+                  full   <- passwordEntryDAO.fullEntry(pwe)
+                  pwe2   <- decodeJSON(Some(full), user, request.body)
                   saved  <- doSave(pwe2)
-                  saved2 <- passwordEntryDAO.fullEntry(saved)
-                  json   <- jsonPasswordEntry(user, saved2) }
+                  json   <- jsonPasswordEntry(user, saved) }
             yield json
 
     f.map { json => Ok(json) }
@@ -69,12 +67,12 @@ object PasswordEntryController extends BaseController {
     implicit val request = authReq.request
     val user = authReq.user
 
-    def doSave(pwe: PasswordEntry): Future[PasswordEntry] = {
+    def doSave(pwe: FullPasswordEntry): Future[FullPasswordEntry] = {
       Future {
         logger.debug { s"Creating new password entry ${pwe.name} " +
                        s"for ${user.email}" }
       } flatMap {
-        case _ => passwordEntryDAO.save(pwe)
+        case _ => passwordEntryDAO.saveWithDependents(pwe)
       }
     }
 
@@ -91,8 +89,7 @@ object PasswordEntryController extends BaseController {
     val f = for { pwe      <- decodeJSON(None, user, request.body)
                   okToSave <- checkForExisting(pwe.name) if okToSave
                   saved    <- doSave(pwe)
-                  saved2   <- passwordEntryDAO.fullEntry(saved)
-                  json     <- jsonPasswordEntry(user, saved2) }
+                  json     <- jsonPasswordEntry(user, saved) }
             yield json
 
     f.map { json => Ok(json) }
@@ -199,20 +196,29 @@ object PasswordEntryController extends BaseController {
   // Private methods
   // -------------------------------------------------------------------------
 
-  private def decodeJSON(pwOpt: Option[PasswordEntry],
+  private def decodeJSON(pwOpt: Option[FullPasswordEntry],
                          owner: User,
                          json: JsValue):
-    Future[PasswordEntry] = {
+    Future[FullPasswordEntry] = {
 
-    val idOpt          = (json \ "id").asOpt[Int]
-    val nameOpt        = blankToNone((json \ "name").asOpt[String])
-    val descriptionOpt = blankToNone((json \ "description").asOpt[String])
-    val passwordOpt    = blankToNone((json \ "password").asOpt[String])
-    val notesOpt       = blankToNone((json \ "notes").asOpt[String])
-    val urlOpt         = blankToNone((json \ "url").asOpt[String])
-    val loginIDOpt     = blankToNone((json \ "loginID").asOpt[String])
+    import models.PasswordEntryHelper.json.implicits._
 
-    def maybeEncryptPassword(pwEntry: PasswordEntry): Future[PasswordEntry] = {
+    val passwordOpt = blankToNone((json \ "password").asOpt[String])
+
+    def objFromJSON(json: JsValue): Future[FullPasswordEntry] = {
+      Future {
+        json.validate[FullPasswordEntry] match {
+          case pwe: JsSuccess[FullPasswordEntry] => pwe.get
+          case e: JsError => {
+            throw new Exception(JsError.toFlatJson(e).toString)
+          }
+        }
+      }
+    }
+
+    def maybeEncryptPassword(pwEntry: FullPasswordEntry):
+      Future[FullPasswordEntry] = {
+
       passwordOpt.map { pw =>
         UserHelpers.encryptStoredPassword(owner, pw).map { epw =>
           pwEntry.copy(encryptedPassword = Some(epw))
@@ -221,45 +227,37 @@ object PasswordEntryController extends BaseController {
       .getOrElse(Future.successful(pwEntry))
     }
 
-    def handleExisting(pw: PasswordEntry): Future[PasswordEntry] = {
+    def handleExisting(existing: FullPasswordEntry, newData: FullPasswordEntry):
+      Future[FullPasswordEntry] = {
 
-      val pw2 = pw.copy(name        = nameOpt.getOrElse(pw.name),
-                        loginID     = loginIDOpt,
-                        description = descriptionOpt.orElse(pw.description),
-                        url         = urlOpt.orElse(pw.url),
-                        notes       = notesOpt.orElse(pw.notes))
-      maybeEncryptPassword(pw2)
+      val toSave = existing.copy(
+        name        = newData.name,
+        loginID     = newData.loginID.orElse(existing.loginID),
+        description = newData.description.orElse(existing.description),
+        url         = newData.url.orElse(existing.url),
+        notes       = newData.notes.orElse(existing.notes),
+        extraFields = newData.extraFields
+      )
+
+      maybeEncryptPassword(toSave)
     }
 
-    def makeNew(): Future[PasswordEntry] = {
+    def makeNew(pw: FullPasswordEntry): Future[FullPasswordEntry] = {
 
-      def create(name: String, userID: Int): Future[PasswordEntry] = {
-
-        Future {
-          logger.debug(s"Saving new password entry ${name} for ${owner.email}")
-          PasswordEntry(id                = None,
-                        userID            = userID,
-                        name              = name,
-                        description       = descriptionOpt,
-                        loginID           = loginIDOpt,
-                        encryptedPassword = None,
-                        url               = urlOpt,
-                        notes             = notesOpt)
-        }
-      }
-
-      for { name     <- nameOpt.toFuture("Missing required name field")
-            userID   <- owner.id.toFuture("Missing owner user ID")
-            pwEntry  <- create(name, userID)
-            pwEntry2 <- maybeEncryptPassword(pwEntry) }
-      yield pwEntry2
+      for { userID <- owner.id.toFuture("Missing owner user ID")
+            pw2    <- maybeEncryptPassword(pw) }
+      yield pw2
     }
 
-    Seq(nameOpt, descriptionOpt, passwordOpt,
-        notesOpt, urlOpt).flatMap {o => o} match {
-      case Nil => Future.failed(new Exception("No posted password fields."))
-      case _   => pwOpt map { handleExisting(_) } getOrElse { makeNew() }
+    // Augment the JSON with the owner ID. We do that here because (a) it means
+    // we aren't relying on the JavaScript, and (b) it's safer. Unfortunately,
+    // we have to cheat with a cast.
+    val adjJson = json.asInstanceOf[JsObject] +
+                  ("userID" -> Json.toJson(owner.id.get))
 
+    objFromJSON(adjJson) flatMap { fullPwEntry =>
+      pwOpt.map { existing => handleExisting(existing, fullPwEntry) }
+           .getOrElse { makeNew(fullPwEntry) }
     }
   }
 

@@ -23,6 +23,7 @@ class DAOException(msg: String) extends Exception(msg)
 
   */
 abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
+  import dal.ModelTable
   import dal.profile.simple._
   import scala.slick.jdbc.JdbcBackend
   import pwguard.global.Globals.DB
@@ -62,12 +63,25 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     */
   def save(model: M): Future[M] = {
     withTransaction { implicit session: SlickSession =>
+      Future {
+        saveSync(model).get
+      }
+    }
+  }
+
+  /** Save an instance of this model, synchronously. Use with care.
+    *
+    * @param model  the model object to save
+    *
+    * @return a `Try` of the possibly modified, saved model object
+    */
+  def saveSync(model: M): Try[M] = {
+    withTransactionSync { implicit session: SlickSession =>
       model.id.map { _ => update(model) }.getOrElse { insert(model) }
     }
   }
 
-  /** Delete an instance of this model, by ID. All DAOs must provide this
-    * method.
+  /** Delete an instance of this model, by ID.
     *
     * @param id  the ID
     *
@@ -82,6 +96,20 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     }
   }
 
+  /** Delete many instances of this model.
+    *
+    * @param models  the models
+    *
+    * @return A `Future` of the number of items deleted
+    */
+  def deleteMany(models: Set[M]): Future[Int] = {
+    withTransaction { implicit session =>
+      val ids = models.flatMap(_.id)
+      val q = for { m <- baseQuery if m.id inSet ids } yield m
+      Future { q.delete }
+    }
+  }
+
   // --------------------------------------------------------------------------
   // Protected methods
   // ------------------------------------------------------------------------
@@ -92,27 +120,31 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     *
     * @return the query
     */
-  protected def queryByID(id: Int): Query[Table[M], M, Seq]
+  protected def queryByID(id: Int): Query[ModelTable[M], M, Seq]
+
+  /** The base query for this model.
+    *
+    * @return the query
+    */
+  protected def baseQuery: Query[ModelTable[M], M, Seq]
 
   /** Insert an instance of the model. Must be supplied by subclasses.
     *
     * @param model   the model object to save
     * @param session the active session
     *
-    * @return `Left(error)` on error, `Right(model)` (with a possibly-updated
-    *         model) on success.
+    * @return A `Try` of the result.
     */
-  protected def insert(model: M)(implicit session: SlickSession): Future[M]
+  protected def insert(model: M)(implicit session: SlickSession): Try[M]
 
   /** Update an instance of the model. Must be supplied by subclasses.
     *
     * @param model   the model object to save
     * @param session the active session
     *
-    * @return `Left(error)` on error, `Right(model)` (with a possibly-updated
-    *         model) on success.
+    * @return A `Try` of the result.
     */
-  protected def update(model: M)(implicit session: SlickSession): Future[M]
+  protected def update(model: M)(implicit session: SlickSession): Try[M]
 
   /** Run the specified code within a session.
     *

@@ -1,10 +1,10 @@
 package dbservice
 
-import models.{PasswordEntryExtraField, PasswordEntry}
+import models.{FullPasswordEntry, PasswordEntryExtraField, PasswordEntry}
 import play.api.Logger
 import pwguard.global.Globals.ExecutionContexts.DB._
 import scala.concurrent.Future
-import scala.util.Try
+import scala.util.{Success, Failure, Try}
 
 class PasswordEntryExtraFieldsDAO(_dal: DAL, _logger: Logger)
   extends BaseDAO[PasswordEntryExtraField](_dal, _logger){
@@ -52,6 +52,87 @@ class PasswordEntryExtraFieldsDAO(_dal: DAL, _logger: Logger)
     }
   }
 
+
+  /** Load all extras for a set of password entries. To prevent SQLite
+    * lock issues, this function loads them serially, returning a future
+    * that completes when all are loaded.
+    *
+    * @param entries the password entries
+    *
+    * @return a `Future` containing a set of 2-tuples, each consisting of a
+    *         `PasswordEntry` and its extra field records.
+    */
+  def findForPasswordEntries(entries: Set[PasswordEntry]):
+    Future[Set[(PasswordEntry, Set[PasswordEntryExtraField])]] = {
+
+    Future {
+      val tries: Seq[Try[(PasswordEntry, Set[PasswordEntryExtraField])]] =
+        for (entry <- entries.toSeq) yield {
+          findForPasswordEntrySync(entry) map { set =>
+            (entry, set)
+          }
+        }
+
+      // If there are any errors, fail with the first one.
+      tries.filter { _.isFailure }.headOption map {
+        case Failure(e) => throw e
+        case Success(_) => throw new Exception("BUG: Expected Failure")
+      }
+
+      tries.filter { _.isSuccess }
+           .map {
+              case Success(tuple) => tuple
+              case Failure(e)     => throw e
+           }
+           .toSet
+    }
+  }
+
+  /** Save many records.
+    *
+    * @param entries  the entries to be saved
+    *
+    * @return A future of the saved entries
+    */
+  def saveMany(entries: Set[PasswordEntryExtraField]):
+    Future[Set[PasswordEntryExtraField]] = {
+
+    withTransaction { implicit session =>
+      Future {
+        val tries = entries map { saveSync(_) }
+
+        // If there are any errors, fail with the first one.
+        tries.filter { _.isFailure }.headOption map {
+          case Failure(e) => throw e
+          case Success(_) => throw new Exception("BUG: Expected Failure.")
+        }
+
+        tries.filter { _.isSuccess }
+             .map {
+               case Success(entry) => entry
+               case Failure(e)     => throw e
+             }
+             .toSet
+      }
+    }
+  }
+
+  /** Delete all extras for a password entry.
+    *
+    * @param pwe the password entry
+    *
+    * @return A future of the number of deleted entries
+    */
+  def deleteForPasswordEntry(pwe: PasswordEntry): Future[Int] = {
+    withTransaction { implicit session =>
+      val q =
+        for { p <- PasswordEntryExtraFields if p.passwordEntryID === pwe.id.get }
+        yield p
+
+      Future { q.delete }
+    }
+  }
+
   // --------------------------------------------------------------------------
   // Package-visible methods
   // ------------------------------------------------------------------------
@@ -74,11 +155,13 @@ class PasswordEntryExtraFieldsDAO(_dal: DAL, _logger: Logger)
     for (p <- PasswordEntryExtraFields if p.id === id) yield p
   }
 
+  protected val baseQuery = PasswordEntryExtraFields
+
   protected def insert(item: PasswordEntryExtraField)
                       (implicit session: SlickSession):
-    Future[PasswordEntryExtraField] = {
+    Try[PasswordEntryExtraField] = {
 
-    Future {
+    Try {
       val id = PasswordEntryExtraFields.insert(item)
       item.copy(id = Some(id))
     }
@@ -86,9 +169,9 @@ class PasswordEntryExtraFieldsDAO(_dal: DAL, _logger: Logger)
 
   protected def update(item: PasswordEntryExtraField)
                       (implicit session: SlickSession):
-  Future[PasswordEntryExtraField] = {
+    Try[PasswordEntryExtraField] = {
 
-    Future {
+    Try {
       val q = for { p <- PasswordEntryExtraFields if p.id === item.id.get }
               yield (p.fieldName, p.fieldValue, p.passwordEntryID)
       q.update((item.fieldName, item.fieldValue, item.passwordEntryID))

@@ -548,15 +548,46 @@ pwGuardApp.controller('EditPasswordEntryCtrl',
     var log = pwgLogging.logger("EditPasswordEntryCtrl");
     $scope.passwordEntry = null;
 
+    function augmentExtra(extra) {
+      extra.deleted = false;
+      extra.delete  = () => {
+        extra.deleted = true;
+        $scope.entryForm.$setDirty();
+      }
+      return extra;
+    }
+
     var url = routes.controllers.PasswordEntryController.getEntry($routeParams.id).url;
     pwgAjax.get(url,
       function(data) {
         $scope.passwordEntry = data.passwordEntry;
+        if ($scope.passwordEntry) {
+          if (!$scope.passwordEntry.extras)
+            $scope.passwordEntry.extras = [];
+
+          for (let extra of $scope.passwordEntry.extras) {
+            augmentExtra(extra);
+          }
+        }
       },
       function(error) {
         console.log(error);
       }
     );
+
+    // When using the "filter" filter with a function, the specified function
+    // is a constructor that returns that actual filter function.
+    $scope.fieldNotDeleted = function() {
+      return function(extra) { return !extra.deleted; }
+    }
+
+    $scope.addExtra = function() {
+      $scope.passwordEntry.extras.push(augmentExtra({
+        fieldName:  null,
+        fieldValue: null,
+        id:         null
+      }));
+    }
 
     $scope.cancel = function() {
       $scope.validateFormCancellation($scope.entryForm, 'search');
@@ -594,7 +625,6 @@ pwGuardApp.controller('NewPasswordEntryCtrl',
     }
 
     $scope.cancel = function() {
-      console.log($scope);
       $scope.validateFormCancellation($scope.entryForm, 'search');
     }
 

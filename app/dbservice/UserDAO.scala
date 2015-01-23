@@ -7,6 +7,7 @@ import pwguard.global.Globals.ExecutionContexts.DB._
 import models.User
 
 import scala.concurrent.Future
+import scala.util.Try
 
 /** DAO for interacting with User objects.
   */
@@ -79,19 +80,17 @@ class UserDAO(_dal: DAL, _logger: Logger) extends BaseDAO[User](_dal, _logger) {
     for {u <- Users if u.id === id } yield u
   }
 
-  protected def insert(user: User)(implicit session: SlickSession):
-    Future[ User] = {
+  protected val baseQuery = Users
 
-    Future {
+  protected def insert(user: User)(implicit session: SlickSession): Try[User] = {
+    Try {
       val id = (Users returning Users.map(_.id)) += user
       user.copy(id = Some(id))
     }
   }
 
-  protected def update(user: User)(implicit session: SlickSession):
-    Future[User] = {
-
-    Future {
+  protected def update(user: User)(implicit session: SlickSession): Try[User] = {
+    Try {
       val q = for { u <- Users if u.id === user.id.get }
               yield (u.email, u.encryptedPassword, u.pwEntryEncryptionKey,
                      u.firstName, u.lastName, u.active, u.admin)

@@ -19,33 +19,9 @@ trait BaseController extends Logging {
 
   val logger = pwguard.global.Globals.mainLogger
 
-  private lazy val cachingStatics = current.configuration
-                                           .getBoolean("http.cacheStaticResources")
-                                           .getOrElse(false)
-
   // --------------------------------------------------------------------------
   // Protected methods
   // ------------------------------------------------------------------------
-
-  /** Add appropriate "no cache" headers to a result.
-    *
-    * @param result the result to annotate
-    *
-    * @return the modified result
-    */
-  protected def noCache(result: Result): Result = {
-    result.withHeaders("Pragma" -> "no-cache", "Cache-Control" -> "no-cache")
-  }
-
-  /** Modify a result to honor the configured caching directive.
-    *
-    * @param result the result to check and possibly modify
-    *
-    * @return the possibly modified result
-    */
-  protected def maybeCached(result: Result): Result = {
-    if (cachingStatics) result else noCache(result)
-  }
 
   /** Convenience method to process incoming secured JSON request, sending
     * back a consistent error when no user is logged in. Built on top of

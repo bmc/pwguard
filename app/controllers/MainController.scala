@@ -115,7 +115,7 @@ object MainController extends BaseController {
 
       files match {
         case Nil       => NotFound
-        case f :: tail => maybeCached(Ok.sendFile(content = f, inline = true))
+        case f :: tail => Ok.sendFile(content = f, inline = true)
       }
     }
   }
@@ -140,7 +140,7 @@ object MainController extends BaseController {
     Future {
       val file = Play.getFile(s"static/AngularTemplates/$name")
       val result = if (file.exists) {
-        Success(maybeCached(Ok.sendFile(content = file, inline = true)))
+        Success(Ok.sendFile(content = file, inline = true))
       }
 
       else {

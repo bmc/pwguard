@@ -7,7 +7,17 @@ case class PasswordEntryExtraField(id:              Option[Int],
                                    passwordEntryID: Int,
                                    fieldName:       String,
                                    fieldValue:      String)
-  extends BaseModel
+  extends BaseModel {
+
+  override def equals(other: Any) = {
+    other match {
+      case PasswordEntryExtraField(_, _, thatName, _) =>  fieldName == thatName
+      case _                                          => false
+    }
+  }
+
+  override val hashCode = fieldName.hashCode
+}
 
 object PasswordEntryExtraFieldHelper {
   object json {
