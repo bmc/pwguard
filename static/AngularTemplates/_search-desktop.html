@@ -119,175 +119,193 @@
         </div>
 
         <div class="results-body">
-          <div class="row"
-               ng-class="{even: $even, odd: $odd}"
-               ng-repeat="pw in searchResults | orderBy:sortColumn:reverse">
+          <div ng-repeat="pw in searchResults | orderBy:sortColumn:reverse">
+            <div class="row" ng-class="{even: $even, odd: $odd}"
+              <form name="pwForm" novalidate ng-submit="pw.save()">
+                <div class="col-md-1">
+                  <span ng-hide="pw.editing">{{pw.name}}</span>
+                  <span ng-show="pw.editing">
+                    <input class="standalone" ng-model="pw.name"
+                           type="text" placeholder="Name"/>
+                  </span>
+                </div>
 
-            <form name="pwForm" novalidate ng-submit="pw.save()">
-              <div class="col-md-1">
-                <span ng-hide="pw.editing">{{pw.name}}</span>
-                <span ng-show="pw.editing">
-                  <input class="standalone" ng-model="pw.name"
-                         type="text" placeholder="Name"/>
-                </span>
-              </div>
+                <div class="col-md-2">
+                  <span ng-hide="pw.editing">{{pw.description}}</span>
+                  <span ng-show="pw.editing">
+                    <input class="standalone" ng-model="pw.description"
+                           type="text" placeholder="Description"/>
+                  </span>
+                </div>
 
-              <div class="col-md-2">
-                <span ng-hide="pw.editing">{{pw.description}}</span>
-                <span ng-show="pw.editing">
-                  <input class="standalone" ng-model="pw.description"
-                         type="text" placeholder="Description"/>
-                </span>
-              </div>
+                <div class="col-md-2">
+                  <span ng-hide="pw.editing || !pw.loginID">
+                    <input type="text" readonly="readonly"
+                           pwg-select-on-click
+                           ng-model="pw.loginID"/>
+                  </span>
+                  <span ng-show="pw.editing">
+                    <input class="standalone" ng-model="pw.loginID"
+                           type="text" placeholder="ID"/>
+                  </span>
+                </div>
 
-              <div class="col-md-2">
-                <span ng-hide="pw.editing || !pw.loginID">
-                  <input type="text" readonly="readonly"
-                         pwg-select-on-click
-                         ng-model="pw.loginID"/>
-                </span>
-                <span ng-show="pw.editing">
-                  <input class="standalone" ng-model="pw.loginID"
-                         type="text" placeholder="ID"/>
-                </span>
-              </div>
+                <div class="col-md-2">
+                  <div class="password">
+                    <div ng-hide="pw.editing">
+                      <div ng-show="pw.plaintextPassword">
 
-              <div class="col-md-2">
-                <div class="password">
-                  <div ng-hide="pw.editing">
-                    <div ng-show="pw.plaintextPassword">
+                        <span class="show-hide-password">
+                          <a href="" ng-click="pw.togglePasswordVisibility()"
+                             class="toggle-password">
+                            <span class="fa fa-toggle-on"
+                                  ng-show="pw.passwordVisible"></span>
+                            <span class="fa fa-toggle-off"
+                                  ng-hide="pw.passwordVisible"></span>
+                          </a>
+                        </span>
 
-                      <span class="show-hide-password">
-                        <a href="" ng-click="pw.togglePasswordVisibility()"
-                           class="toggle-password">
-                          <span class="fa fa-toggle-on"
-                                ng-show="pw.passwordVisible"></span>
-                          <span class="fa fa-toggle-off"
-                                ng-hide="pw.passwordVisible"></span>
-                        </a>
-                      </span>
+                        <span ng-show="pw.passwordVisible">
+                          <input type="text" readonly="readonly"
+                                 class="shown-password clickable"
+                                 pwg-select-on-click
+                                 ng-show="pw.passwordVisible"
+                                 ng-model="pw.plaintextPassword"/>
+                        </span>
 
-                      <span ng-show="pw.passwordVisible">
-                        <input type="text" readonly="readonly"
-                               class="shown-password clickable"
-                               pwg-select-on-click
-                               ng-show="pw.passwordVisible"
-                               ng-model="pw.plaintextPassword"/>
-                      </span>
+                        <span ng-show="!pw.passwordVisible"
+                              class="hidden-password clickable">
+                          **************
+                        </span>
 
-                      <span ng-show="!pw.passwordVisible"
-                            class="hidden-password clickable">
-                        **************
-                      </span>
-
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div ng-show="pw.editing">
-                  <input class="standalone" ng-model="pw.plaintextPassword"
-                         type="text" placeholder="Password"/>
-                </div>
-              </div>
-
-              <div class="col-md-2">
-                <!--
-                  ng-bind-html sanitizes any HTML in the field. The
-                  linky filter then converts any links embedded in the
-                  text.
-                -->
-                <span ng-hide="pw.editing">
-                  <span ng-show="pw.urlPreview">
-                    <button type="button"
-                            class="btn btn-default btn-xs pull-right"
-                            ng-click="pw.toggleUrlPreview()">
-                      <i ng-show="pw.showUrlPreview" class="fa fa-plus"></i>
-                      <i ng-hide="pw.showUrlPreview" class="fa fa-minus"></i>
-                    </button>
-                    <span ng-show="pw.showUrlPreview">
-                      <a ng-href="{{pw.url}}">{{pw.urlPreview}}</a>
-                    </span>
-                    <span ng-hide="pw.showUrlPreview"
-                          ng-bind-html="pw.url | linky:'newPage'">
-                    </span>
-                  </span>
-                  <span ng-hide="pw.urlPreview">
-                    <span ng-bind-html="pw.url | linky:'newPage'"></span>
-                  </span>
-                </span>
-                <span ng-show="pw.editing" pwg-bootstrap-form-error="url">
-                  <input type="text" ng-model="pw.url" name="url"
-                         ng-pattern="URLPattern"/>
-                  <div class="error" ng-show="pwForm.url.$error.pattern">
-                    Invalid URL.
+                  <div ng-show="pw.editing">
+                    <input class="standalone" ng-model="pw.plaintextPassword"
+                           type="text" placeholder="Password"/>
                   </div>
-                </span>
-              </div>
+                </div>
 
-              <div class="col-md-2">
-                <span ng-hide="pw.editing">
-                  <span ng-show="pw.notesPreviewAvailable">
-                    <button type="button"
-                            class="btn btn-default btn-xs pull-right"
-                            ng-click="pw.toggleNotesPreview()">
-                      <i ng-show="pw.showNotesPreview" class="fa fa-plus"></i>
-                      <i ng-hide="pw.showNotesPreview" class="fa fa-minus"></i>
-                    </button>
-
-                    <span ng-show="pw.showNotesPreview">
-                      {{pw.notesPreview}}
+                <div class="col-md-2">
+                  <!--
+                    ng-bind-html sanitizes any HTML in the field. The
+                    linky filter then converts any links embedded in the
+                    text.
+                  -->
+                  <span ng-hide="pw.editing">
+                    <span ng-show="pw.urlPreview">
+                      <button type="button"
+                              class="btn btn-default btn-xs pull-right"
+                              ng-click="pw.toggleUrlPreview()">
+                        <i ng-show="pw.showUrlPreview" class="fa fa-plus"></i>
+                        <i ng-hide="pw.showUrlPreview" class="fa fa-minus"></i>
+                      </button>
+                      <span ng-show="pw.showUrlPreview">
+                        <a ng-href="{{pw.url}}">{{pw.urlPreview}}</a>
+                      </span>
+                      <span ng-hide="pw.showUrlPreview"
+                            ng-bind-html="pw.url | linky:'newPage'">
+                      </span>
                     </span>
-                    <span ng-hide="pw.showNotesPreview">
-                      <!--
-                        ng-bind-html sanitizes any HTML in the field. The
-                        linky filter then converts any links embedded in the
-                        text.
-                      -->
+                    <span ng-hide="pw.urlPreview">
+                      <span ng-bind-html="pw.url | linky:'newPage'"></span>
+                    </span>
+                  </span>
+                  <span ng-show="pw.editing" pwg-bootstrap-form-error="url">
+                    <input type="text" ng-model="pw.url" name="url"
+                           ng-pattern="URLPattern"/>
+                    <div class="error" ng-show="pwForm.url.$error.pattern">
+                      Invalid URL.
+                    </div>
+                  </span>
+                </div>
+
+                <div class="col-md-2">
+                  <span ng-hide="pw.editing">
+                    <span ng-show="pw.notesPreviewAvailable">
+                      <button type="button"
+                              class="btn btn-default btn-xs pull-right"
+                              ng-click="pw.toggleNotesPreview()">
+                        <i ng-show="pw.showNotesPreview" class="fa fa-plus"></i>
+                        <i ng-hide="pw.showNotesPreview" class="fa fa-minus"></i>
+                      </button>
+
+                      <span ng-show="pw.showNotesPreview">
+                        {{pw.notesPreview}}
+                      </span>
+                      <span ng-hide="pw.showNotesPreview">
+                        <!--
+                          ng-bind-html sanitizes any HTML in the field. The
+                          linky filter then converts any links embedded in the
+                          text.
+                        -->
+                        <span ng-bind-html="pw.notes | linky:'newPage' | pwgNewlinesToBRs">
+                        </span>
+                      </span>
+                    </span>
+                    <span ng-hide="pw.notesPreviewAvailable">
                       <span ng-bind-html="pw.notes | linky:'newPage' | pwgNewlinesToBRs">
                       </span>
                     </span>
                   </span>
-                  <span ng-hide="pw.notesPreviewAvailable">
-                    <span ng-bind-html="pw.notes | linky:'newPage' | pwgNewlinesToBRs">
-                    </span>
+                  <span ng-show="pw.editing">
+                    <textarea class="standalone" ng-model="pw.notes"/>
                   </span>
-                </span>
-                <span ng-show="pw.editing">
-                  <textarea class="standalone" ng-model="pw.notes"/>
-                </span>
-              </div>
-
-              <div class="pw-buttons col-md-1">
-                <div class="select-checkbox">
-                  <input type="checkbox" ng-model="pw.selected"/>
                 </div>
-                <button type="button"
-                        class="btn btn-borderless"
-                        ng-click="pw.edit()"
-                        ng-hide="pw.editing">
-                  <i class="fa fa-pencil"></i>
-                </button>
-                <button type="button"
-                        class="btn btn-borderless"
-                        ng-click="pw.delete()"
-                        ng-hide="pw.editing">
-                  <i class="fa fa-trash-o"></i>
-                </button>
-                <button type="submit"
-                        class="btn btn-borderless save"
-                        ng-click="pw.save()"
-                        ng-disabled="pwForm.$invalid"
-                        ng-show="pw.editing">
-                  <i class="fa fa-save"></i>
-                </button>
-                <button type="button"
-                        class="btn btn-borderless cancel"
-                        ng-click="pw.cancel(pwForm)"
-                        ng-show="pw.editing">
-                  <i class="fa fa-times"></i>
-                </button>
+
+                <div class="pw-buttons col-md-1">
+                  <div class="select-checkbox">
+                    <input type="checkbox" ng-model="pw.selected"/>
+                  </div>
+                  <button type="button"
+                          class="btn btn-borderless"
+                          ng-click="pw.edit()"
+                          ng-hide="pw.editing">
+                    <i class="fa fa-pencil"></i>
+                  </button>
+                  <button type="button"
+                          class="btn btn-borderless"
+                          ng-click="pw.delete()"
+                          ng-hide="pw.editing">
+                    <i class="fa fa-trash-o"></i>
+                  </button>
+                  <button type="submit"
+                          class="btn btn-borderless save"
+                          ng-click="pw.save()"
+                          ng-disabled="pwForm.$invalid"
+                          ng-show="pw.editing">
+                    <i class="fa fa-save"></i>
+                  </button>
+                  <button type="button"
+                          class="btn btn-borderless cancel"
+                          ng-click="pw.cancel(pwForm)"
+                          ng-show="pw.editing">
+                    <i class="fa fa-times"></i>
+                  </button>
+                </div>
+              </form>
+            </div>
+            <div ng-show="pw.extras" class="row extras"
+                 ng-class="{even: $even, odd: $odd}">
+              <div class="col-md-1">
+                <a href="" ng-click="pw.showExtras=!pw.showExtras"
+                   role="button" class="btn btn-default btn-xs toggle-button">
+                  <span ng-show="pw.showExtras">Hide Custom Fields</span>
+                  <span ng-hide="pw.showExtras">Show Custom Fields</span>
+                </a>
               </div>
-            </form>
+              <div class="col-md-11">
+                <table class="table table-condensed extras"
+                       ng-show="pw.showExtras">
+                  <tr ng-repeat="e in pw.extras">
+                    <td class="field-name">{{e.fieldName}}</td>
+                    <td class="field-value">{{e.fieldValue}}</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       </div>

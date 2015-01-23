@@ -48,7 +48,7 @@ libraryDependencies ++= Seq(
   "org.webjars"           % "angularjs"                  % "1.2.26",
   "org.webjars"           % "angular-strap"              % "2.1.2",
   // -------------------------------------------------------------------------
-  "org.webjars"           % "font-awesome"               % "4.2.0",
+  "org.webjars"           % "font-awesome"               % "4.3.0",
   "org.webjars"           % "jquery"                     % "1.11.2",
   "org.webjars"           % "log4javascript"             % "1.4.10",
   "org.webjars"           % "underscorejs"               % "1.7.0-1",

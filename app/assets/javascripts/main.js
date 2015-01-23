@@ -566,14 +566,13 @@ pwGuardApp.controller('InnerSearchCtrl',
     var pwgModal       = $injector.get('pwgModal');
     var pwgLogging     = $injector.get('pwgLogging');
     var pwgRoutes      = $injector.get('pwgRoutes');
+    var $cookies       = $injector.get('$cookies');
     var $filter        = $injector.get('$filter');
     var inflector      = $filter('pwgInflector');
     var ellipsize      = $filter('pwgEllipsize');
     var makeUrlPreview = $filter('pwgUrlPreview');
-    var $cookies       = $injector.get('$cookies');
 
     var SEARCH_ALL_MARKER = '-*-all-*-';
-    var lastSearch = "";
     var originalEntries = {};
 
     var log = pwgLogging.logger('InnerSearchCtrl');
@@ -613,7 +612,7 @@ pwGuardApp.controller('InnerSearchCtrl',
       let url = routes.controllers.PasswordEntryController.searchPasswordEntries().url;
       log.debug(`Issuing search: ${$scope.searchTerm}`);
       pwgAjax.post(url, {searchTerm: $scope.searchTerm}, function(response) {
-        lastSearch = $scope.searchTerm;
+        $cookies.lastSearch = $scope.searchTerm;
         $scope.searchResults = adjustResults(response.results);
       });
     }
@@ -624,7 +623,7 @@ pwGuardApp.controller('InnerSearchCtrl',
       var url = routes.controllers.PasswordEntryController.all().url;
       pwgAjax.get(url,
         function(response) {
-          lastSearch = SEARCH_ALL_MARKER;
+          $cookies.lastSearch = SEARCH_ALL_MARKER;
           $scope.searchResults = adjustResults(response.results);
         }
       );
@@ -641,14 +640,7 @@ pwGuardApp.controller('InnerSearchCtrl',
     }
 
     var reissueLastSearch = () => {
-      if (! lastSearch) {
-        let c = $cookies.savedSearch;
-        if (c) {
-          delete $cookies.savedSearch;
-          lastSearch = c;
-        }
-      }
-
+      let lastSearch = $cookies.lastSearch;
       if (lastSearch) {
         if (lastSearch === SEARCH_ALL_MARKER) {
           $scope.showAll();
@@ -760,6 +752,7 @@ pwGuardApp.controller('InnerSearchCtrl',
         pw.showNotesPreview      = pw.notesPreviewAvailable;
         pw.passwordVisible       = false;
         pw.selected              = false;
+        pw.showExtras            = false;
 
         if (pw.url) {
           pw.urlPreview     = makeUrlPreview(pw.url, 20);

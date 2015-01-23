@@ -19,6 +19,10 @@ trait BaseController extends Logging {
 
   val logger = pwguard.global.Globals.mainLogger
 
+  private lazy val cachingStatics = current.configuration
+                                           .getBoolean("http.cacheStaticResources")
+                                           .getOrElse(false)
+
   // --------------------------------------------------------------------------
   // Protected methods
   // ------------------------------------------------------------------------
@@ -40,10 +44,7 @@ trait BaseController extends Logging {
     * @return the possibly modified result
     */
   protected def maybeCached(result: Result): Result = {
-    val cache = current.configuration
-                       .getBoolean("http.cacheStaticResources")
-                       .getOrElse(false)
-    if (cache) result else noCache(result)
+    if (cachingStatics) result else noCache(result)
   }
 
   /** Convenience method to process incoming secured JSON request, sending

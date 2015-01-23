@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS password_entry_extra_fields(
   FOREIGN KEY(password_entry_id) REFERENCES password_entries(id)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS pweef_ix_id ON password_entry_extra_fields(password_entry_id);
+CREATE UNIQUE INDEX IF NOT EXISTS pweef_ix_id
+  ON password_entry_extra_fields(password_entry_id, field_name);
 
 # --- !Downs
 
