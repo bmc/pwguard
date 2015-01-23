@@ -74,11 +74,11 @@
 
                 <div class="mobile-field password" ng-show="pw.plaintextPassword">
                   <span class="mobile-label">Password:</span>
-                      <span class="mobile-value">
-                        <input type="text" readonly="readonly"
-                               ng-model="pw.plaintextPassword"
-                               pwg-select-on-click/>
-                      </span>
+                  <span class="mobile-value">
+                    <input type="text" readonly="readonly"
+                           ng-model="pw.plaintextPassword"
+                           pwg-select-on-click/>
+                  </span>
                 </div>
 
                 <div class="mobile-field url" ng-show="pw.url">
@@ -90,6 +90,13 @@
                   -->
                   <div class="mobile-value"
                        ng-bind-html="pw.url | linky:'newPage'"/>
+                </div>
+
+                <div class="extras" ng-show="pw.extras">
+                  <div ng-repeat="e in pw.extras" class="mobile-field">
+                    <span class="mobile-label">{{e.fieldName}}</span>
+                    <span class="mobile-value">{{e.fieldValue}}</span>
+                  </div>
                 </div>
 
                 <div class="mobile-field notes" ng-show="pw.notes">
