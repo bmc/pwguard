@@ -69,7 +69,6 @@ pwgDirectives.directive('pwgSelectOnClick', function() {
   }
 });
 
-
 // ----------------------------------------------------------------------------
 // Add a bootstrap error class to a form-group. Requires the existence of an
 // outer form. Use like this:
@@ -270,5 +269,97 @@ pwgDirectives.directive('pwgDropFile', ['pwgLogging', function(pwgLogging) {
     }
   }
 }]);
+
+// ----------------------------------------------------------------------------
+// Display and manage a password entry edit form
+// ----------------------------------------------------------------------------
+
+pwgDirectives.directive('pwgEditPasswordEntryForm',
+   ['$injector', function($injector) {
+
+     var pwgAjax       = $injector.get('pwgAjax');
+     var pwgLogging    = $injector.get('pwgLogging');
+     var pwgFormHelper = $injector.get('pwgFormHelper');
+     var pwgFlash      = $injector.get('pwgFlash');
+     var pwgRoutes     = $injector.get('pwgRoutes');
+     var name          = 'pwg-edit-password-entry-form';
+     var log           = pwgLogging.logger('pwgEditPasswordEntryForm');
+
+     return {
+       restrict: 'E',
+       scope: {
+         ngModel:     '=',
+         saveUrl:     '=',
+         onSave:      '=',
+         cancelRoute: '@',
+         saveRoute:   '@'
+       },
+       templateUrl: templateURL('directives/pwgEditPasswordEntryForm.html'),
+
+       link: function($scope, element, attrs) {
+         if (! attrs.ngModel)
+           throw new Error(`${name}: ng-model attribute is required.`);
+         if (! attrs.cancelRoute)
+           throw new Error(`${name}: cancel-route attribute is required.`);
+         if (! attrs.saveUrl)
+           throw new Error(`${name}: save-url attribute is required.`);
+
+         function augmentExtra(extra) {
+           extra.deleted = false;
+           extra.delete = () => {
+             extra.deleted = true;
+             $scope.entryForm.$setDirty();
+           }
+           return extra;
+         }
+
+         $scope.$watch('ngModel', function(newValue) {
+           if (newValue) {
+             log.debug(`ngModel: ${JSON.stringify(newValue)}`);
+             if (! newValue.extras) newValue.extras = [];
+
+             for (let extra of newValue.extras)
+               augmentExtra(extra);
+           }
+         });
+
+         // When using the "filter" filter with a function, the specified function
+         // is a constructor that returns that actual filter function.
+         $scope.fieldNotDeleted = function() {
+           return function(extra) { return !extra.deleted; }
+         }
+
+         $scope.addExtra = function() {
+           $scope.ngModel.extras.push(augmentExtra({
+             fieldName:  null,
+             fieldValue: null,
+             id:         null
+           }));
+         }
+
+         $scope.cancel = function() {
+           pwgFormHelper.validateCancellation($scope.entryForm,
+                                              $scope.cancelRoute);
+         }
+
+         $scope.submit = function() {
+           let id = $scope.ngModel.id;
+           let name = $scope.ngModel.name;
+           $scope.ngModel.extras = _.filter($scope.ngModel.extras, function(e) {
+             return ! e.deleted;
+           });
+           log.debug(`Saving password entry. name=${name}, url=${$scope.saveUrl}`);
+           pwgAjax.post($scope.saveUrl, $scope.ngModel, function() {
+             pwgFlash.info("Saved.", 5 /* second timeout */);
+             if ($scope.onSave)
+               $scope.onSave($scope.ngModel);
+             if ($scope.saveRoute)
+               pwgRoutes.redirectToNamedRoute($scope.saveRoute);
+           });
+         }
+       }
+     }
+   }
+]);
 
 /* jshint ignore:end */

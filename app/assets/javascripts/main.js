@@ -45,7 +45,7 @@ function checkMissingFeatures() {
   }
 }
 
-pwGuardApp.config(['$routeProvider', function($routeProvider) {
+pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provide) {
 
   var templateURL = angularTemplateURL;
 
@@ -211,190 +211,6 @@ pwGuardApp.run(['$rootScope', 'pwgLogging', function($rootScope, pwgLogging) {
 }]);
 
 // ##########################################################################
-// Services
-// ##########################################################################
-
-var pwgRoutes = pwGuardApp.factory('pwgRoutes',
-  ['$injector', function($injector) {
-
-    var pwgLogging              = $injector.get('pwgLogging');
-    var pwgError                = $injector.get('pwgError');
-    var pwgFlash                = $injector.get('pwgFlash');
-    var $location               = $injector.get('$location');
-    var $route                  = $injector.get('$route');
-    var DEFAULT_ROUTE_NAME      = null;
-    var POST_LOGIN_ROUTES       = [];
-    var PRE_LOGIN_ROUTES        = [];
-    var ADMIN_ONLY_ROUTES       = [];
-    var REVERSE_ROUTES          = {};
-
-    var log = pwgLogging.logger("pwgRoutes");
-
-    for (var pattern in $route.routes) {
-      let route = $route.routes[pattern];
-      if (!route)
-        continue;
-
-      if (route.isDefault) { // This is the default route
-        DEFAULT_ROUTE_NAME = route.defaultName;
-      }
-      else if (route.name) {
-        // AngularJS adds routes. If the name field is present, it's one
-        // we added.
-        REVERSE_ROUTES[route.name] = pattern;
-
-        if (route.postLogin) POST_LOGIN_ROUTES.push(route.name);
-        if (route.preLogin) PRE_LOGIN_ROUTES.push(route.name);
-        if (route.admin) ADMIN_ONLY_ROUTES.push(route.name);
-      }
-    }
-
-    var URL_RE = /^.*#(.*)$/;
-
-    var isPostLoginRoute = (name) => {
-      return (POST_LOGIN_ROUTES.indexOf(name) >= 0);
-    }
-
-    var isPreLoginRoute = (name) => {
-      return (PRE_LOGIN_ROUTES.indexOf(name) >= 0);
-    }
-
-    var substituteParams = (url, params) => {
-      for (let k in params) {
-        url = url.replace(":" + k, params[k]);
-      }
-      return url;
-    }
-
-    var pathForRouteName = (name, params = {}) => {
-      let urlPattern = REVERSE_ROUTES[name];
-      if (urlPattern) {
-        return substituteParams(urlPattern, params);
-      }
-      else {
-        throw new Error(`(BUG) No URL for route ${name}`)
-      }
-    }
-
-    var hrefForRouteName = (name, params = {}) => {
-      return "#" + pathForRouteName(name, params);
-    }
-
-    var redirectToNamedRoute = (name, params = {}) => {
-     let url = pathForRouteName(name, params);
-     log.debug(`Redirecting to ${url}`)
-     pwgFlash.clearAll();
-     $location.path(url);
-    }
-
-    var DEFAULT_ROUTE_PATH = pathForRouteName(DEFAULT_ROUTE_NAME);
-    var DEFAULT_ROUTE_HREF = hrefForRouteName(DEFAULT_ROUTE_NAME);
-
-    return {
-      isAdminOnlyRoute: (name) => {
-        return ADMIN_ONLY_ROUTES.indexOf(name) >= 0;
-      },
-
-      isPostLoginRoute: (name) => {
-        return isPostLoginRoute(name);
-      },
-
-      isPreLoginRoute: (name) => {
-        return isPreLoginRoute(name);
-      },
-
-      hrefForRouteName: (name, params = {}) => {
-        return hrefForRouteName(name, params);
-      },
-
-      pathForRouteName: (name) => {
-        return pathForRouteName(name);
-      },
-
-      // These are functions to ensure no one can modify the values.
-      defaultRouteName: () => { return DEFAULT_ROUTE_NAME; },
-
-      defaultRoutePath: () => { return pathForRouteName(DEFAULT_ROUTE_NAME); },
-
-      defaultRouteHref: () => { return hrefForRouteName(DEFAULT_ROUTE_NAME); },
-
-      redirectToDefaultRoute: () => {
-        redirectToNamedRoute(DEFAULT_ROUTE_NAME);
-      },
-
-      routeIsActive: (name) => {
-        let path = pathForRouteName(name);
-        return (path && $location.path().endsWith(path));
-      },
-
-      redirectToNamedRoute: (name, params = {}) => {
-        redirectToNamedRoute(name, params);
-      },
-
-      routeNameForURL: (url) => {
-        if (!url) url = "";
-        let m = URL_RE.exec(url);
-        let strippedURL;
-        if (m)
-          strippedURL = m[1];
-        else
-          strippedURL = url;
-
-        let result = null;
-        for (var pattern in $route.routes) {
-          let r = $route.routes[pattern];
-          if (! r.name)
-            continue;
-          if (! r.regexp)
-            continue;
-          if (r.regexp.test(strippedURL)) {
-            result = r.name;
-            break;
-          }
-        }
-
-        return result;
-      }
-    }
-  }
-]);
-
-pwGuardApp.factory('pwgCheckRoute', ['pwgRoutes', 'pwgLogging',
-  function(pwgRoutes, pwgLogging) {
-    var log = pwgLogging.logger('pwgCheckRoute');
-    return function(routeName, currentUser) {
-      log.debug(`checking ${routeName}. Current user:`);
-      log.debug(currentUser);
-
-      if (currentUser) { // logged in
-        if (pwgRoutes.isPostLoginRoute(routeName)) {
-          log.debug(`${routeName} is a post-login route. Staying here.`);
-          // Okay to stay here
-        }
-        else {
-          // Can't stay here. Off to the default page.
-          log.debug(`${routeName} is not a post-login route. Redirecting.`);
-          pwgRoutes.redirectToDefaultRoute();
-        }
-      }
-
-      else { // not logged in
-        if (pwgRoutes.isPreLoginRoute(routeName)) {
-          log.debug(`${routeName} is a pre-login route. Staying here.`);
-          // Okay to stay here
-        }
-        else {
-          // Can't stay here; it's not a pre-login route. Off to the login
-          // page.
-          log.debug(`${routeName} is not a pre-login route. Redirecting.`);
-          pwgRoutes.redirectToNamedRoute('login');
-        }
-      }
-    }
-  }
-]);
-
-// ##########################################################################
 // Controllers
 // ##########################################################################
 
@@ -419,7 +235,6 @@ pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
      // Put the template URL in the scope, because it's used inside templates
      // (e.g., within ng-include directives).
 
-     $scope.URLPattern  = /^(ftp|http|https):\/\/[^ "]+$/;
      $scope.templateURL = angularTemplateURL;
      $scope.version     = window.version;
 
@@ -451,23 +266,6 @@ pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
          pwgFlash.error("Login failure");
        }
      });
-
-     // Check a form. If it's been edited, prompt the user for cancellation.
-     // If the user confirms, or if the form is pristine, route to the named
-     // location.
-     $scope.validateFormCancellation = function(form, routeName) {
-       let doCancel = function() {
-         pwgRoutes.redirectToNamedRoute('search');
-       }
-
-       if (form.$dirty) {
-         pwgModal.confirm("You've modified the form. Really cancel?",
-                          "Confirm cancel.").then(doCancel);
-       }
-       else {
-         doCancel();
-       }
-     }
    }
 ]);
 
@@ -578,64 +376,21 @@ pwGuardApp.controller('EditPasswordEntryCtrl',
     var pwgFlash     = $injector.get('pwgFlash');
 
     var log = pwgLogging.logger("EditPasswordEntryCtrl");
-    $scope.passwordEntry = null;
 
-    function augmentExtra(extra) {
-      extra.deleted = false;
-      extra.delete  = () => {
-        extra.deleted = true;
-        $scope.entryForm.$setDirty();
-      }
-      return extra;
-    }
+    var id = $routeParams.id;
+
+    $scope.passwordEntry = null;
+    $scope.saveURL = routes.controllers.PasswordEntryController.save(id).url;
 
     var url = routes.controllers.PasswordEntryController.getEntry($routeParams.id).url;
     pwgAjax.get(url,
       function(data) {
         $scope.passwordEntry = data.passwordEntry;
-        if ($scope.passwordEntry) {
-          if (!$scope.passwordEntry.extras)
-            $scope.passwordEntry.extras = [];
-
-          for (let extra of $scope.passwordEntry.extras) {
-            augmentExtra(extra);
-          }
-        }
       },
       function(error) {
         console.log(error);
       }
     );
-
-    // When using the "filter" filter with a function, the specified function
-    // is a constructor that returns that actual filter function.
-    $scope.fieldNotDeleted = function() {
-      return function(extra) { return !extra.deleted; }
-    }
-
-    $scope.addExtra = function() {
-      $scope.passwordEntry.extras.push(augmentExtra({
-        fieldName:  null,
-        fieldValue: null,
-        id:         null
-      }));
-    }
-
-    $scope.cancel = function() {
-      $scope.validateFormCancellation($scope.entryForm, 'search');
-    }
-
-    $scope.save = function() {
-      let id = $scope.passwordEntry.id;
-      let url = routes.controllers.PasswordEntryController.save(id).url;
-      log.debug(`Saving existing entry, name=${$scope.passwordEntry.name}`);
-      pwgAjax.post(url, $scope.passwordEntry,
-                   function() {
-                     pwgFlash.info("Saved.", 5 /* second timeout */)
-                     pwgRoutes.redirectToNamedRoute('search');
-                   }
-      )
-    }
   }
 ]);
 

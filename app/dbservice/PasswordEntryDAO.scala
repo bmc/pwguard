@@ -204,6 +204,20 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
       val baseEntry = entry.toBaseEntry
       val extrasDAO = DAO.passwordEntryExtraFieldsDAO
 
+      def doDeletes(toDelete: Set[PasswordEntryExtraField]): Future[Int] = {
+        if (toDelete.isEmpty)
+          Future.successful(0)
+        else
+          extrasDAO.deleteMany(toDelete)
+      }
+
+      def doSaves(toSave: Set[PasswordEntryExtraField]) = {
+        if (toSave.isEmpty)
+          Future.successful(Set.empty[PasswordEntryExtraField])
+        else
+          extrasDAO.saveMany(toSave)
+      }
+
       def handleExtraFields(savedEntry:     PasswordEntry,
                             existingExtras: Set[PasswordEntryExtraField]) = {
 
@@ -221,13 +235,16 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
           getOrElse(false)
         }
 
+        logger.debug(s"saveWithDependents: newExtras=$newExtras, " +
+                     s"toAdd=$toAdd, toUpdate=$toUpdate, toDelete=$toDelete");
+
         // Ensure that the password entry owns the saved fields.
         val toSave = (toAdd ++ toUpdate).map {
           _.copy(passwordEntryID = savedEntry.id)
         }
 
-        for { total       <- extrasDAO.deleteMany(toDelete)
-              savedExtras <- extrasDAO.saveMany(toSave) }
+        for { total       <- doDeletes(toDelete)
+              savedExtras <- doSaves(toSave) }
         yield savedExtras
       }
 
