@@ -105,7 +105,7 @@ trait PasswordEntriesExtraFieldsComponent {
 
     def idIndex = index("pweef_ix_id", passwordEntryID, unique=false)
 
-    def * = (id.?, passwordEntryID, fieldName, fieldValue) <>
+    def * = (id.?, passwordEntryID.?, fieldName, fieldValue) <>
             (PasswordEntryExtraField.tupled, PasswordEntryExtraField.unapply)
   }
 

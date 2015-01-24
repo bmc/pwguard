@@ -209,11 +209,9 @@ object PasswordEntryController extends BaseController {
       Future {
         json.validate[FullPasswordEntry] match {
           case pwe: JsSuccess[FullPasswordEntry] => pwe.get
-          case e: JsError => {
-            throw new Exception(JsError.toFlatJson(e).toString)
+          case e: JsError => throw new Exception(JsonHelpers.jsErrorToString(e))
           }
         }
-      }
     }
 
     def maybeEncryptPassword(pwEntry: FullPasswordEntry):

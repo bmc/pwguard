@@ -1,6 +1,6 @@
 package util
 
-import play.api.libs.json.{Writes, Json, JsObject, JsValue}
+import play.api.libs.json._
 
 /** JSON helpers.
   */
@@ -32,5 +32,20 @@ object JsonHelpers {
       ! (keySet contains key)
     }
     JsObject(fields)
+  }
+
+  /** Convert a `JsError` into an error messages.
+    *
+    * @param jsError  the error object
+    *
+    * @return a string
+    */
+  def jsErrorToString(jsError: JsError): String = {
+    jsError.errors.map {
+      case (jsPath, validationErrors) => {
+        s"$jsPath: " + validationErrors.map { _.message }.mkString(", ")
+      }
+    }.
+    mkString("; ")
   }
 }

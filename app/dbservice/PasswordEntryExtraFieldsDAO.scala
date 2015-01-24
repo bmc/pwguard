@@ -174,7 +174,7 @@ class PasswordEntryExtraFieldsDAO(_dal: DAL, _logger: Logger)
     Try {
       val q = for { p <- PasswordEntryExtraFields if p.id === item.id.get }
               yield (p.fieldName, p.fieldValue, p.passwordEntryID)
-      q.update((item.fieldName, item.fieldValue, item.passwordEntryID))
+      q.update((item.fieldName, item.fieldValue, item.passwordEntryID.get))
       item
     }
   }

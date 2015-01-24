@@ -221,8 +221,13 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
           getOrElse(false)
         }
 
+        // Ensure that the password entry owns the saved fields.
+        val toSave = (toAdd ++ toUpdate).map {
+          _.copy(passwordEntryID = savedEntry.id)
+        }
+
         for { total       <- extrasDAO.deleteMany(toDelete)
-              savedExtras <- extrasDAO.saveMany(toAdd ++ toUpdate) }
+              savedExtras <- extrasDAO.saveMany(toSave) }
         yield savedExtras
       }
 
