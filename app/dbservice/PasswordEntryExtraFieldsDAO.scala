@@ -124,10 +124,20 @@ class PasswordEntryExtraFieldsDAO(_dal: DAL, _logger: Logger)
     * @return A future of the number of deleted entries
     */
   def deleteForPasswordEntry(pwe: PasswordEntry): Future[Int] = {
+    pwe.id.map { deleteForPasswordEntry(_) }
+          .getOrElse(Future.successful(0))
+  }
+
+  /** Delete all extras for a password entry.
+    *
+    * @param id the ID of the password entry
+    *
+    * @return A future of the number of deleted entries
+    */
+  def deleteForPasswordEntry(id: Int): Future[Int] = {
     withTransaction { implicit session =>
-      val q =
-        for { p <- PasswordEntryExtraFields if p.passwordEntryID === pwe.id.get }
-        yield p
+      val q = for { p <- PasswordEntryExtraFields if p.passwordEntryID === id }
+              yield p
 
       Future { q.delete }
     }

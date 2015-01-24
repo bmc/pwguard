@@ -369,11 +369,9 @@ pwGuardApp.controller('EditPasswordEntryCtrl',
 
     pwgCheckRoute('edit-entry', currentUser);
 
-    var pwgRoutes    = $injector.get('pwgRoutes');
     var pwgLogging   = $injector.get('pwgLogging');
     var $routeParams = $injector.get('$routeParams');
     var pwgAjax      = $injector.get('pwgAjax');
-    var pwgFlash     = $injector.get('pwgFlash');
 
     var log = pwgLogging.logger("EditPasswordEntryCtrl");
 
@@ -404,42 +402,25 @@ pwGuardApp.controller('NewPasswordEntryCtrl',
 
     pwgCheckRoute('new-entry', currentUser)
 
-    var pwgRoutes  = $injector.get('pwgRoutes');
     var pwgAjax    = $injector.get('pwgAjax');
-    var pwgFlash   = $injector.get('pwgFlash');
     var pwgLogging = $injector.get('pwgLogging');
 
     var log = pwgLogging.logger('NewPasswordEntryCtrl');
 
-    var createNew = (pw) => {
-    }
-
-    $scope.cancel = function() {
-      $scope.validateFormCancellation($scope.entryForm, 'search');
-    }
-
-    $scope.save = function() {
-      let url = routes.controllers.PasswordEntryController.create().url;
-      log.debug(`Saving new entry, name=${$scope.passwordEntry.name}`);
-      pwgAjax.post(url, $scope.passwordEntry,
-                   function() {
-                     pwgFlash.info("Saved.", 5 /* second timeout */)
-                     pwgRoutes.redirectToNamedRoute('search');
-                   }
-      )
-    }
-
     $scope.passwordEntry = {
-      id:           null,
-      name:         "",
-      loginID:      "",
-      password:     "",
-      description:  "",
-      url:          "",
-      notes:        ""
+      id:                null,
+      name:              "",
+      loginID:           "",
+      password:          "",
+      encryptedPassword: "",
+      description:       "",
+      url:               "",
+      notes:             "",
+      extras:            []
     }
-  }
 
+    $scope.saveURL = routes.controllers.PasswordEntryController.create().url;
+  }
 ]);
 
 // --------------------------------------------------------------------------

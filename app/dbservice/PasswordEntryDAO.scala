@@ -248,11 +248,27 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
         yield savedExtras
       }
 
+      def getExistingExtras(entry: PasswordEntry) = {
+        entry.id.map { id =>
+          extrasDAO.findForPasswordEntry(entry)
+        }.
+        getOrElse {
+          Future.successful(Set.empty[PasswordEntryExtraField])
+        }
+      }
 
       for { savedEntry     <- save(baseEntry)
-            existingExtras <- extrasDAO.findForPasswordEntry(baseEntry)
+            existingExtras <- getExistingExtras(baseEntry)
             savedExtras    <- handleExtraFields(savedEntry, existingExtras) }
       yield savedEntry.toFullEntry(savedExtras)
+    }
+  }
+
+  override def delete(id: Int): Future[Boolean] = {
+    withTransaction { implicit session =>
+      DAO.passwordEntryExtraFieldsDAO.deleteForPasswordEntry(id) flatMap { n =>
+        super.delete(id)
+      }
     }
   }
 

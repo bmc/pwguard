@@ -77,6 +77,7 @@ object PasswordEntryController extends BaseController {
     }
 
     def checkForExisting(name: String): Future[Boolean] = {
+logger.error("check for existing");
       passwordEntryDAO.findByName(user, name) map { opt =>
         logger.error(s"$opt")
         if (opt.isDefined)
