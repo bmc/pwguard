@@ -329,12 +329,24 @@ pwgDirectives.directive('pwgEditPasswordEntryForm',
          if (! attrs.saveUrl)
            throw new Error(`${name}: save-url attribute is required.`);
 
-         function augmentExtra(extra) {
-           extra.deleted = false;
-           extra.delete = () => {
-             extra.deleted = true;
-             $scope.entryForm.$setDirty();
-           }
+         function augmentExtra(index, extra) {
+           _.extend(extra, {
+             deleted:        false,
+             delete:         function() { extra.deleted = true; },
+             inputNameName:  `extraFieldName${index}`,
+             inputValueName: `extraFieldValue${index}`,
+             originalName:   extra.fieldName,
+             originalValue:  extra.fieldValue,
+             isValid:        function() {
+               let v = (extra.fieldName != null) &&
+                       (extra.fieldName.trim().length > 0) &&
+                       (extra.fieldValue != null) &&
+                       (extra.fieldValue.trim().length > 0);
+               console.log(`*** ${v}`);
+               return v;
+             }
+           });
+
            return extra;
          }
 
@@ -343,8 +355,11 @@ pwgDirectives.directive('pwgEditPasswordEntryForm',
              log.debug(`ngModel: ${JSON.stringify(newValue)}`);
              if (! newValue.extras) newValue.extras = [];
 
-             for (let extra of newValue.extras)
-               augmentExtra(extra);
+             for (let i = 0; i < newValue.extras.length; i++) {
+               newValue.extras[i] = augmentExtra(i, newValue.extras[i]);
+             }
+
+             log.debug(`entry is now: ${JSON.stringify(newValue)}`);
            }
          });
 
@@ -356,14 +371,13 @@ pwgDirectives.directive('pwgEditPasswordEntryForm',
 
          $scope.addExtra = function() {
            let i = $scope.ngModel.extras.length
-           let extra = augmentExtra({
+           let extra = augmentExtra(i, {
              fieldName:      null,
              fieldValue:     null,
-             id:             null,
-             inputNameName:  `extraFieldName${i}`,
-             inputValueName: `extraFieldValue${i}`
+             id:             null
            });
            $scope.ngModel.extras.push(extra);
+           $scope.entryForm.$setDirty();
            $scope.checkExtraField(extra);
          }
 
@@ -372,11 +386,63 @@ pwgDirectives.directive('pwgEditPasswordEntryForm',
                                               $scope.cancelRoute);
          }
 
-         $scope.checkExtraField = function(extra, index) {
-           console.log(extra);
-           console.log(index);
-           console.log($("extraFieldName" + index));
-           console.log($scope.entryForm);
+         $scope.checkExtraField = function(extra) {
+           // Save the current form status.
+           let formOrigState = formIsValid();
+           let formValid = true;
+
+           // Check the extra.
+           if (extra.isValid()) {
+             formValid = formOrigState;
+             log.debug(`Extra field is valid: ${JSON.stringify(extra)}`);
+           }
+
+           else {
+             log.debug(`Extra field is invalid: ${JSON.stringify(extra)}`);
+             formValid = false;
+           }
+
+           // It'd be nice if (a) Angular handled dynamically-added form fields
+           // properly (it doesn't), or (b) it provided a better mechanism for
+           // marking a form valid/invalid.
+
+           $scope.entryForm.$valid = formValid;    // hack
+           $scope.entryForm.$invalid = !formValid; // hack
+
+           if ((extra.fieldName != extra.originalName) ||
+              (extra.fieldValue != extra.originalValue)) {
+             $scope.entryForm.$setDirty();
+           }
+
+         }
+
+         function formIsValid() {
+           // Check the validity of non-extra (i.e., non-dynamic) form
+           // elements. This is a hack, but it's necessary because Angular
+           // doesn't properly handle dynamically-added form fields.
+           var valid = true;
+           for (let key in $scope.entryForm) {
+             if ($scope.entryForm.hasOwnProperty(key) &&
+                 $scope.entryForm.$addControl) {
+               let field = $scope.entryForm[key];
+               if (field.$dirty && field.$invalid) {
+                 valid = false;
+                 break;
+               }
+             }
+           }
+
+           if (valid) {
+             // check the dynamic fields.
+             for (let extra of $scope.ngModel.extras) {
+               if (! extra.isValid()) {
+                 valid = false;
+                 break;
+               }
+             }
+           }
+
+           return valid;
          }
 
          $scope.submit = function() {
