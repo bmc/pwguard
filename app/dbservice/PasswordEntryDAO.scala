@@ -224,11 +224,14 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
         // This logic isn't 100% correct. A change in a field name will
         // cause it to appear to be new, because the name is the only hash
         // code. That's not optimal, but it isn't worth optimizing right now.
+        // It does mean, though, that we have to nuke the IDs on any record
+        // that looks like a new one, because it might not be.
         val existingByName = existingExtras.map { e => e.fieldName -> e }.toMap
+
         val newExtras = entry.extraFields
-        val toDelete = existingExtras -- newExtras
-        val toAdd    = newExtras -- existingExtras
-        val toUpdate = newExtras filter { extra =>
+        val toDelete  = existingExtras -- newExtras
+        val toAdd     = (newExtras -- existingExtras).map { _.copy(id = None) }
+        val toUpdate  = newExtras filter { extra =>
           existingByName.get(extra.fieldName).map { existing =>
             existing.fieldValue != extra.fieldValue
           }.

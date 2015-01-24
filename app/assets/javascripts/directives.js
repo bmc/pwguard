@@ -408,11 +408,9 @@ pwgDirectives.directive('pwgEditPasswordEntryForm',
            // Check the extra.
            if (extra.isValid()) {
              formValid = formOrigState;
-             log.debug(`Extra field is valid: ${JSON.stringify(extra)}`);
            }
 
            else {
-             log.debug(`Extra field is invalid: ${JSON.stringify(extra)}`);
              formValid = false;
            }
 
