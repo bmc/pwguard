@@ -330,17 +330,29 @@ pwgServices.factory('pwgTimeout', ['$timeout', function($timeout) {
 // Get info about the currently logged-in user
 // ----------------------------------------------------------------------------
 
-pwgServices.factory('pwgCheckUser', ['$q', 'pwgAjax', function($q, pwgAjax) {
+pwgServices.factory('pwgUser', ['$injector', function($injector) {
 
-  var deferred = null;
+  var pwgLogging  = $injector.get('pwgLogging');
+  var pwgAjax     = $injector.get('pwgAjax');
+  var currentUser = null;
+  var $q          = $injector.get('$q');
+
+  function isLoggedIn() {
+    return currentUser != null;
+  }
 
   return {
     checkUser: function() {
-      deferred = $q.defer();
+      var deferred = $q.defer();
       var url = routes.controllers.SessionController.getLoggedInUser().url;
 
       pwgAjax.post(url, {},
         function(response) { // on success
+          if (response.loggedIn)
+            currentUser = response.user;
+          else
+            currentUser = null;
+
           if (deferred)
             deferred.resolve(response);
 
@@ -356,6 +368,20 @@ pwgServices.factory('pwgCheckUser', ['$q', 'pwgAjax', function($q, pwgAjax) {
       );
 
       return deferred.promise;
+    },
+
+    currentUser: function() {
+      return currentUser;
+    },
+
+    setLoggedInUser: function(user) {
+      currentUser = user;
+    },
+
+    isLoggedIn: isLoggedIn,
+
+    userIsAdmin: function() {
+      return isLoggedIn() && currentUser.admin;
     }
   }
 
@@ -462,6 +488,10 @@ pwgServices.factory('pwgFormHelper', ['$injector', function($injector) {
     }
   }
 }]);
+
+// ----------------------------------------------------------------------------
+// Route-related services
+// ----------------------------------------------------------------------------
 
 pwgServices.factory('pwgRoutes', ['$injector', function($injector) {
 

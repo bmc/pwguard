@@ -124,11 +124,11 @@
 
       <div id="content">
 
-        <div class="row" ng-show="loggedIn()">
+        <div class="row" ng-show="isLoggedIn()">
           <div class="col-md-12">
             <div class="login-status pull-right"
                   ng-class="{mobile: isMobile, desktop: !isMobile}">
-              {{loggedInUser.displayName}}
+              {{currentUser().displayName}}
             </div>
           </div>
         </div>

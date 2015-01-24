@@ -49,27 +49,25 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
 
   var templateURL = angularTemplateURL;
 
-  function checkUser($q, pwgCheckUser, $rootScope) {
+  function checkUser($q, pwgUser, $rootScope) {
     let deferred = $q.defer();
 
-    if ($rootScope.loggedInUser) {
-      deferred.resolve($rootScope.loggedInUser);
+    let user = pwgUser.currentUser();
+    if (user != null) {
+      deferred.resolve(user);
     }
 
     else {
-      pwgCheckUser.checkUser().then(
+      pwgUser.checkUser().then(
         function(response) {
           if (response.loggedIn) {
-            $rootScope.setLoggedInUser(response.user);
             deferred.resolve(response.user);
           }
           else {
-            $rootScope.setLoggedInUser(null);
             deferred.resolve(null);
           }
         },
         function(response) {
-          $rootScope.setLoggedInUser(null);
           deferred.reject(response);
         }
       );
@@ -87,8 +85,8 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
       postLogin:   false,
       preLogin:    true,
       resolve: {
-        currentUser: function($q, pwgCheckUser, $rootScope) {
-          return checkUser($q, pwgCheckUser, $rootScope);
+        currentUser: function($q, pwgUser, $rootScope) {
+          return checkUser($q, pwgUser, $rootScope);
         }
       }
     }).
@@ -100,8 +98,8 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
       postLogin:   true,
       preLogin:    false,
       resolve: {
-        currentUser: function($q, pwgCheckUser, $rootScope) {
-          return checkUser($q, pwgCheckUser, $rootScope);
+        currentUser: function($q, pwgUser, $rootScope) {
+          return checkUser($q, pwgUser, $rootScope);
         }
       }
     }).
@@ -113,8 +111,8 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
       postLogin:   true,
       preLogin:    false,
       resolve: {
-        currentUser: function($q, pwgCheckUser, $rootScope) {
-          return checkUser($q, pwgCheckUser, $rootScope);
+        currentUser: function($q, pwgUser, $rootScope) {
+          return checkUser($q, pwgUser, $rootScope);
         }
       }
     }).
@@ -126,8 +124,8 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
       postLogin:   true,
       preLogin:    false,
       resolve: {
-        currentUser: function($q, pwgCheckUser, $rootScope) {
-          return checkUser($q, pwgCheckUser, $rootScope);
+        currentUser: function($q, pwgUser, $rootScope) {
+          return checkUser($q, pwgUser, $rootScope);
         }
       }
     }).
@@ -139,8 +137,8 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
       postLogin:   true,
       preLogin:    false,
       resolve: {
-        currentUser: function($q, pwgCheckUser, $rootScope) {
-          return checkUser($q, pwgCheckUser, $rootScope);
+        currentUser: function($q, pwgUser, $rootScope) {
+          return checkUser($q, pwgUser, $rootScope);
         }
       }
     }).
@@ -152,8 +150,8 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
       postLogin:   true,
       preLogin:    false,
       resolve: {
-        currentUser: function($q, pwgCheckUser, $rootScope) {
-          return checkUser($q, pwgCheckUser, $rootScope);
+        currentUser: function($q, pwgUser, $rootScope) {
+          return checkUser($q, pwgUser, $rootScope);
         }
       }
     }).
@@ -165,8 +163,8 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
       postLogin:   true,
       preLogin:    false,
       resolve: {
-        currentUser: function($q, pwgCheckUser, $rootScope) {
-          return checkUser($q, pwgCheckUser, $rootScope);
+        currentUser: function($q, pwgUser, $rootScope) {
+          return checkUser($q, pwgUser, $rootScope);
         }
       }
     }).
@@ -178,8 +176,8 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
       postLogin:   true,
       preLogin:    true,
       resolve: {
-        currentUser: function($q, pwgCheckUser, $rootScope) {
-          return checkUser($q, pwgCheckUser, $rootScope);
+        currentUser: function($q, pwgUser, $rootScope) {
+          return checkUser($q, pwgUser, $rootScope);
         }
       }
     }).
@@ -197,24 +195,7 @@ pwGuardApp.run(['$rootScope', '$injector', function($rootScope, $injector) {
   var pwgLogging = $injector.get('pwgLogging');
   var pwgRoutes  = $injector.get('pwgRoutes');
 
-  $rootScope.loggedInUser = null;
   var log = pwgLogging.logger('rootScope');
-
-  $rootScope.setLoggedInUser = function(user) {
-    log.debug(`setLoggedInUser: ${JSON.stringify(user)}`);
-    if (user && user.email)
-      $rootScope.loggedInUser = user;
-    else
-      $rootScope.loggedInUser = null;
-  }
-
-  $rootScope.loggedIn = function() {
-    return $rootScope.loggedInUser ? true : false;
-  }
-
-  $rootScope.userIsAdmin = function() {
-    return $rootScope.loggedIn() && $rootScope.loggedInUser.admin;
-  }
 
   $rootScope.hrefForRouteName = function(name) {
     return pwgRoutes.hrefForRouteName(name);
@@ -243,6 +224,7 @@ pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
      var angularTemplateURL = $injector.get('angularTemplateURL');
      var pwgError           = $injector.get('pwgError');
      var pwgModal           = $injector.get('pwgModal');
+     var pwgUser            = $injector.get('pwgUser');
 
      // Put the template URL in the scope, because it's used inside templates
      // (e.g., within ng-include directives).
@@ -259,7 +241,6 @@ pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
 
      $scope.dialogConfirmTitle    = null;
      $scope.dialogConfirmMessage  = null;
-     $scope.loggedInUser          = null;
      $scope.urlOnLoad             = $location.path();
      $scope.initializing          = true;
      $scope.flashAfterRouteChange = null;
@@ -268,9 +249,13 @@ pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
 
      $scope.routeIsActive = pwgRoutes.routeIsActive;
 
+     $scope.currentUser = pwgUser.currentUser;
+     $scope.userIsAdmin = pwgUser.userIsAdmin;
+     $scope.isLoggedIn  = pwgUser.isLoggedIn;
+
      pwgAjax.on401(function() {
-       if ($scope.loggedInUser) {
-         $scope.loggedInUser = null;
+       if (pwgUser.isLoggedIn()) {
+         pwgUser.setLoggedInUser(null);
          pwgRoutes.redirectToNamedRoute('login');
          $scope.flashAfterRouteChange = "Session timeout. Please log in again.";
        }
@@ -291,16 +276,17 @@ pwGuardApp.controller('NavbarCtrl',
     var pwgAjax   = $injector.get('pwgAjax');
     var pwgModal  = $injector.get('pwgModal');
     var pwgRoutes = $injector.get('pwgRoutes');
+    var pwgUser   = $injector.get('pwgUser');
 
     $scope.logout = () => {
 
       pwgModal.confirm("Really log out?", "Confirm logout").then(
         function() {
-          if ($scope.loggedIn()) {
+          if (pwgUser.isLoggedIn()) {
             let url = routes.controllers.SessionController.logout().url
 
             let always = () => {
-              $scope.setLoggedInUser(null);
+              pwgUser.setLoggedInUser(null);
               pwgRoutes.redirectToNamedRoute('login');
             }
 
@@ -339,10 +325,11 @@ pwGuardApp.controller('LoginCtrl',
 
     pwgCheckRoute('login', currentUser);
 
-    var pwgAjax            = $injector.get('pwgAjax');
-    var pwgFlash           = $injector.get('pwgFlash');
-    var pwgLogging         = $injector.get('pwgLogging');
-    var pwgRoutes          = $injector.get('pwgRoutes');
+    var pwgAjax     = $injector.get('pwgAjax');
+    var pwgFlash    = $injector.get('pwgFlash');
+    var pwgLogging  = $injector.get('pwgLogging');
+    var pwgRoutes   = $injector.get('pwgRoutes');
+    var pwgUser     = $injector.get('pwgUser');
 
     var log = pwgLogging.logger('LoginCtrl');
 
@@ -355,7 +342,7 @@ pwGuardApp.controller('LoginCtrl',
 
         // Success.
         function(response) {
-          $scope.setLoggedInUser(response.user);
+          pwgUser.setLoggedInUser(response.user);
           log.debug("Login successful");
           pwgRoutes.redirectToDefaultRoute();
         },
@@ -710,19 +697,19 @@ pwGuardApp.controller('ProfileCtrl',
     var pwgLogging = $injector.get('pwgLogging');
     var pwgAjax    = $injector.get('pwgAjax');
     var pwgFlash   = $injector.get('pwgFlash');
+    var pwgUser    = $injector.get('pwgUser');
+    var pwgRoutes  = $injector.get('pwgRoutes');
 
     var log = pwgLogging.logger('ProfileCtrl');
 
-    if (! $scope.loggedInUser) {
-      $scope.email     = null;
-      $scope.firstName = null;
-      $scope.lastName  = null;
+    if (currentUser == null) {
+      console.log("ERROR: Not logged in.");
+      pwgRoutes.redirectToNamedRoute('login');
     }
-    else {
-      $scope.email     = $scope.loggedInUser.email;
-      $scope.firstName = $scope.loggedInUser.firstName;
-      $scope.lastName  = $scope.loggedInUser.lastName;
-    }
+
+    $scope.email     = currentUser.email;
+    $scope.firstName = currentUser.firstName;
+    $scope.lastName  = currentUser.lastName;
 
     $scope.password1 = null;
     $scope.password2 = null;
@@ -748,11 +735,11 @@ pwGuardApp.controller('ProfileCtrl',
         password2:  $scope.password2
       }
 
-      let url = routes.controllers.UserController.save($scope.loggedInUser.id).url
+      let url = routes.controllers.UserController.save(currentUser.id).url
 
       pwgAjax.post(url, data, (response) => {
         log.debug("Save complete.");
-        $scope.setLoggedInUser(response);
+        pwgUser.setLoggedInUser(response);
         pwgFlash.info("Saved.");
         form.$setPristine();
       });
@@ -1003,6 +990,7 @@ pwGuardApp.controller('AdminUsersCtrl',
     var pwgFlash   = $injector.get('pwgFlash');
     var pwgLogging = $injector.get('pwgLogging');
     var pwgModal   = $injector.get('pwgModal');
+    var pwgUser    = $injector.get('pwgUser');
 
     var log = pwgLogging.logger('AdminUsersCtrl');
 
@@ -1039,7 +1027,7 @@ pwGuardApp.controller('AdminUsersCtrl',
     }
 
     var deleteUser = (u) => {
-      if (u.id === $scope.loggedInUser.id)
+      if (u.id === currentUser.id)
         pwgFlash.error("You can't delete yourself!");
       else {
         pwgModal.confirm(`Really delete ${u.email}?`, "Confirm deletion").then(
@@ -1114,8 +1102,8 @@ pwGuardApp.controller('AdminUsersCtrl',
 
       pwgAjax.get(url, (response) => {
         $scope.users = _.map(response.users, (u) => {
-          if ($scope.loggedInUser && (u.id === $scope.loggedInUser.id)) {
-            $scope.setLoggedInUser(u); // Update info for current user
+          if (currentUser && (u.id === currentUser.id)) {
+            pwgUser.setLoggedInUser(u); // Update info for current user
           }
 
           let u2 = _.clone(u);
