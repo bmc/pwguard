@@ -271,6 +271,31 @@ pwgDirectives.directive('pwgDropFile', ['pwgLogging', function(pwgLogging) {
 }]);
 
 // ----------------------------------------------------------------------------
+// Allow setting a form field's name from a model.
+// ----------------------------------------------------------------------------
+
+pwgDirectives.directive('pwgName', ['$injector', function($injector) {
+
+  var $compile = $injector.get('$compile');
+  return {
+    restrict: 'A',
+    require:  '^form',
+    scope: {
+      pwgName: '='
+    },
+    link: function($scope, element, attrs) {
+      $scope.$watch('pwgName', function(newValue) {
+        let n = newValue;
+        if (!n) n = "";
+        console.log(`pwg-name: name=${n}`);
+        element.attr("name", n);
+      });
+    }
+  }
+
+}]);
+
+// ----------------------------------------------------------------------------
 // Display and manage a password entry edit form
 // ----------------------------------------------------------------------------
 
@@ -330,16 +355,28 @@ pwgDirectives.directive('pwgEditPasswordEntryForm',
          }
 
          $scope.addExtra = function() {
-           $scope.ngModel.extras.push(augmentExtra({
-             fieldName:  null,
-             fieldValue: null,
-             id:         null
-           }));
+           let i = $scope.ngModel.extras.length
+           let extra = augmentExtra({
+             fieldName:      null,
+             fieldValue:     null,
+             id:             null,
+             inputNameName:  `extraFieldName${i}`,
+             inputValueName: `extraFieldValue${i}`
+           });
+           $scope.ngModel.extras.push(extra);
+           $scope.checkExtraField(extra);
          }
 
          $scope.cancel = function() {
            pwgFormHelper.validateCancellation($scope.entryForm,
                                               $scope.cancelRoute);
+         }
+
+         $scope.checkExtraField = function(extra, index) {
+           console.log(extra);
+           console.log(index);
+           console.log($("extraFieldName" + index));
+           console.log($scope.entryForm);
          }
 
          $scope.submit = function() {

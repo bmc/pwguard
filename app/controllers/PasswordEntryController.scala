@@ -31,6 +31,8 @@ object PasswordEntryController extends BaseController {
   // Public methods
   // -------------------------------------------------------------------------
 
+  /** Save a JSON-posted password entry.
+    */
   def save(id: Int) = SecuredJSONAction { authReq =>
 
     implicit val request = authReq.request
@@ -62,6 +64,8 @@ object PasswordEntryController extends BaseController {
     }
   }
 
+  /** Create a new JSON-posted password entry.
+    */
   def create = SecuredJSONAction { authReq =>
 
     implicit val request = authReq.request
@@ -77,12 +81,10 @@ object PasswordEntryController extends BaseController {
     }
 
     def checkForExisting(name: String): Future[Boolean] = {
-logger.error("check for existing");
       passwordEntryDAO.findByName(user, name) map { opt =>
-        logger.error(s"$opt")
         if (opt.isDefined)
           throw new SaveFailed(s"The name " + '"' + name + '"' +
-                               " is already in use.")
+                               " is already in use by another password entry.")
         true
       }
     }
