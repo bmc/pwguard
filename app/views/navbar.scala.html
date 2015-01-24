@@ -36,36 +36,36 @@
             </a>
           </li>
           <li ng-class="{active: routeIsActive('login')}" ng-hide="loggedIn()">
-            <a href="#/login">
+            <a ng-href="{{ hrefForRouteName('login') }}">
               <i class="fa fa-sign-in"></i> Login
             </a>
           </li>
           <li ng-class="{active: routeIsActive('search')}" ng-show="loggedIn()">
-            <a href="#/search">
+            <a ng-href="{{ hrefForRouteName('search') }}">
               <i class="fa fa-search"></i> Search
             </a>
           </li>
           <li ng-class="{active: routeIsActive('profile')}" ng-show="loggedIn()">
-            <a href="#/profile">
+            <a ng-href="{{ hrefForRouteName('profile') }}">
               <i class="fa fa-wrench"></i> Profile
             </a>
           </li>
           <li ng-class="{active: routeIsActive('import-export')}"
               ng-hide="isMobile || !loggedIn()">
-            <a href="#/import-export">
+            <a ng-href="{{ hrefForRouteName('import-export') }}">
               <i class="fa fa-folder-o" ng-hide="segmentIsActive('import-export')"></i>
               <i class="fa fa-folder-open-o" ng-show="segmentIsActive('import-export')"></i>
               Import &amp; Export
             </a>
           </li>
           <li ng-class="{active: routeIsActive('admin-users')}"
-              ng-show="loggedIn() && loggedInUser.admin">
-            <a ng-href="#/admin/users">
+              ng-show="userIsAdmin()">
+            <a ng-href="{{ hrefForRouteName('admin-users') }}">
               <i class="fa fa-users"></i> Edit Users
             </a>
           </li>
           <li ng-class="{active: routeIsActive('about')}">
-            <a href="#/about">
+            <a ng-href="{{ hrefForRouteName('about') }}">
               <i class="fa fa-question-circle"></i> About
             </a>
           </li>

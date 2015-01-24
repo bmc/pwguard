@@ -192,7 +192,11 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
   checkMissingFeatures();
 }]);
 
-pwGuardApp.run(['$rootScope', 'pwgLogging', function($rootScope, pwgLogging) {
+pwGuardApp.run(['$rootScope', '$injector', function($rootScope, $injector) {
+
+  var pwgLogging = $injector.get('pwgLogging');
+  var pwgRoutes  = $injector.get('pwgRoutes');
+
   $rootScope.loggedInUser = null;
   var log = pwgLogging.logger('rootScope');
 
@@ -206,6 +210,14 @@ pwGuardApp.run(['$rootScope', 'pwgLogging', function($rootScope, pwgLogging) {
 
   $rootScope.loggedIn = function() {
     return $rootScope.loggedInUser ? true : false;
+  }
+
+  $rootScope.userIsAdmin = function() {
+    return $rootScope.loggedIn() && $rootScope.loggedInUser.admin;
+  }
+
+  $rootScope.hrefForRouteName = function(name) {
+    return pwgRoutes.hrefForRouteName(name);
   }
 
 }]);
@@ -985,7 +997,7 @@ pwGuardApp.controller('AdminUsersCtrl',
   ['$scope', '$injector', 'currentUser', 'pwgCheckRoute',
   function($scope, $injector, currentUser, pwgCheckRoute) {
 
-    pwgCheckRoute('admin', currentUser);
+    pwgCheckRoute('admin-users', currentUser);
 
     var pwgAjax    = $injector.get('pwgAjax');
     var pwgFlash   = $injector.get('pwgFlash');
