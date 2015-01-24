@@ -65,26 +65,27 @@ class PasswordEntryExtraFieldsDAO(_dal: DAL, _logger: Logger)
   def findForPasswordEntries(entries: Set[PasswordEntry]):
     Future[Set[(PasswordEntry, Set[PasswordEntryExtraField])]] = {
 
-    Future {
-      val tries: Seq[Try[(PasswordEntry, Set[PasswordEntryExtraField])]] =
-        for (entry <- entries.toSeq) yield {
-          findForPasswordEntrySync(entry) map { set =>
-            (entry, set)
-          }
+    withSession { implicit session =>
+      Future {
+        val entryIDs = entries.collect {
+          case p: PasswordEntry if p.id.isDefined => p.id.get
         }
 
-      // If there are any errors, fail with the first one.
-      tries.filter { _.isFailure }.headOption map {
-        case Failure(e) => throw e
-        case Success(_) => throw new Exception("BUG: Expected Failure")
-      }
+        val q = for { e <- PasswordEntryExtraFields if e.id inSet entryIDs }
+                yield e
 
-      tries.filter { _.isSuccess }
-           .map {
-              case Success(tuple) => tuple
-              case Failure(e)     => throw e
-           }
-           .toSet
+        val extrasMap = q.list.groupBy(_.passwordEntryID.get)
+
+        val noExtras = Set.empty[PasswordEntryExtraField]
+        entries.map { entry =>
+          entry.id.map { id =>
+            (entry, extrasMap.getOrElse(id, noExtras).toSet)
+          }.
+          getOrElse {
+            (entry, noExtras)
+          }
+        }
+      }
     }
   }
 
