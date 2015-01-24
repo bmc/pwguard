@@ -329,10 +329,25 @@ pwgDirectives.directive('pwgEditPasswordEntryForm',
          if (! attrs.saveUrl)
            throw new Error(`${name}: save-url attribute is required.`);
 
+         function setFormValidity(valid) {
+           $scope.entryForm.$valid   = valid;  // hack
+           $scope.entryForm.$invalid = !valid; // hack
+         }
+
+         function setFormDirtyFlag(dirty) {
+           if (dirty)
+             $scope.entryForm.$setDirty();
+           else
+             $scope.entryForm.$setPristine();
+         }
+
          function augmentExtra(index, extra) {
            _.extend(extra, {
              deleted:        false,
-             delete:         function() { extra.deleted = true; },
+             delete:         function() {
+               extra.deleted = true;
+               setFormDirtyFlag(true);
+             },
              inputNameName:  `extraFieldName${index}`,
              inputValueName: `extraFieldValue${index}`,
              originalName:   extra.fieldName,
@@ -342,7 +357,6 @@ pwgDirectives.directive('pwgEditPasswordEntryForm',
                        (extra.fieldName.trim().length > 0) &&
                        (extra.fieldValue != null) &&
                        (extra.fieldValue.trim().length > 0);
-               console.log(`*** ${v}`);
                return v;
              }
            });
@@ -377,7 +391,7 @@ pwgDirectives.directive('pwgEditPasswordEntryForm',
              id:             null
            });
            $scope.ngModel.extras.push(extra);
-           $scope.entryForm.$setDirty();
+           setFormDirtyFlag(true);
            $scope.checkExtraField(extra);
          }
 
@@ -405,9 +419,7 @@ pwgDirectives.directive('pwgEditPasswordEntryForm',
            // It'd be nice if (a) Angular handled dynamically-added form fields
            // properly (it doesn't), or (b) it provided a better mechanism for
            // marking a form valid/invalid.
-
-           $scope.entryForm.$valid = formValid;    // hack
-           $scope.entryForm.$invalid = !formValid; // hack
+           setFormValidity(formValid);
 
            if ((extra.fieldName != extra.originalName) ||
               (extra.fieldValue != extra.originalValue)) {
