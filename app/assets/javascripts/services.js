@@ -26,13 +26,14 @@ pwgServices.factory('pwgLogging', function() {
 
   log4javascript.setShowStackTraces(true);
 
-  // Allow the console appender to use the default NullLayout, which allows
-  // for the logging of objects without converting them to strings.
+  // We could allow the console appender to use the default NullLayout,
+  // which allows for the logging of objects without converting them to
+  // strings. But other info (e.g., component and timestamp) are lost that
+  // way. To log objects, dump them as JSON.
 
-  /*
-   var layout   = new log4javascript.PatternLayout("%d{HH:mm:ss} (%-5p) %c %m")
-   appender.setLayout(layout)
-   */
+  appender.setLayout(
+    new log4javascript.PatternLayout("%d{HH:mm:ss} (%-5p) %c: %m")
+  );
 
   log.addAppender(appender);
 
@@ -325,7 +326,6 @@ pwgServices.factory('pwgTimeout', ['$timeout', function($timeout) {
   }
 }]);
 
-
 // ----------------------------------------------------------------------------
 // Get info about the currently logged-in user
 // ----------------------------------------------------------------------------
@@ -360,7 +360,6 @@ pwgServices.factory('pwgCheckUser', ['$q', 'pwgAjax', function($q, pwgAjax) {
   }
 
 }]);
-
 
 // ----------------------------------------------------------------------------
 // Modal service. Hides underlying implementation(s).

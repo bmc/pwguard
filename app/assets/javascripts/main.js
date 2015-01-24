@@ -31,81 +31,6 @@ var pwGuardApp = angular.module("PWGuardApp", ['ngRoute',
 // Initialization logic
 // ##########################################################################
 
-function initializeRouting($routeProvider) {
-  var templateURL = angularTemplateURL;
-
-  $routeProvider.
-    when("/initializing", {
-      templateUrl:  templateURL("initializing.html"),
-      controller:   'InitCtrl',
-      name:         'initializing',
-      admin:        false,
-      alwaysActive: true
-    }).
-    when(
-    "/login", {
-      templateUrl: templateURL("login.html"),
-      controller:  'LoginCtrl',
-      name:        'login',
-      admin:       false,
-      postLogin:   false
-    }).
-    when("/search", {
-      templateUrl: templateURL("search.html"),
-      controller:  'SearchCtrl',
-      name:        'search',
-      admin:       false,
-      postLogin:   true,
-    }).
-    when("/edit/:id", {
-      templateUrl: templateURL("edit-password-entry.html"),
-      controller:  'EditPasswordEntryCtrl',
-      name:        'edit-entry',
-      admin:       false,
-      postLogin:   true
-    }).
-    when("/new-entry", {
-      templateUrl: templateURL("new-password-entry.html"),
-      controller:  'NewPasswordEntryCtrl',
-      name:        'new-entry',
-      admin:       false,
-      postLogin:   true
-    }).
-    when("/profile", {
-      templateUrl: templateURL("profile.html"),
-      controller:  'ProfileCtrl',
-      name:        'profile',
-      admin:       false,
-      postLogin:   true
-    }).
-    when("/admin/users", {
-      templateUrl: templateURL("admin-users.html"),
-      controller:  'AdminUsersCtrl',
-      name:        'admin-users',
-      admin:       true,
-      postLogin:   true
-    }).
-    when("/import-export", {
-      templateUrl: templateURL("ImportExport.html"),
-      controller:  'ImportExportCtrl',
-      name:        'import-export',
-      admin:       false,
-      postLogin:   true
-    }).
-    when("/about", {
-      templateUrl: templateURL("about.html"),
-      controller:  'AboutCtrl',
-      name:        'about',
-      admin:       false,
-      postLogin:   true
-    }).
-    otherwise({
-      redirectTo:  "/search",
-      defaultName: "search",
-      isDefault:   true
-    });
-}
-
 function checkMissingFeatures() {
   var missing = [];
 
@@ -121,8 +46,168 @@ function checkMissingFeatures() {
 }
 
 pwGuardApp.config(['$routeProvider', function($routeProvider) {
-  initializeRouting($routeProvider);
+
+  var templateURL = angularTemplateURL;
+
+  function checkUser($q, pwgCheckUser, $rootScope) {
+    let deferred = $q.defer();
+
+    if ($rootScope.loggedInUser) {
+      deferred.resolve($rootScope.loggedInUser);
+    }
+
+    else {
+      pwgCheckUser.checkUser().then(
+        function(response) {
+          if (response.loggedIn) {
+            $rootScope.setLoggedInUser(response.user);
+            deferred.resolve(response.user);
+          }
+          else {
+            $rootScope.setLoggedInUser(null);
+            deferred.resolve(null);
+          }
+        },
+        function(response) {
+          $rootScope.setLoggedInUser(null);
+          deferred.reject(response);
+        }
+      );
+    }
+
+    return deferred.promise;
+  }
+
+  $routeProvider.
+    when("/login", {
+      templateUrl: templateURL("login.html"),
+      controller:  'LoginCtrl',
+      name:        'login',
+      admin:       false,
+      postLogin:   false,
+      preLogin:    true,
+      resolve: {
+        currentUser: function($q, pwgCheckUser, $rootScope) {
+          return checkUser($q, pwgCheckUser, $rootScope);
+        }
+      }
+    }).
+    when("/search", {
+      templateUrl: templateURL("search.html"),
+      controller:  'SearchCtrl',
+      name:        'search',
+      admin:       false,
+      postLogin:   true,
+      preLogin:    false,
+      resolve: {
+        currentUser: function($q, pwgCheckUser, $rootScope) {
+          return checkUser($q, pwgCheckUser, $rootScope);
+        }
+      }
+    }).
+    when("/edit/:id", {
+      templateUrl: templateURL("edit-password-entry.html"),
+      controller:  'EditPasswordEntryCtrl',
+      name:        'edit-entry',
+      admin:       false,
+      postLogin:   true,
+      preLogin:    false,
+      resolve: {
+        currentUser: function($q, pwgCheckUser, $rootScope) {
+          return checkUser($q, pwgCheckUser, $rootScope);
+        }
+      }
+    }).
+    when("/new-entry", {
+      templateUrl: templateURL("new-password-entry.html"),
+      controller:  'NewPasswordEntryCtrl',
+      name:        'new-entry',
+      admin:       false,
+      postLogin:   true,
+      preLogin:    false,
+      resolve: {
+        currentUser: function($q, pwgCheckUser, $rootScope) {
+          return checkUser($q, pwgCheckUser, $rootScope);
+        }
+      }
+    }).
+    when("/profile", {
+      templateUrl: templateURL("profile.html"),
+      controller:  'ProfileCtrl',
+      name:        'profile',
+      admin:       false,
+      postLogin:   true,
+      preLogin:    false,
+      resolve: {
+        currentUser: function($q, pwgCheckUser, $rootScope) {
+          return checkUser($q, pwgCheckUser, $rootScope);
+        }
+      }
+    }).
+    when("/admin/users", {
+      templateUrl: templateURL("admin-users.html"),
+      controller:  'AdminUsersCtrl',
+      name:        'admin-users',
+      admin:       true,
+      postLogin:   true,
+      preLogin:    false,
+      resolve: {
+        currentUser: function($q, pwgCheckUser, $rootScope) {
+          return checkUser($q, pwgCheckUser, $rootScope);
+        }
+      }
+    }).
+    when("/import-export", {
+      templateUrl: templateURL("ImportExport.html"),
+      controller:  'ImportExportCtrl',
+      name:        'import-export',
+      admin:       false,
+      postLogin:   true,
+      preLogin:    false,
+      resolve: {
+        currentUser: function($q, pwgCheckUser, $rootScope) {
+          return checkUser($q, pwgCheckUser, $rootScope);
+        }
+      }
+    }).
+    when("/about", {
+      templateUrl: templateURL("about.html"),
+      controller:  'AboutCtrl',
+      name:        'about',
+      admin:       false,
+      postLogin:   true,
+      preLogin:    true,
+      resolve: {
+        currentUser: function($q, pwgCheckUser, $rootScope) {
+          return checkUser($q, pwgCheckUser, $rootScope);
+        }
+      }
+    }).
+    otherwise({
+      redirectTo:  "/search",
+      defaultName: "search",
+      isDefault:   true
+    });
+
   checkMissingFeatures();
+}]);
+
+pwGuardApp.run(['$rootScope', 'pwgLogging', function($rootScope, pwgLogging) {
+  $rootScope.loggedInUser = null;
+  var log = pwgLogging.logger('rootScope');
+
+  $rootScope.setLoggedInUser = function(user) {
+    log.debug(`setLoggedInUser: ${JSON.stringify(user)}`);
+    if (user && user.email)
+      $rootScope.loggedInUser = user;
+    else
+      $rootScope.loggedInUser = null;
+  }
+
+  $rootScope.loggedIn = function() {
+    return $rootScope.loggedInUser ? true : false;
+  }
+
 }]);
 
 // ##########################################################################
@@ -139,8 +224,8 @@ var pwgRoutes = pwGuardApp.factory('pwgRoutes',
     var $route                  = $injector.get('$route');
     var DEFAULT_ROUTE_NAME      = null;
     var POST_LOGIN_ROUTES       = [];
+    var PRE_LOGIN_ROUTES        = [];
     var ADMIN_ONLY_ROUTES       = [];
-    var ALWAYS_AVAILABLE_ROUTES = [];
     var REVERSE_ROUTES          = {};
 
     var log = pwgLogging.logger("pwgRoutes");
@@ -159,21 +244,19 @@ var pwgRoutes = pwGuardApp.factory('pwgRoutes',
         REVERSE_ROUTES[route.name] = pattern;
 
         if (route.postLogin) POST_LOGIN_ROUTES.push(route.name);
+        if (route.preLogin) PRE_LOGIN_ROUTES.push(route.name);
         if (route.admin) ADMIN_ONLY_ROUTES.push(route.name);
-        if (route.alwaysActive) ALWAYS_AVAILABLE_ROUTES.push(route.name);
       }
     }
 
     var URL_RE = /^.*#(.*)$/;
 
     var isPostLoginRoute = (name) => {
-      return (POST_LOGIN_ROUTES.indexOf(name) >= 0) ||
-             (ALWAYS_AVAILABLE_ROUTES.indexOf(name) >= 0);
+      return (POST_LOGIN_ROUTES.indexOf(name) >= 0);
     }
 
     var isPreLoginRoute = (name) => {
-      return (POST_LOGIN_ROUTES.indexOf(name) < 0) ||
-             (ALWAYS_AVAILABLE_ROUTES.indexOf(name) >= 0);
+      return (PRE_LOGIN_ROUTES.indexOf(name) >= 0);
     }
 
     var substituteParams = (url, params) => {
@@ -276,18 +359,44 @@ var pwgRoutes = pwGuardApp.factory('pwgRoutes',
   }
 ]);
 
+pwGuardApp.factory('pwgCheckRoute', ['pwgRoutes', 'pwgLogging',
+  function(pwgRoutes, pwgLogging) {
+    var log = pwgLogging.logger('pwgCheckRoute');
+    return function(routeName, currentUser) {
+      log.debug(`checking ${routeName}. Current user:`);
+      log.debug(currentUser);
+
+      if (currentUser) { // logged in
+        if (pwgRoutes.isPostLoginRoute(routeName)) {
+          log.debug(`${routeName} is a post-login route. Staying here.`);
+          // Okay to stay here
+        }
+        else {
+          // Can't stay here. Off to the default page.
+          log.debug(`${routeName} is not a post-login route. Redirecting.`);
+          pwgRoutes.redirectToDefaultRoute();
+        }
+      }
+
+      else { // not logged in
+        if (pwgRoutes.isPreLoginRoute(routeName)) {
+          log.debug(`${routeName} is a pre-login route. Staying here.`);
+          // Okay to stay here
+        }
+        else {
+          // Can't stay here; it's not a pre-login route. Off to the login
+          // page.
+          log.debug(`${routeName} is not a pre-login route. Redirecting.`);
+          pwgRoutes.redirectToNamedRoute('login');
+        }
+      }
+    }
+  }
+]);
+
 // ##########################################################################
 // Controllers
 // ##########################################################################
-
-// --------------------------------------------------------------------------
-// Init Controller
-// --------------------------------------------------------------------------
-
-pwGuardApp.controller('InitCtrl', ['$scope', 'pwgLogging',
-  function($scope, pwgLogging) {
-  }]
-)
 
 // --------------------------------------------------------------------------
 // Main Controller
@@ -301,7 +410,6 @@ pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
      var pwgTimeout         = $injector.get('pwgTimeout');
      var pwgAjax            = $injector.get('pwgAjax');
      var pwgFlash           = $injector.get('pwgFlash');
-     var pwgCheckUser       = $injector.get('pwgCheckUser');
      var pwgLogging         = $injector.get('pwgLogging');
      var pwgRoutes          = $injector.get('pwgRoutes');
      var angularTemplateURL = $injector.get('angularTemplateURL');
@@ -344,32 +452,6 @@ pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
        }
      });
 
-     $scope.$on('$routeChangeStart', () => {
-       // Skip, while initializing. (Doing this during initialization screws
-       // things up, causing multiple redirects that play games with Angular.)
-       if(! $scope.initializing) {
-         let url = $location.path();
-         let useUrl = validateLocationChange(url);
-         if (useUrl !== url)
-           $location.path(useUrl);
-       }
-     });
-
-     $scope.loggedIn = () => {
-       if ($scope.loggedInUser)
-         return true;
-       else
-         return false;
-     }
-
-     $scope.setLoggedInUser = (user) => {
-       if (user && user.email)
-         $scope.loggedInUser = user;
-       else
-         $scope.loggedInUser = null;
-     }
-
-
      // Check a form. If it's been edited, prompt the user for cancellation.
      // If the user confirms, or if the form is pristine, route to the named
      // location.
@@ -386,65 +468,8 @@ pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
          doCancel();
        }
      }
-
-     // On initial load or reload, we need to determine whether the user is
-     // still logged in, since a reload clears everything in the browser.
-
-     function validateLocationChange(url) {
-       let useUrl = null;
-       let routeName = pwgRoutes.routeNameForURL(url);
-
-       if ($scope.loggedInUser) {
-         // Ensure that the segment is valid for the logged in user.
-         useUrl = pwgRoutes.defaultRouteName();
-         if (url && pwgRoutes.isPostLoginRoute(routeName)) {
-           if ($scope.loggedInUser.admin) {
-             // Admins can go anywhere.
-             useUrl = url;
-           }
-           else if (! pwgRoutes.isAdminOnlyRoute(routeName)) {
-             // Non-admins can go to non-admin segments only.
-             useUrl = url;
-           }
-         }
-       }
-       else {
-         // Ensure that the segment is valid for a non-logged in user.
-         if (routeName && pwgRoutes.isPreLoginRoute(routeName))
-           useUrl = url;
-         else
-           useUrl = pwgRoutes.hrefForRouteName('login');
-       }
-
-       return useUrl;
-     }
-
-     pwgRoutes.redirectToNamedRoute('initializing');
-
-     pwgCheckUser.checkUser().then(
-       function(response) {
-         // Success
-         log.debug(`checkUser: Success. loggedIn=${response.loggedIn}`)
-         $scope.initializing = false;
-         if (response.loggedIn)
-           $scope.setLoggedInUser(response.user);
-         else
-           $scope.setLoggedInUser(null);
-
-         let useUrl = validateLocationChange($scope.urlOnLoad);
-         $location.path(useUrl);
-         $scope.routeOnLoad = null;
-       },
-       function(response) {
-         // Failure.
-         log.error(response);
-         $scope.initializing = false;
-         $scope.setLoggedInUser(null);
-         pwgRoutes.redirectToNamedRoute('login');
-       }
-     );
-   }]
-);
+   }
+]);
 
 // --------------------------------------------------------------------------
 // Navbar Controller
@@ -499,45 +524,52 @@ pwGuardApp.controller('NavbarCtrl',
 // --------------------------------------------------------------------------
 
 pwGuardApp.controller('LoginCtrl',
-  ['$scope', '$injector', function($scope, $injector) {
+  ['$scope', '$injector', 'currentUser', 'pwgCheckRoute',
+  function($scope, $injector, currentUser, pwgCheckRoute) {
 
-     var pwgAjax            = $injector.get('pwgAjax');
-     var pwgFlash           = $injector.get('pwgFlash');
-     var pwgLogging         = $injector.get('pwgLogging');
-     var pwgRoutes          = $injector.get('pwgRoutes');
+    pwgCheckRoute('login', currentUser);
 
-     var log = pwgLogging.logger('LoginCtrl');
+    var pwgAjax            = $injector.get('pwgAjax');
+    var pwgFlash           = $injector.get('pwgFlash');
+    var pwgLogging         = $injector.get('pwgLogging');
+    var pwgRoutes          = $injector.get('pwgRoutes');
 
-     $scope.email    = null;
-     $scope.password = null;
+    var log = pwgLogging.logger('LoginCtrl');
 
-     $scope.login = () => {
-       let url = routes.controllers.SessionController.login().url;
-       pwgAjax.post(url, {email: $scope.email, password: $scope.password},
+    $scope.email    = null;
+    $scope.password = null;
 
-         // Success.
-         function(response) {
-           $scope.setLoggedInUser(response.user);
-           pwgRoutes.redirectToDefaultRoute();
-         },
+    $scope.login = () => {
+      let url = routes.controllers.SessionController.login().url;
+      pwgAjax.post(url, {email: $scope.email, password: $scope.password},
 
-         // Failure
-         function(response) {
-           log.error(data);
-           // Nothing to do. Error was handled by pwgAjax
-         }
-       );
-     }
+        // Success.
+        function(response) {
+          $scope.setLoggedInUser(response.user);
+          log.debug("Login successful");
+          pwgRoutes.redirectToDefaultRoute();
+        },
 
-   }]
-)
+        // Failure
+        function(response) {
+          log.error(data);
+          // Nothing to do. Error was handled by pwgAjax
+        }
+      );
+    }
+
+  }
+]);
 
 // --------------------------------------------------------------------------
 // Edit Entry Controller
 // --------------------------------------------------------------------------
 
 pwGuardApp.controller('EditPasswordEntryCtrl',
-  ['$scope', '$injector', function($scope, $injector) {
+  ['$scope', '$injector', 'currentUser', 'pwgCheckRoute',
+  function($scope, $injector, currentUser, pwgCheckRoute) {
+
+    pwgCheckRoute('edit-entry', currentUser);
 
     var pwgRoutes    = $injector.get('pwgRoutes');
     var pwgLogging   = $injector.get('pwgLogging');
@@ -612,7 +644,10 @@ pwGuardApp.controller('EditPasswordEntryCtrl',
 // --------------------------------------------------------------------------
 
 pwGuardApp.controller('NewPasswordEntryCtrl',
-  ['$scope', '$injector', function($scope, $injector) {
+  ['$scope', '$injector', 'currentUser', 'pwgCheckRoute',
+  function($scope, $injector, currentUser, pwgCheckRoute) {
+
+    pwgCheckRoute('new-entry', currentUser)
 
     var pwgRoutes  = $injector.get('pwgRoutes');
     var pwgAjax    = $injector.get('pwgAjax');
@@ -660,7 +695,10 @@ pwGuardApp.controller('NewPasswordEntryCtrl',
 // instantiated. Only one outer controller will be.
 
 pwGuardApp.controller('SearchCtrl',
-  ['$scope', '$injector', function($scope, $injector) {
+  ['$scope', '$injector', 'pwgCheckRoute', 'currentUser',
+  function($scope, $injector, pwgCheckRoute, currentUser) {
+
+    pwgCheckRoute('search', currentUser);
 
     var pwgRoutes = $injector.get('pwgRoutes');
 
@@ -916,7 +954,10 @@ pwGuardApp.controller('InnerSearchCtrl',
 // --------------------------------------------------------------------------
 
 pwGuardApp.controller('ProfileCtrl',
-  ['$scope', '$injector', function($scope, $injector) {
+  ['$scope', '$injector', 'currentUser', 'pwgCheckRoute',
+  function($scope, $injector, currentUser, pwgCheckRoute) {
+
+    pwgCheckRoute('profile', currentUser);
 
     var pwgLogging = $injector.get('pwgLogging');
     var pwgAjax    = $injector.get('pwgAjax');
@@ -976,7 +1017,10 @@ pwGuardApp.controller('ProfileCtrl',
 // --------------------------------------------------------------------------
 
 pwGuardApp.controller('ImportExportCtrl',
-  ['$scope', '$injector', function($scope, $injector) {
+  ['$scope', '$injector', 'currentUser', 'pwgCheckRoute',
+  function($scope, $injector, currentUser, pwgCheckRoute) {
+
+    pwgCheckRoute('import-export', currentUser);
 
     var $timeout   = $injector.get('$timeout');
     var pwgAjax    = $injector.get('pwgAjax');
@@ -1202,7 +1246,10 @@ pwGuardApp.controller('ImportExportCtrl',
 // --------------------------------------------------------------------------
 
 pwGuardApp.controller('AdminUsersCtrl',
-  ['$scope', '$injector', function($scope, $injector) {
+  ['$scope', '$injector', 'currentUser', 'pwgCheckRoute',
+  function($scope, $injector, currentUser, pwgCheckRoute) {
+
+    pwgCheckRoute('admin', currentUser);
 
     var pwgAjax    = $injector.get('pwgAjax');
     var pwgFlash   = $injector.get('pwgFlash');
@@ -1345,17 +1392,20 @@ pwGuardApp.controller('AdminUsersCtrl',
     }
 
     loadUsers();
-  }]
-);
+  }
+]);
 
 
 // --------------------------------------------------------------------------
 // About Controller
 // --------------------------------------------------------------------------
 
-pwGuardApp.controller('AboutCtrl', ['$scope', function($scope) {
-  return;
-}])
+pwGuardApp.controller('AboutCtrl',
+  ['$scope', 'currentUser', 'pwgCheckRoute',
+  function($scope, currentUser, pwgCheckRoute) {
+    pwgCheckRoute('about', currentUser);
+  }
+]);
 
 
 /* jshint ignore:end */

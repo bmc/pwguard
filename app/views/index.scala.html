@@ -122,23 +122,13 @@
 
       @navbar()
 
-      <div id="content" ng-hide="initializing">
+      <div id="content">
 
         <div class="row" ng-show="loggedIn()">
           <div class="col-md-12">
             <div class="login-status pull-right"
                   ng-class="{mobile: isMobile, desktop: !isMobile}">
               {{loggedInUser.displayName}}
-            </div>
-          </div>
-        </div>
-
-        <div ng-show="initializing">
-          <div class="row">
-            <div class="col-md-4">
-              <div class="message">
-                Loading. Please wait...
-              </div>
             </div>
           </div>
         </div>

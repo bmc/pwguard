@@ -29,24 +29,29 @@
       </div>
 
       <div class="collapse navbar-collapse" id="navbar-collapse">
-        <ul class="nav navbar-nav" ng-show="loggedIn()">
+        <ul class="nav navbar-nav">
           <li>
-            <a href="" ng-click="logout()">
+            <a href="" ng-click="logout()" ng-show="loggedIn()">
               <i class="fa fa-sign-out"></i> Logout
             </a>
           </li>
-          <li ng-class="{active: routeIsActive('search')}">
+          <li ng-class="{active: routeIsActive('login')}" ng-hide="loggedIn()">
+            <a href="#/login">
+              <i class="fa fa-sign-in"></i> Login
+            </a>
+          </li>
+          <li ng-class="{active: routeIsActive('search')}" ng-show="loggedIn()">
             <a href="#/search">
               <i class="fa fa-search"></i> Search
             </a>
           </li>
-          <li ng-class="{active: routeIsActive('profile')}">
+          <li ng-class="{active: routeIsActive('profile')}" ng-show="loggedIn()">
             <a href="#/profile">
               <i class="fa fa-wrench"></i> Profile
             </a>
           </li>
           <li ng-class="{active: routeIsActive('import-export')}"
-              ng-hide="isMobile">
+              ng-hide="isMobile || !loggedIn()">
             <a href="#/import-export">
               <i class="fa fa-folder-o" ng-hide="segmentIsActive('import-export')"></i>
               <i class="fa fa-folder-open-o" ng-show="segmentIsActive('import-export')"></i>
@@ -54,7 +59,7 @@
             </a>
           </li>
           <li ng-class="{active: routeIsActive('admin-users')}"
-              ng-show="loggedInUser.admin">
+              ng-show="loggedIn() && loggedInUser.admin">
             <a ng-href="#/admin/users">
               <i class="fa fa-users"></i> Edit Users
             </a>
