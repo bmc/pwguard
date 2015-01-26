@@ -84,7 +84,7 @@ object ImportExportController extends BaseController {
             Json.obj(
               "headers" -> h,
               "fields"  -> ImportFieldMapping.values.map { field =>
-                Json.obj("name" -> field.toString,
+                Json.obj("name"     -> field.toString,
                          "required" -> ImportFieldMapping.isRequired(field))
               }
             )

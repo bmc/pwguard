@@ -83,10 +83,7 @@ class UserDAO(_dal: DAL, _logger: Logger) extends BaseDAO[User](_dal, _logger) {
   protected val baseQuery = Users
 
   protected def insert(user: User)(implicit session: SlickSession): Try[User] = {
-    Try {
-      val id = (Users returning Users.map(_.id)) += user
-      user.copy(id = Some(id))
-    }
+    doInsert(user) map { id => user.copy(id = Some(id)) }
   }
 
   protected def update(user: User)(implicit session: SlickSession): Try[User] = {

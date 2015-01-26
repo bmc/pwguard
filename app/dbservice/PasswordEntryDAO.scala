@@ -12,7 +12,7 @@ import scala.util.{Success, Failure, Try}
 class PasswordEntryDAO(_dal: DAL, _logger: Logger)
   extends BaseDAO[PasswordEntry](_dal, _logger) {
 
-  override val logger = Logger("dbservice.PasswordEntryDAO")
+  override val logger = Logger("pwguard.dbservice.PasswordEntryDAO")
 
   import dal.profile.simple._
   import dal.{PasswordEntriesTable, PasswordEntries}
@@ -81,7 +81,9 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
   def fullEntries(passwordEntries: Set[PasswordEntry]):
     Future[Set[FullPasswordEntry]] = {
 
-    loadDependents(passwordEntries)
+    withSession { implicit session =>
+      loadDependents(passwordEntries)
+    }
   }
 
   /** Map a `PasswordEntry` object into its `FullPasswordEntry` counterpart.
@@ -91,7 +93,9 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
     * @return a future of the mapped entry
     */
   def fullEntry(passwordEntry: PasswordEntry): Future[FullPasswordEntry] = {
-    loadDependents(passwordEntry)
+    withSession { implicit session =>
+      loadDependents(passwordEntry)
+    }
   }
 
   /** Find a password entry by user and entry name.
@@ -195,82 +199,51 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
 
   /** Save a full password entry, with all its dependents.
     *
-    * @param entry  the full password entry
+    * @param entryToSave  the full password entry
     *
     * @return A future of the saved entry, which may be modified
     */
-  def saveWithDependents(entry: FullPasswordEntry): Future[FullPasswordEntry] = {
+  def saveWithDependents(entryToSave: FullPasswordEntry):
+    Future[FullPasswordEntry] = {
+
     withTransaction { implicit session =>
-      val baseEntry = entry.toBaseEntry
+      val baseEntry = entryToSave.toBaseEntry
       val extrasDAO = DAO.passwordEntryExtraFieldsDAO
 
-      def doDeletes(toDelete: Set[PasswordEntryExtraField]): Future[Int] = {
-        if (toDelete.isEmpty)
-          Future.successful(0)
-        else
-          extrasDAO.deleteMany(toDelete)
-      }
-
-      def doSaves(toSave: Set[PasswordEntryExtraField]) = {
-        if (toSave.isEmpty)
-          Future.successful(Set.empty[PasswordEntryExtraField])
-        else
-          extrasDAO.saveMany(toSave)
-      }
-
-      def handleExtraFields(savedEntry:     PasswordEntry,
-                            existingExtras: Set[PasswordEntryExtraField]) = {
+      def handleExtraFields(savedEntry: PasswordEntry,
+                            extras:     Set[PasswordEntryExtraField])
+                           (implicit session: SlickSession) = {
 
         // This logic isn't 100% correct. A change in a field name will
         // cause it to appear to be new, because the name is the only hash
         // code. That's not optimal, but it isn't worth optimizing right now.
-        // It does mean, though, that we have to nuke the IDs on any record
-        // that looks like a new one, because it might not be.
-        val existingByName = existingExtras.map { e => e.fieldName -> e }.toMap
+        // The simplest solution, the one that has the least possibility of
+        // going wrong, is just to delete all the old entries and (re-)insert
+        // the new ones.
+        extrasDAO.deleteForPasswordEntry(savedEntry) flatMap { n =>
+          // Make sure we associate the extras with this password entry.
+          val adjustedExtras = extras.map {
+            _.copy(id = None, passwordEntryID = savedEntry.id)
+          }
 
-        val newExtras = entry.extraFields
-        val toDelete  = existingExtras -- newExtras
-        val toAdd     = (newExtras -- existingExtras).map { _.copy(id = None) }
-        val toUpdate  = newExtras filter { extra =>
-          existingByName.get(extra.fieldName).map { existing =>
-            existing.fieldValue != extra.fieldValue
-          }.
-          getOrElse(false)
-        }
-
-        logger.debug(s"saveWithDependents: newExtras=$newExtras, " +
-                     s"toAdd=$toAdd, toUpdate=$toUpdate, toDelete=$toDelete");
-
-        // Ensure that the password entry owns the saved fields.
-        val toSave = (toAdd ++ toUpdate).map {
-          _.copy(passwordEntryID = savedEntry.id)
-        }
-
-        for { total       <- doDeletes(toDelete)
-              savedExtras <- doSaves(toSave) }
-        yield savedExtras
-      }
-
-      def getExistingExtras(entry: PasswordEntry) = {
-        entry.id.map { id =>
-          extrasDAO.findForPasswordEntry(entry)
-        }.
-        getOrElse {
-          Future.successful(Set.empty[PasswordEntryExtraField])
+          extrasDAO.saveMany(adjustedExtras) map { savedExtras =>
+            savedEntry.toFullEntry(savedExtras)
+          }
         }
       }
 
-      for { savedEntry     <- save(baseEntry)
-            existingExtras <- getExistingExtras(baseEntry)
-            savedExtras    <- handleExtraFields(savedEntry, existingExtras) }
-      yield savedEntry.toFullEntry(savedExtras)
+      for { savedBaseEntry  <- save(baseEntry)
+            fullySavedEntry <- handleExtraFields(savedBaseEntry,
+                                                 entryToSave.extraFields) }
+      yield fullySavedEntry
     }
   }
 
   override def delete(id: Int): Future[Boolean] = {
     withTransaction { implicit session =>
       DAO.passwordEntryExtraFieldsDAO.deleteForPasswordEntry(id) flatMap { n =>
-        super.delete(id)
+        logger.debug(s"Deleted $n password entry extra fields.");
+        super.deleteInSession(id)
       }
     }
   }
@@ -288,10 +261,7 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
   protected def insert(pwEntry: PasswordEntry)(implicit session: SlickSession):
     Try[PasswordEntry] = {
 
-    Try {
-      val id = PasswordEntries.insert(pwEntry)
-      pwEntry.copy(id = Some(id))
-    }
+    doInsert(pwEntry) map { id => pwEntry.copy(id = Some(id)) }
   }
 
   protected def update(pwEntry: PasswordEntry)(implicit session: SlickSession):
@@ -316,7 +286,10 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
   // Private methods
   // ------------------------------------------------------------------------
 
-  private def loadDependents(pw: PasswordEntry): Future[FullPasswordEntry] = {
+  private def loadDependents(pw: PasswordEntry)
+                            (implicit session: SlickSession):
+    Future[FullPasswordEntry] = {
+
     DAO.passwordEntryExtraFieldsDAO.findForPasswordEntry(pw) map { extras =>
       pw.toFullEntry(extras)
     }
@@ -326,11 +299,11 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
     *
     * @param entries the password entries
     */
-  private def loadDependents(entries: Set[PasswordEntry]):
+  private def loadDependents(entries: Set[PasswordEntry])
+                            (implicit session: SlickSession):
     Future[Set[FullPasswordEntry]] = {
 
     DAO.passwordEntryExtraFieldsDAO.findForPasswordEntries(entries) map { set =>
-
       set map {
         case (passwordEntry, extras) => passwordEntry.toFullEntry(extras)
       }

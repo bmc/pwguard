@@ -7,6 +7,7 @@ import models.BaseModel
 import play.api.Logger
 
 import pwguard.global.Globals.ExecutionContexts.DB._
+import util.ReflectionHelpers
 
 import scala.reflect.runtime.{universe => ru}
 import scala.concurrent.Future
@@ -22,13 +23,16 @@ class DAOException(msg: String) extends Exception(msg)
   * @tparam M     the type of the model the DAO loads
 
   */
-abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
+abstract class BaseDAO[M <: BaseModel: ru.TypeTag](val dal:    DAL,
+                                                   val logger: Logger) {
   import dal.ModelTable
   import dal.profile.simple._
   import scala.slick.jdbc.JdbcBackend
   import pwguard.global.Globals.DB
 
   type SlickSession = JdbcBackend#Session
+
+  val modelName = ReflectionHelpers.typeTagShortName(ru.typeTag[M])
 
   // --------------------------------------------------------------------------
   // Public methods
@@ -64,7 +68,7 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
   def save(model: M): Future[M] = {
     withTransaction { implicit session: SlickSession =>
       Future {
-        saveSync(model).get
+        doSave(model).get
       }
     }
   }
@@ -77,7 +81,7 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     */
   def saveSync(model: M): Try[M] = {
     withTransactionSync { implicit session: SlickSession =>
-      model.id.map { _ => update(model) }.getOrElse { insert(model) }
+      doSave(model)
     }
   }
 
@@ -89,10 +93,7 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     */
   def delete(id: Int): Future[Boolean] = {
     withTransaction { implicit session =>
-      Future {
-        queryByID(id).delete
-        true
-      }
+      deleteInSession(id)
     }
   }
 
@@ -113,6 +114,52 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
   // --------------------------------------------------------------------------
   // Protected methods
   // ------------------------------------------------------------------------
+
+  /** Issue a delete outside a transaction. Useful for rolling into another
+    * method that already has a session or transaction defined.
+    *
+    * @param id the ID of the model
+    *
+    * @return `Future(true)`
+    */
+  protected def deleteInSession(id: Int)(implicit session: SlickSession):
+    Future[Boolean] = {
+
+    Future {
+      queryByID(id).delete
+      true
+    }
+  }
+
+  /** Issue a save outside a transaction. Useful for rolling into another
+    * method that already has a session or transaction defined.
+    *
+    * @param model the model object to save
+    *
+    * @return A `Future` of the saved model object
+    */
+  protected def saveInSession(model: M)(implicit session: SlickSession):
+    Future[M] = {
+
+    Future {
+      doSave(model).get
+    }
+  }
+
+  /** Issue a saveSync outside a transaction. Useful for rolling into another
+    * method that already has a session or transaction defined.
+    *
+    * @param model the model object to save
+    *
+    * @return A `Trye` of the saved model object
+    */
+  protected def saveSyncInSession(model: M)(implicit session: SlickSession):
+    Try[M] = {
+
+    Try {
+      doSave(model).get
+    }
+  }
 
   /** Get the Slick query that retrieves a model object by ID.
     *
@@ -136,6 +183,35 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     * @return A `Try` of the result.
     */
   protected def insert(model: M)(implicit session: SlickSession): Try[M]
+
+  /** Workhorse insert method. This method does an insert, using the result
+    * of `baseQuery`. However, it cannot update the model object (because
+    * `BaseModel` is a trait, not a case class. Thus, all subclasses still
+    * must provide `insert()`. This method just eases the implementation,
+    * which can usually be as simple as:
+    *
+    * {{{
+    *   protected def insert(model: SomeModel)(implicit session: SlickSession):
+    *     Try[SomeModel] = {
+    *
+    *     doInsert(model) map { id => model.copy(id = Some(id)) }
+    *   }
+    * }}}
+    *
+    * @param model   the model
+    * @param session the active session
+    *
+    * @return A `Try` of the result.
+    */
+  protected def doInsert(model: M)(implicit session: SlickSession): Try[Int] = {
+    Try {
+      // Note: The <query>.insert() method returns the number of items
+      // inserted, NOT the ID.
+      val id = (baseQuery returning baseQuery.map(_.id)) += model
+      logger.debug(s"Insert of ${modelName} returned ID $id")
+      id
+    }
+  }
 
   /** Update an instance of the model. Must be supplied by subclasses.
     *
@@ -290,8 +366,8 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
     * @return On success, this method returns a `Right` containing a map
     *         of ID to model. On failure, it returns `Left(error)`.
     */
-  protected def loadDependentIDs[M <: BaseModel: ru.TypeTag]
-    (idSet: Set[Int], dao: BaseDAO[M])(implicit session: SlickSession):
+  protected def loadDependentIDs(idSet: Set[Int], dao: BaseDAO[M])
+                                (implicit session: SlickSession):
     Future[Map[Int, M]] = {
 
     if (idSet.isEmpty)
@@ -301,12 +377,11 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
       dao.findByIDs(idSet).flatMap { loaded =>
         val loadedIDs = loaded.map {_.id.get}
         if (loadedIDs != idSet) {
-          val name = typeName(ru.typeTag[M])
           logger.error {
-            s"Missing some ${name} results in loaded appointments. " +
+            s"Missing some ${modelName} results in loaded appointments. " +
             s"Expected: $idSet, got: $loadedIDs"
           }
-          daoError(s"Missing some ${name} results in loaded appointments.")
+          daoError(s"Missing some ${modelName} results in loaded appointments.")
         }
         else {
           Future {
@@ -323,9 +398,15 @@ abstract class BaseDAO[M <: BaseModel](val dal: DAL, val logger: Logger) {
   // Private methods
   // ------------------------------------------------------------------------
 
-  /** Get the printable name of a runtime type.
-   */
-  private def typeName[T](tag: ru.TypeTag[T]): String = {
-    tag.tpe.toString.split("""\.""").last
+  /** Workhorse save method, called by all the others.
+    *
+    * @param model   model to save
+    * @param session existing session
+    *
+    * @return a `Try` of the saved model
+    */
+  private def doSave(model: M)(implicit session: SlickSession): Try[M] = {
+    model.id.map { _ => update(model) }.getOrElse { insert(model) }
   }
+
 }
