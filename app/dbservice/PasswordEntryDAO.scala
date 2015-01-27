@@ -186,7 +186,7 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
                      s"entries ${sIDs}, but they belong to someone else.")
       }
 
-      if (actualIDs.size == 0) {
+      if (actualIDs.isEmpty) {
         logger.error(s"No legitimate IDs to be deleted.")
         Future.successful(0)
       }
