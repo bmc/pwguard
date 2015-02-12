@@ -106,8 +106,10 @@
                     linky filter then converts any links embedded in the
                     text.
                   -->
-                  <div class="mobile-value"
-                       ng-bind-html="pw.notes | linky:'newPage'"/>
+                  <div class="mobile-value">
+                    <span ng-bind-html="pw.notes | linky:'newPage' | pwgNewlinesToBRs">
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
