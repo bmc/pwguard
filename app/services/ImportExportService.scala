@@ -13,12 +13,13 @@ import akka.actor.Props
 import actors.{ImportData, ImportFieldMapping, ImportActor}
 import actors.ImportFieldMapping.ImportFieldMapping
 import exceptions.{ImportFailed, UploadFailed, ExportFailed}
-import models.{UserHelpers, PasswordEntry, User}
+import models._
 import pwguard.global.Globals.ExecutionContexts.Default._
 import util.FileHelpers._
 
 import grizzled.io.util.withCloseable
 
+import scala.annotation.tailrec
 import scala.concurrent.{Promise, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -77,8 +78,9 @@ object ImportExportService {
   def createExportFile(user: User, format: ImportExportFormat):
     Future[(File, String)] = {
 
-    for { seq          <- passwordEntryDAO.allForUser(user)
-          (file, mime) <- createDownload(seq, user, format) }
+    for { entries      <- passwordEntryDAO.allForUser(user)
+          fullEntries  <- passwordEntryDAO.fullEntries(entries)
+          (file, mime) <- createDownload(fullEntries, user, format) }
     yield (file, mime)
   }
 
@@ -177,34 +179,52 @@ object ImportExportService {
       Future.failed(new ImportFailed(s"Unknown import file type: $contentType"))
   }
 
-  private def unpackEntry(user: User, e: PasswordEntry):
-  Future[Map[ImportFieldMapping.Value, String]] = {
+  private def unpackEntry(user: User, e: FullPasswordEntry):
+  Future[Map[String, String]] = {
 
-    val PasswordEntry(_, _, name, descriptionOpt, loginIDOpt,
-                      encryptedPasswordOpt, urlOpt, notesOpt) = e
-    val description = descriptionOpt.getOrElse("")
-    val loginID     = loginIDOpt.getOrElse("")
-    val notes       = notesOpt.getOrElse("")
-    val url         = urlOpt.getOrElse("")
+    val name                 = e.name
+    val description          = e.description.getOrElse("")
+    val loginID              = e.loginID.getOrElse("")
+    val notes                = e.notes.getOrElse("")
+    val url                  = e.url.getOrElse("")
+    val encryptedPasswordOpt = e.encryptedPassword
 
-    encryptedPasswordOpt map { epw =>
-      UserHelpers.decryptStoredPassword(user, epw)
+    def getEncryptedPassword(): Future[String] = {
+      encryptedPasswordOpt map { epw =>
+        UserHelpers.decryptStoredPassword(user, epw)
+      } getOrElse {
+        Future.successful("")
+      }
+    }
 
-    } getOrElse {
-      Future.successful("")
+    @tailrec
+    def addCustomFields(fields: List[PasswordEntryExtraField],
+                        m:      Map[String, String]):
+      Map[String, String] = {
 
-    } map { pwString =>
-      Map(ImportFieldMapping.Name        -> name,
-        ImportFieldMapping.Password    -> pwString,
-        ImportFieldMapping.Description -> description,
-        ImportFieldMapping.Login       -> loginID,
-        ImportFieldMapping.URL         -> url,
-        ImportFieldMapping.Notes       -> notes)
+      fields match {
+        case Nil => m
+        case e :: rest => {
+          val newMap = m + (e.fieldName -> e.fieldValue)
+          addCustomFields(rest, newMap)
+        }
+      }
+    }
+
+    for { epw <- getEncryptedPassword() }
+    yield {
+      val initialMap = Map(ImportFieldMapping.Name.toString        -> name,
+                           ImportFieldMapping.Password.toString    -> epw,
+                           ImportFieldMapping.Description.toString -> description,
+                           ImportFieldMapping.Login.toString       -> loginID,
+                           ImportFieldMapping.URL.toString         -> url,
+                           ImportFieldMapping.Notes.toString       -> notes)
+      addCustomFields(e.extraFields.toList, initialMap)
     }
   }
 
 
-  private def createDownload(entries: Set[PasswordEntry],
+  private def createDownload(entries: Set[FullPasswordEntry],
                              user:    User,
                              format:  ImportExportFormat):
   Future[(File, String)] = {
@@ -279,9 +299,8 @@ object ImportExportService {
   }
 
 
-  private def writeExcel(out:     File,
-                         entries: Seq[Map[ImportFieldMapping, String]]):
-  Future[File] = {
+  private def writeExcel(out: File, entries: Seq[Map[String, String]]):
+    Future[File] = {
 
     import java.io.FileOutputStream
     import org.apache.poi.xssf.usermodel.XSSFWorkbook
@@ -291,6 +310,8 @@ object ImportExportService {
         val wb = new XSSFWorkbook
         val sheet = wb.createSheet("Passwords")
 
+        val headers = collectHeaders(entries)
+
         // Write the header.
         val font = wb.createFont()
         font.setBold(true)
@@ -298,9 +319,9 @@ object ImportExportService {
         style.setFont(font)
 
         val row = sheet.createRow(0.asInstanceOf[Short])
-        for ((cellValue, i) <- ImportFieldMapping.valuesInOrder.zipWithIndex) {
+        for ((cellValue, i) <- headers.zipWithIndex) {
           val cell = row.createCell(i)
-          cell.setCellValue(cellValue.toString)
+          cell.setCellValue(cellValue)
           cell.setCellStyle(style)
         }
 
@@ -308,7 +329,7 @@ object ImportExportService {
         for { (rowMap, rI)  <- entries.zipWithIndex
               rowNum         = rI + 1
               row            = sheet.createRow(rowNum.asInstanceOf[Short])
-              (name, cI)    <- ImportFieldMapping.valuesInOrder.zipWithIndex } {
+              (name, cI)    <- headers.zipWithIndex } {
           val cellNum = cI + 1
           val cell    = row.createCell(cI.asInstanceOf[Short])
           cell.setCellValue(rowMap.getOrElse(name, ""))
@@ -320,9 +341,8 @@ object ImportExportService {
     }
   }
 
-  private def writeCSV(out:     File,
-                       entries: Seq[Map[ImportFieldMapping, String]]):
-  Future[File] = {
+  private def writeCSV(out: File, entries: Seq[Map[String, String]]):
+    Future[File] = {
 
     Future {
       withCloseable(new BufferedWriter(
@@ -330,14 +350,15 @@ object ImportExportService {
           new FileOutputStream(out), "UTF-8"))) { fOut =>
         withCloseable(CSVWriter.open(fOut)) { csv =>
 
+          val headers = collectHeaders(entries)
+
           // Write the header.
-          csv.writeRow(ImportFieldMapping.valuesInOrder.map(_.toString).toList)
+          csv.writeRow(headers)
 
           // Now the data.
           for ( rowMap <- entries ) {
-            val row = ImportFieldMapping.valuesInOrder
-              .map { rowMap.getOrElse(_, "") }
-              .toList
+            val row = headers.map { i => rowMap.getOrElse(i.toString, "") }
+                             .toList
             csv.writeRow(row)
           }
 
@@ -347,6 +368,13 @@ object ImportExportService {
     }
   }
 
+  private def collectHeaders(entries: Seq[Map[String,String]]): Seq[String] = {
+    val headerSet = entries.flatMap { m => m.keySet }.toSet
+    val requiredHeaders = ImportFieldMapping.values.map { _.toString }.toSet
+    val extraHeaders = headerSet -- requiredHeaders
+
+    // Put them together, required headers first.
+    ImportFieldMapping.valuesInOrder.map { _.toString } ++ extraHeaders.toSeq
+  }
+
 }
-
-
