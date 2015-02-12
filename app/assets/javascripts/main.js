@@ -867,9 +867,10 @@ pwGuardApp.controller('ImportExportCtrl',
     }
 
     var checkForMatch = () => {
-      if ($scope.headers && $scope.filters) {
+      if ($scope.headers && $scope.fields) {
         let i = _.filter($scope.headers, (h) => { return h.selected });
         let selectedHeader = i[0];
+        log.debug(`checkForMatch: selectedHeader=${JSON.stringify(selectedHeader)}`);
         if (selectedHeader) {
           i = _.filter($scope.fields, (f) => { return f.selected });
           let selectedField = i[0];
