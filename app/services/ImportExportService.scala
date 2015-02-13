@@ -51,6 +51,10 @@ object ImportFieldMapping extends Enumeration {
   val valuesInOrder = values.toList.sorted
 
   def isRequired(f: ImportFieldMapping): Boolean = Required contains f
+
+  val AllCommonHeaders: Set[Value] = values.toSet
+
+  val AllCommonHeaderNames: Set[String] = values.map { _.toString }
 }
 
 /** Represents an uploaded file.
@@ -531,8 +535,7 @@ object ImportExportService {
 
   private def collectHeaders(entries: Seq[Map[String,String]]): Seq[String] = {
     val headerSet = entries.flatMap { m => m.keySet }.toSet
-    val requiredHeaders = ImportFieldMapping.values.map { _.toString }.toSet
-    val extraHeaders = headerSet -- requiredHeaders
+    val extraHeaders = headerSet -- ImportFieldMapping.AllCommonHeaderNames
 
     // Put them together, required headers first.
     ImportFieldMapping.valuesInOrder.map { _.toString } ++ extraHeaders.toSeq
