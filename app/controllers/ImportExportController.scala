@@ -1,11 +1,6 @@
 package controllers
 
-import akka.actor.Props
-import dbservice.DAO
-import models.{UserHelpers, User, PasswordEntry}
-import org.apache.poi.ss.usermodel.Sheet
-import play.api.libs.concurrent.Akka
-import services.{UploadedFile, ImportExportFormat, ImportExportService}
+import services.{UploadedFile, ImportExportService}
 import util.EitherOptionHelpers._
 
 import com.github.tototoshi.csv._
@@ -22,9 +17,10 @@ import play.api.cache.Cache
 import play.api.Play.current
 
 import pwguard.global.Globals.ExecutionContexts.Default._
-import actors.{ImportFieldMapping, ImportData, ImportActor}
+import actors.ImportActor
 import exceptions._
 import util.FutureHelpers._
+import services.ImportFieldMapping
 
 import scala.concurrent.{Promise, Future}
 import scala.util.control.NonFatal
