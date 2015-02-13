@@ -72,7 +72,14 @@ private case class MappedHeaders(nameHeader:  String,
                                  loginHeader: Option[String],
                                  notesHeader: Option[String],
                                  pwHeader:    Option[String],
-                                 urlHeader:   Option[String])
+                                 urlHeader:   Option[String]) {
+  val All = Set(Some(nameHeader),
+                descHeader,
+                loginHeader,
+                notesHeader,
+                pwHeader,
+                urlHeader).flatten
+}
 
 /** Handles the logic of import and export, so it doesn't clutter up the
   * controller.
@@ -281,16 +288,54 @@ object ImportExportService {
       notes             = headers.notesHeader.flatMap(row.get(_))
     )
 
-    // Any other cells are
+    // Any other cells defined for this row constitute custom fields.
 
-    saveIfNew(entry, headers.pwHeader.flatMap(row.get(_)), user) map { opt =>
+    @tailrec
+    def handleExtraFields(fields: Set[PasswordEntryExtraField],
+                          remainingExtraHeaders: List[String]):
+      Set[PasswordEntryExtraField] = {
+
+      remainingExtraHeaders match {
+        case Nil => fields
+
+        case name :: rest if row.get(name).isDefined => {
+          // If the value is blank, ignore the field.
+          val trimmedValue = row(name).trim
+          val newFields = if (trimmedValue.length > 0) {
+            fields + PasswordEntryExtraField(id = None,
+                                             passwordEntryID = None,
+                                             fieldName       = name,
+                                             fieldValue      = trimmedValue)
+          }
+          else {
+            fields
+          }
+
+          handleExtraFields(newFields, rest)
+        }
+
+        case name :: rest => fields
+      }
+    }
+
+    // The row's key set is the set of headers for this row. Remove the
+    // common headers, which we just processed. Anything left is a custom
+    // field.
+    val remainingHeaders = row.keySet -- headers.All
+    val extraFields = handleExtraFields(Set.empty[PasswordEntryExtraField],
+                                        remainingHeaders.toList)
+
+    // Map to a full password entry.
+    val fpw = entry.toFullEntry(extraFields)
+
+    saveIfNew(fpw, headers.pwHeader.flatMap(row.get(_)), user) map { opt =>
       // Return a count of 1 if saved, 0 if not.
       opt.map(_ => 1).getOrElse(0)
     }
   }
 
   private def mappingFor(key: ImportFieldMapping, mappings: Map[String, String]):
-  Option[String] = {
+    Option[String] = {
 
     val opt = mappings.get(key.toString)
     if ((ImportFieldMapping.isRequired(key)) && opt.isEmpty) {
@@ -299,12 +344,12 @@ object ImportExportService {
     opt
   }
 
-  private def saveIfNew(entry:                PasswordEntry,
+  private def saveIfNew(entry:                FullPasswordEntry,
                         plaintextPasswordOpt: Option[String],
                         user:                 User):
-  Future[Option[PasswordEntry]] = {
+    Future[Option[FullPasswordEntry]] = {
 
-    val futureFuture: Future[Future[Option[PasswordEntry]]] =
+    val futureFuture: Future[Future[Option[FullPasswordEntry]]] =
       for { epwOpt   <- maybeEncryptPW(user, plaintextPasswordOpt)
             entryOpt <- passwordEntryDAO.findByName(user, entry.name) }
       yield {
@@ -316,7 +361,7 @@ object ImportExportService {
         }
         else {
           val toSave = entry.copy(encryptedPassword = epwOpt)
-          passwordEntryDAO.save(toSave) map { Some(_) }
+          passwordEntryDAO.saveWithDependents(toSave) map { Some(_) }
         }
       }
 
@@ -324,7 +369,7 @@ object ImportExportService {
   }
 
   private def maybeEncryptPW(user: User, password: Option[String]):
-  Future[Option[String]] = {
+    Future[Option[String]] = {
 
     password map { pw =>
       UserHelpers.encryptStoredPassword(user, pw) map { Some(_) }
@@ -334,7 +379,7 @@ object ImportExportService {
   }
 
   private def getCSVReader(f: File, contentType: String):
-  Future[(File, CSVReader)] = {
+    Future[(File, CSVReader)] = {
 
     if (ExcelContentTypes contains contentType)
       convertExcelToCSV(f).map { csv => (csv, CSVReader.open(csv)) }
@@ -345,7 +390,7 @@ object ImportExportService {
   }
 
   private def unpackEntry(user: User, e: FullPasswordEntry):
-  Future[Map[String, String]] = {
+    Future[Map[String, String]] = {
 
     val name                 = e.name
     val description          = e.description.getOrElse("")
@@ -392,7 +437,7 @@ object ImportExportService {
   private def createDownload(entries: Set[FullPasswordEntry],
                              user:    User,
                              format:  ImportExportFormat):
-  Future[(File, String)] = {
+    Future[(File, String)] = {
 
     createPseudoTempFile("pwguard", format.toString) flatMap { out =>
 
