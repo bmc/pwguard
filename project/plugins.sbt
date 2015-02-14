@@ -27,3 +27,6 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-gzip" % "1.0.0")
 
 // git-stamp: Add Git commit information to generated MANIFEST.MF
 addSbtPlugin("com.atlassian.labs" % "sbt-git-stamp" % "0.1.2")
+
+// gather build information
+addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.3.2")

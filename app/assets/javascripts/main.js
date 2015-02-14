@@ -231,6 +231,7 @@ pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
 
      $scope.templateURL = angularTemplateURL;
      $scope.version     = window.version;
+     $scope.gitVersion  = window.gitVersion;
 
      $scope.debugMessages = [];
      $scope.debug = (msg) => {

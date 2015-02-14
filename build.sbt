@@ -1,6 +1,6 @@
 name := """pwguard"""
 
-version := "1.0-SNAPSHOT"
+version := "1.0.0"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 
@@ -9,8 +9,6 @@ scalaVersion := "2.11.5"
 scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked")
 
 resolvers += "Spy Repository" at "http://files.couchbase.com/maven2"
-
-seq(gitStampSettings: _*)
 
 pipelineStages := Seq(digest, gzip)
 
@@ -54,6 +52,19 @@ libraryDependencies ++= Seq(
   "org.webjars"           % "lodash"                     % "3.1.0",
   "org.webjars"           % "jasmine"                    % "2.1.3" % "test"
 )
+
+// Gather some build-related stuff
+
+gitStampSettings
+
+buildInfoSettings
+
+sourceGenerators in Compile <+= buildInfo
+
+buildInfoKeys := Seq[BuildInfoKey](name, version)
+
+buildInfoPackage := "buildinfo"
+
 
 // Some components aren't available in WebJars, so we use Bower. Note that
 // the .bowerrc file ensures that Bower components are installed in the

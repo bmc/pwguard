@@ -83,10 +83,15 @@ object MainController extends BaseController {
       }
     }
 
-    val res = for { version  <- getVersionInfo()
-                    isMobile <- isMobileBrowser() }
+    import buildinfo.BuildInfo
+
+    val res = for { gitVersion  <- getVersionInfo()
+                    isMobile    <- isMobileBrowser() }
       yield {
-        Ok(views.html.index(browserLogLevel, isMobile, version))
+        Ok(views.html.index(browserLoggingLevel = browserLogLevel,
+                            mobile              = isMobile,
+                            gitVersion          = gitVersion,
+                            version             = BuildInfo.version))
       }
 
     res recover {
