@@ -19,6 +19,7 @@ GET           /pwguard/pw/:id                        controllers.PasswordEntryCo
 POST          /pwguard/pw/:id                        controllers.PasswordEntryController.save(id: Int)
 DELETE        /pwguard/pw/:id                        controllers.PasswordEntryController.delete(id: Int)
 DELETE        /pwguard/pws                           controllers.PasswordEntryController.deleteMany
+GET           /pwguard/pw/keywords/all               controllers.PasswordEntryController.getUniqueKeywords
 
 POST          /pwguard/user                          controllers.UserController.create
 POST          /pwguard/user/:id                      controllers.UserController.save(id: Int)

@@ -206,6 +206,17 @@ object PasswordEntryController extends BaseController {
     }
   }
 
+  def getUniqueKeywords = SecuredAction { authReq =>
+    implicit val request = authReq.request
+    val user = authReq.user
+
+    DAO.passwordEntryKeywordsDAO.findUniqueKeywords(user) map { keywords =>
+      Ok(Json.obj("keywords" -> keywords.toSeq))
+    } recover {
+      case NonFatal(e) => Ok(jsonError(s"Can't get keywords for $user", e))
+    }
+  }
+
   // -------------------------------------------------------------------------
   // Private methods
   // -------------------------------------------------------------------------

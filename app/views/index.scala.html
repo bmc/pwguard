@@ -60,6 +60,8 @@
     @scriptWebJar("log4javascript/js/log4javascript.js")
     @scriptWebJar("lodash/lodash.min.js")
     @scriptWebJar("modernizr/modernizr.min.js")
+    @scriptWebJar("ng-tags-input/ng-tags-input.min.js")
+    @stylesheetWebJar("ng-tags-input/ng-tags-input.min.css")
 
     @* ----------------------------------------------------------------------
         Local
@@ -93,6 +95,7 @@
       routes.javascript.PasswordEntryController.delete,
       routes.javascript.PasswordEntryController.deleteMany,
       routes.javascript.PasswordEntryController.getEntry,
+      routes.javascript.PasswordEntryController.getUniqueKeywords,
       routes.javascript.MainController.getUserAgentInfo,
       routes.javascript.UserController.save,
       routes.javascript.UserController.getAll,

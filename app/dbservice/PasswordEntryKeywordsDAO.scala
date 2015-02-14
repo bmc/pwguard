@@ -1,6 +1,6 @@
 package dbservice
 
-import models.{FullPasswordEntry, PasswordEntryKeyword, PasswordEntry}
+import models.{User, FullPasswordEntry, PasswordEntryKeyword, PasswordEntry}
 import play.api.Logger
 import pwguard.global.Globals.ExecutionContexts.DB._
 import scala.concurrent.Future
@@ -12,7 +12,7 @@ class PasswordEntryKeywordsDAO(_dal: DAL, _logger: Logger)
   override val logger = Logger("pwguard.dbservice.PasswordEntryKeywordsDAO")
 
   import dal.profile.simple._
-  import dal.{PasswordEntryKeywordsTable, PasswordEntryKeywords}
+  import dal.{PasswordEntryKeywordsTable, PasswordEntries, PasswordEntryKeywords}
 
   private type PWEntryExtraFieldsQuery = Query[PasswordEntryKeywordsTable,
                                                PasswordEntryKeyword,
@@ -31,6 +31,21 @@ class PasswordEntryKeywordsDAO(_dal: DAL, _logger: Logger)
   def findByIDs(idSet: Set[Int]): Future[Set[PasswordEntryKeyword]] = {
     withSession { implicit session =>
       val q = for (p <- PasswordEntryKeywords if p.id inSet idSet) yield p
+      Future { q.list.toSet }
+    }
+  }
+
+  /** Find all unique keywords, across all password entries, for a given user.
+    *
+    * @param user  the user
+    *
+    * @return a `Future` of the set of keyword strings
+    */
+  def findUniqueKeywords(user: User): Future[Set[String]] = {
+    withSession { implicit session =>
+      val q = for { pwe <- PasswordEntries if pwe.userID === user.id.get
+                    kw  <- PasswordEntryKeywords if kw.passwordEntryID === pwe.id }
+              yield kw.keyword
       Future { q.list.toSet }
     }
   }
@@ -106,7 +121,21 @@ class PasswordEntryKeywordsDAO(_dal: DAL, _logger: Logger)
                                  (implicit session: SlickSession):
     Future[Set[PasswordEntryKeyword]] = {
 
-    Future {
+    // Delete any already-saved empty keywords. This is a backstop measure.
+    val toDelete = entries filter { kw =>
+      (kw.keyword.length > 0) && (kw.id.isDefined)
+    }
+
+    // Ignore any not-saved empty keywords.
+    val toSave = entries filter { _.keyword.length > 0 }
+
+    val fDelete = if (toDelete.isEmpty) {
+      Future.successful(0)
+    } else {
+      deleteMany(toDelete)
+    }
+
+    fDelete map { n =>
       val tries = entries map { saveSyncInSession(_) }
 
       val errors: Set[Throwable] = tries.collect {

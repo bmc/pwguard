@@ -50,6 +50,7 @@ libraryDependencies ++= Seq(
   "org.webjars"           % "jquery"                     % "1.11.2",
   "org.webjars"           % "log4javascript"             % "1.4.10",
   "org.webjars"           % "lodash"                     % "3.1.0",
+  "org.webjars"           % "ng-tags-input"              % "2.1.1",
   "org.webjars"           % "jasmine"                    % "2.1.3" % "test"
 )
 

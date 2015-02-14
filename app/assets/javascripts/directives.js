@@ -10,7 +10,8 @@
 
 /* jshint ignore:start */
 
-var pwgDirectives = angular.module('pwguard-directives', ['pwguard-services']);
+var pwgDirectives = angular.module('pwguard-directives',
+                                   ['pwguard-services', 'ngTagsInput']);
 
 var templateURL   = window.angularTemplateURL;
 
@@ -112,8 +113,8 @@ pwgDirectives.directive('pwgBootstrapFormError', function() {
     },
 
     link: function(scope, element, attrs, ctrl) {
-      var field = ctrl[scope.pwgBootstrapFormError];
-      var watchFunc = function() {
+      function watchFunc() {
+        var field = ctrl[scope.pwgBootstrapFormError];
         return field.$invalid && field.$dirty;
       }
 
@@ -127,6 +128,46 @@ pwgDirectives.directive('pwgBootstrapFormError', function() {
   }
 });
 
+// ----------------------------------------------------------------------------
+// A popover directive, hiding the actual implementation. Using this directive
+// isolates the views from the actual implementation.
+// ----------------------------------------------------------------------------
+
+pwgDirectives.directive('pwgPopover', function() {
+  function requiredAttr(attrs, name) {
+    if (! attrs[name]) {
+      throw `pwg-popover: ${name} attribute is required.`
+    }
+  }
+
+  return {
+    restrict:     'E',
+    replace:      true,
+    transclude:   true,
+    templateUrl:  templateURL('directives/pwgPopover.html'),
+    scope: {
+      title:     "@",
+      icon:      "@",
+      placement: "@",
+      trigger:   "@",
+      content:   "@"
+    },
+    link: function(scope, element, attrs) {
+      console.log(attrs.icon);
+      requiredAttr(scope, 'placement');
+      requiredAttr(scope, 'icon');
+      requiredAttr(scope, 'trigger');
+      requiredAttr(scope, 'content');
+
+      let popover = element.find('.popover-button');
+
+      popover.popover({
+        trigger:   scope.trigger,
+        content:   scope.content
+      });
+    }
+  }
+});
 
 // ----------------------------------------------------------------------------
 // Allow a drag-and-drop of a file, posting the results to a callback as
@@ -156,7 +197,7 @@ pwgDirectives.directive('pwgDropFile', ['pwgLogging', function(pwgLogging) {
     scope: {
       maxFileSize: '@',
       fileDropped: '=',
-      onError:     '=',
+      onError:     '='
     },
 
     link: function(scope, element, attrs, ngModel) {
@@ -304,7 +345,6 @@ pwgDirectives.directive('pwgName', ['$injector', function($injector) {
       $scope.$watch('pwgName', function(newValue) {
         let n = newValue;
         if (!n) n = "";
-        console.log(`pwg-name: name=${n}`);
         element.attr("name", n);
       });
     }
@@ -381,6 +421,34 @@ pwgDirectives.directive('pwgEditPasswordEntryForm',
            return extra;
          }
 
+         let allUniqueKeywords = null;
+
+         $scope.loadUniqueKeywords = (query) => {
+           let $q = $injector.get('$q');
+           let deferred = $q.defer();
+           let url = routes.controllers.PasswordEntryController.getUniqueKeywords().url;
+
+           function filterAndResolve(uniqueKeywordStrings) {
+             let q = query.toLowerCase();
+             deferred.resolve(_.filter(uniqueKeywordStrings, (k) => {
+               return _.startsWith(k.toLowerCase(), q);
+             }));
+           }
+
+           if (allUniqueKeywords) {
+             // Already loaded.
+             filterAndResolve(allUniqueKeywords);
+           }
+           else {
+             pwgAjax.get(url, function(data) {
+               allUniqueKeywords = data.keywords;
+               filterAndResolve(allUniqueKeywords);
+             });
+           }
+
+           return deferred.promise;
+         }
+
          $scope.$watch('ngModel', function(v) {
            if (v) {
              log.debug(`ngModel: ${JSON.stringify(v)}`);
@@ -391,9 +459,17 @@ pwgDirectives.directive('pwgEditPasswordEntryForm',
                v.extras[i] = augmentExtra(i, v.extras[i]);
              }
 
-             // Capture just the keyword strings. We'll have to map them
-             // back before posting.
-             v.keywordStrings = _.map(v.keywords, (k) => { return k.keyword });
+             // Filter out any empty keywords that happen to be posted.
+             v.keywords = _.filter(v.keywords, (k) => {
+               return k.keyword && k.keyword.trim().length > 0
+             });
+
+             // Convert the keywords into ngTagsInput-compatible objects.
+             // We'll have to map these back to PWGuard-compatible keyword
+             // objects when we post.
+             $scope.keywordTags = _.map(v.keywords, (k) => {
+               return { text: k.keyword }
+             });
 
              log.debug(`entry is now: ${JSON.stringify(v)}`);
            }
@@ -479,20 +555,22 @@ pwgDirectives.directive('pwgEditPasswordEntryForm',
 
          // Take the keyword strings, possibly modified in the DOM, and map
          // them back to keyword objects.
-         function mapKeywordStrings(pwEntry) {
+         function mapKeywordTags(pwEntry) {
            let kwMap = {};
            for (let kw of $scope.ngModel.keywords) {
              kwMap[kw.keyword] = kw;
            }
 
            let newKeywords = [];
-           for (let s of $scope.ngModel.keywordStrings) {
-             let kw = kwMap[s];
+           for (let k of $scope.keywordTags) {
+             let kw = kwMap[k.text];
              if (kw) {
+               // Existing tag. Preserve it.
                newKeywords.push(kw);
              }
              else {
-               newKeywords.push({id: null, keyword: s});
+               // New tag. Make it, with no ID.
+               newKeywords.push({id: null, keyword: k.text});
              }
            }
 
@@ -509,7 +587,7 @@ pwgDirectives.directive('pwgEditPasswordEntryForm',
 
            // Map the keyword strings to their actual counterparts, if possible.
            // If not, create new ones.
-           mapKeywordStrings($scope.ngModel);
+           mapKeywordTags($scope.ngModel);
 
            log.debug(`Saving password entry. name=${name}, url=${$scope.saveUrl}`);
            log.debug(JSON.stringify($scope.ngModel));
