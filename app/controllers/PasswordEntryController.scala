@@ -42,12 +42,10 @@ object PasswordEntryController extends BaseController {
       Future {
         logger.debug { s"Saving existing password entry ${pwe.name} " +
                        s"for ${user.email}" }
-logger.error(s"entry=${pwe}")
       } flatMap {
         case _ => passwordEntryDAO.saveWithDependents(pwe)
       }
     }
-logger.error(s"json=${request.body}")
 
     val f = for { pweOpt <- passwordEntryDAO.findByID(id)
                   pwe    <- pweOpt.toFuture("Password entry not found")
@@ -138,10 +136,21 @@ logger.error(s"json=${request.body}")
 
   def getEntry(id: Int) = SecuredAction { authReq =>
     val user = authReq.user
+
+    def maybeDecryptPassword(encryptedOpt: Option[String]): Future[String] = {
+      UserHelpers.decryptStoredPasswordOpt(user, encryptedOpt) map {
+        _.getOrElse("")
+      }
+    }
+
     passwordEntryDAO.findByUserAndId(user, id) flatMap { opt =>
       opt map { pwe =>
-        passwordEntryDAO.fullEntry(pwe) map {
-          f => Ok(Json.obj("passwordEntry" -> f))
+        for { fpwe <- passwordEntryDAO.fullEntry(pwe)
+              pw   <- maybeDecryptPassword(pwe.encryptedPassword) }
+        yield {
+          val js = JsonHelpers.addFields(Json.toJson(fpwe),
+                                         ("password" -> Json.toJson(pw)))
+          Ok(Json.obj("passwordEntry" -> js))
         }
       } getOrElse {
         Future.successful(NotFound)
@@ -254,12 +263,10 @@ logger.error(s"json=${request.body}")
     }
 
     // Augment the JSON with the owner ID. We do that here because (a) it means
-    // we aren't relying on the JavaScript, and (b) it's safer. Unfortunately,
-    // we have to cheat with a cast.
-    val adjJson = json.asInstanceOf[JsObject] +
-                  ("userID" -> Json.toJson(owner.id.get))
+    // we aren't relying on the JavaScript, and (b) it's safer.
+    val js2 = JsonHelpers.addFields(json, ("userID" -> Json.toJson(owner.id.get)))
 
-    objFromJSON(adjJson) flatMap { fullPwEntry =>
+    objFromJSON(js2) flatMap { fullPwEntry =>
       pwOpt.map { existing => handleExisting(existing, fullPwEntry) }
            .getOrElse { makeNew(fullPwEntry) }
     }

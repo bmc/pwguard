@@ -386,6 +386,7 @@ pwGuardApp.controller('EditPasswordEntryCtrl',
     pwgAjax.get(url,
       function(data) {
         $scope.passwordEntry = data.passwordEntry;
+        log.debug(`Editing: ${JSON.stringify($scope.passwordEntry)}`);
       },
       function(error) {
         console.log(error);

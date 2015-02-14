@@ -2,6 +2,7 @@ package models
 
 import java.net.URL
 
+import _root_.util.JsonHelpers
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 
@@ -114,11 +115,9 @@ object PasswordEntryHelper {
 
       implicit val fullPasswordEntryWrites = new Writes[FullPasswordEntry] {
         def writes(o: FullPasswordEntry): JsValue = {
-          // JsValue doesn't have a "+", but JsObject does. This downcast,
-          // while regrettable, is pretty much the only option.
-          val j: JsObject = Json.toJson(o.toBaseEntry).asInstanceOf[JsObject]
-          j + ("extras" -> Json.toJson(o.extraFields.toArray)) +
-              ("keywords" -> Json.toJson(o.keywords.toArray))
+          JsonHelpers.addFields(Json.toJson(o.toBaseEntry),
+                                ("extras" -> Json.toJson(o.extraFields.toArray)),
+                                ("keywords" -> Json.toJson(o.keywords.toArray)))
         }
       }
 

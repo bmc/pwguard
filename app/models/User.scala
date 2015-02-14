@@ -195,6 +195,26 @@ object UserHelpers {
     }
   }
 
+  /** Decrypt an encrypted password, if it's defined.
+    *
+    * @param user                 the user
+    * @param optEncryptedPassword encrypted password, or None
+    *
+    * @return `Future(Some(plaintext))` or `Future(None)`
+    */
+  def decryptStoredPasswordOpt(user:                 User,
+                               optEncryptedPassword: Option[String]):
+    Future[Option[String]] = {
+
+    import _root_.util.EitherOptionHelpers.noneT
+
+    optEncryptedPassword map { epw =>
+      decryptStoredPassword(user, epw) map { Some(_) }
+    } getOrElse {
+      Future.successful(noneT[String])
+    }
+  }
+
   /** Encrypt a password for storage.
     *
     * @param user              the user

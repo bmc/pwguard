@@ -14,6 +14,8 @@ object JsonHelpers {
     * @return the new JSON
     */
   def addFields(json: JsValue, fields: (String, JsValue)*): JsValue = {
+    // JsValue doesn't have a "+", but JsObject does. This downcast,
+    // while regrettable, is pretty much the only option.
     val obj = json.as[JsObject]
     JsObject(obj.fields ++ fields)
   }

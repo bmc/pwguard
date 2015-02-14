@@ -415,10 +415,8 @@ object ImportExportService {
     val keywords             = e.keywords map { _.keyword } mkString (",")
 
     def getEncryptedPassword(): Future[String] = {
-      encryptedPasswordOpt map { epw =>
-        UserHelpers.decryptStoredPassword(user, epw)
-      } getOrElse {
-        Future.successful("")
+      UserHelpers.decryptStoredPasswordOpt(user, encryptedPasswordOpt) map {
+        _.getOrElse("")
       }
     }
 
