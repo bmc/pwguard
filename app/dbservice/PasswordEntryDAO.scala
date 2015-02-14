@@ -19,8 +19,6 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
 
   private type PWEntryQuery = Query[PasswordEntriesTable, PasswordEntry, Seq]
 
-  private val SplitKeywords = """[,\s]+""".r
-
   private val compiledAllQuery = Compiled{ (userID: Column[Int]) =>
     val q = for { pwe <- PasswordEntries if pwe.userID === userID } yield pwe
     q.sorted(_.name)
@@ -218,7 +216,7 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
       val baseEntry = entryToSave.toBaseEntry
 
       for { savedBaseEntry  <- save(baseEntry)
-            fullEntry       = baseEntry.toFullEntry()
+            fullEntry       = savedBaseEntry.toFullEntry()
             savedFullEntry1 <- saveExtraFieldChanges(fullEntry,
                                                      entryToSave.extraFields)
             savedFullEntry2 <- saveKeywordChanges(savedFullEntry1,
