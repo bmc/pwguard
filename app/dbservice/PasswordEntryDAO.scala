@@ -15,7 +15,7 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
   override val logger = Logger("pwguard.dbservice.PasswordEntryDAO")
 
   import dal.profile.simple._
-  import dal.{PasswordEntriesTable, PasswordEntries}
+  import dal.{PasswordEntriesTable, PasswordEntries, PasswordEntryKeywords}
 
   private type PWEntryQuery = Query[PasswordEntriesTable, PasswordEntry, Seq]
 
@@ -141,30 +141,48 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
       val lcTerm  = term.toLowerCase
       val sqlTerm = s"%$lcTerm%"
 
-      val q1 = PasswordEntries.filter { pw =>
-        (pw.name.toLowerCase like sqlTerm)
+      // There's a way to do this with one query. I'll figure it out later.
+
+      def getKeywordMatches(): Future[Set[Int]] = {
+        val q =
+          for { pwe <- PasswordEntries if pwe.userID === userID
+                kw  <- PasswordEntryKeywords if (kw.passwordEntryID === pwe.id) &&
+                                                (kw.keyword like sqlTerm) }
+          yield pwe.id
+
+        Future { q.list.toSet }
       }
 
-      val q2 = if (includeDesc) {
-        q1 ++ PasswordEntries.filter { _.description.toLowerCase like sqlTerm }
-      }
-      else {
-        q1
-      }
-      val q3 = if (includeURL) {
-        q2 ++ PasswordEntries.filter { _.url like sqlTerm }
-      }
-      else {
-        q2
+      def getEntryMatches(keywordMatchIDs: Set[Int]): Future[Set[PasswordEntry]] = {
+
+        val q1 = PasswordEntries.filter { pw =>
+          (pw.name.toLowerCase like sqlTerm) || (pw.id inSet keywordMatchIDs)
+        }
+
+        val q2 = if (includeDesc) {
+          q1 ++ PasswordEntries.filter { _.description.toLowerCase like sqlTerm }
+        }
+        else {
+          q1
+        }
+
+        val q3 = if (includeURL) {
+          q2 ++ PasswordEntries.filter { _.url like sqlTerm }
+        }
+        else {
+          q2
+        }
+
+        val qFinal = q3.filter { pwe => pwe.userID === userID }
+
+        Future {
+          qFinal.list.toSet
+        }
       }
 
-      val qFinal = q3.filter { pwe => pwe.userID === userID }
-
-      // Can't do word-only matches in the database in a database-agnostic
-      // fashion. So, we need to filter here.
-      Future {
-        qFinal.list.toSet
-      }
+      for { kwMatchIDs <- getKeywordMatches()
+            pwEntries  <- getEntryMatches(kwMatchIDs) }
+      yield pwEntries
     }
   }
 
