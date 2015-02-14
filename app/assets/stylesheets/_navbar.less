@@ -1,6 +1,6 @@
 
 //@activeBackground: darken(@navbarBackground, 10%);
-@activeTabBackground: @logoColor;
+@activeTabBackground: #428bca;
 @activeTabForeground: white;
 
 #navbar {
@@ -62,6 +62,10 @@
 
       &.active {
         background-color: @activeTabBackground;
+
+        &.desktop {
+          border-radius: 4px 4px 4px 4px;
+        }
 
         a {
           color:  @activeTabForeground;
