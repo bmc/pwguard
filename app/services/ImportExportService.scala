@@ -110,7 +110,9 @@ object ImportExportService {
   private val logger = Logger("services.ImportExportService")
 
   private val importActor = Akka.system(current).actorOf(Props[ImportActor],
-    "import-actor")
+                                                         "import-actor")
+
+  private val SplitKeywords = """[,\s]+""".r
 
   // -------------------------------------------------------------------------
   // Public methods
@@ -322,15 +324,23 @@ object ImportExportService {
       }
     }
 
+    def handleKeywords(keywordString: String): Set[PasswordEntryKeyword] = {
+      SplitKeywords.split(keywordString).map { s =>
+        PasswordEntryKeyword(id = None, passwordEntryID = None, keyword = s)
+      }.toSet
+    }
+
     // The row's key set is the set of headers for this row. Remove the
     // common headers, which we just processed. Anything left is a custom
     // field.
     val remainingHeaders = row.keySet -- headers.All
-    val extraFields = handleExtraFields(Set.empty[PasswordEntryExtraField],
-                                        remainingHeaders.toList)
+    val extras = handleExtraFields(Set.empty[PasswordEntryExtraField],
+                                   remainingHeaders.toList)
+    val keywordString = headers.keywordsHeader.flatMap(row.get(_)).getOrElse("")
+    val keywords = handleKeywords(keywordString)
 
     // Map to a full password entry.
-    val fpw = entry.toFullEntry(extraFields)
+    val fpw = entry.toFullEntry(extras = extras, keywords = keywords)
 
     saveIfNew(fpw, headers.pwHeader.flatMap(row.get(_)), user) map { opt =>
       // Return a count of 1 if saved, 0 if not.
