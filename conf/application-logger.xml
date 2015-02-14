@@ -36,7 +36,7 @@
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>[%boldYellow(%date)] %highlight(%level) %boldWhite(%logger{25}) %message%n%xException</pattern>
+      <pattern>[%boldYellow(%date)] %highlight(%level) %boldWhite(%logger{20}) %message%n%xException</pattern>
     </encoder>
     <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
       <level>DEBUG</level>
@@ -50,6 +50,7 @@
   <logger name="com.ning.http.client" level="WARN"/>
   <logger name="ch.qos.logback.core" level="WARN"/>
   <logger name="scala.slick.jdbc" level="DEBUG"/>
+  <logger name="scala.slick.jdbc.StatementInvoker" level="WARN"/>
 
   <logger name="pwguard" level="DEBUG"/>
 

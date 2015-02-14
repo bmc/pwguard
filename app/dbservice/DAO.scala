@@ -12,4 +12,5 @@ object DAO {
   val userDAO                     = new UserDAO(dal, logger)
   val passwordEntryDAO            = new PasswordEntryDAO(dal, logger)
   val passwordEntryExtraFieldsDAO = new PasswordEntryExtraFieldsDAO(dal, logger)
+  val passwordEntryKeywordsDAO    = new PasswordEntryKeywordsDAO(dal, logger)
 }

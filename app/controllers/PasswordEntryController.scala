@@ -42,10 +42,12 @@ object PasswordEntryController extends BaseController {
       Future {
         logger.debug { s"Saving existing password entry ${pwe.name} " +
                        s"for ${user.email}" }
+logger.error(s"entry=${pwe}")
       } flatMap {
         case _ => passwordEntryDAO.saveWithDependents(pwe)
       }
     }
+logger.error(s"json=${request.body}")
 
     val f = for { pweOpt <- passwordEntryDAO.findByID(id)
                   pwe    <- pweOpt.toFuture("Password entry not found")
@@ -237,7 +239,8 @@ object PasswordEntryController extends BaseController {
         description = newData.description.orElse(existing.description),
         url         = newData.url.orElse(existing.url),
         notes       = newData.notes.orElse(existing.notes),
-        extraFields = newData.extraFields
+        extraFields = newData.extraFields,
+        keywords    = newData.keywords
       )
 
       maybeEncryptPassword(toSave)

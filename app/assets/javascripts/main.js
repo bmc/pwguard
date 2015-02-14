@@ -412,6 +412,7 @@ pwGuardApp.controller('NewPasswordEntryCtrl',
       loginID:           "",
       password:          "",
       encryptedPassword: "",
+      keywords:          [],
       description:       "",
       url:               "",
       notes:             "",
@@ -614,7 +615,7 @@ pwGuardApp.controller('InnerSearchCtrl',
 
     var cancelEdit = function(form, pw) {
       let doCancel = function() {
-        _.extend(pw, originalEntries[pw.id]);
+        _.assign(pw, originalEntries[pw.id]);
         pw.editing = false;
         reissueLastSearch();
       }
@@ -1016,7 +1017,7 @@ pwGuardApp.controller('AdminUsersCtrl',
       let url = routes.controllers.UserController.save(u.id).url;
 
       pwgAjax.post(url, u, (response) => {
-        originalUsers[u.email] = _.omit('save', 'cancel', 'edit', 'editing');
+        originalUsers[u.email] = _.omit(u, 'save', 'cancel', 'edit', 'editing');
         u.editing = false;
         loadUsers();
       });

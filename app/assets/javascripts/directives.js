@@ -342,7 +342,7 @@ pwgDirectives.directive('pwgEditPasswordEntryForm',
          }
 
          function augmentExtra(index, extra) {
-           _.extend(extra, {
+           _.assign(extra, {
              deleted:        false,
              delete:         function() {
                extra.deleted = true;
@@ -364,16 +364,21 @@ pwgDirectives.directive('pwgEditPasswordEntryForm',
            return extra;
          }
 
-         $scope.$watch('ngModel', function(newValue) {
-           if (newValue) {
-             log.debug(`ngModel: ${JSON.stringify(newValue)}`);
-             if (! newValue.extras) newValue.extras = [];
+         $scope.$watch('ngModel', function(v) {
+           if (v) {
+             log.debug(`ngModel: ${JSON.stringify(v)}`);
+             if (! v.extras) v.extras = [];
+             if (! v.keywords) v.keywords = [];
 
-             for (let i = 0; i < newValue.extras.length; i++) {
-               newValue.extras[i] = augmentExtra(i, newValue.extras[i]);
+             for (let i = 0; i < v.extras.length; i++) {
+               v.extras[i] = augmentExtra(i, v.extras[i]);
              }
 
-             log.debug(`entry is now: ${JSON.stringify(newValue)}`);
+             // Capture just the keyword strings. We'll have to map them
+             // back before posting.
+             v.keywordStrings = _.map(v.keywords, (k) => { return k.keyword });
+
+             log.debug(`entry is now: ${JSON.stringify(v)}`);
            }
          });
 
@@ -455,13 +460,42 @@ pwgDirectives.directive('pwgEditPasswordEntryForm',
            return valid;
          }
 
+         // Take the keyword strings, possibly modified in the DOM, and map
+         // them back to keyword objects.
+         function mapKeywordStrings(pwEntry) {
+           let kwMap = {};
+           for (let kw of $scope.ngModel.keywords) {
+             kwMap[kw.keyword] = kw;
+           }
+
+           let newKeywords = [];
+           for (let s of $scope.ngModel.keywordStrings) {
+             let kw = kwMap[s];
+             if (kw) {
+               newKeywords.push(kw);
+             }
+             else {
+               newKeywords.push({id: null, keyword: s});
+             }
+           }
+
+           pwEntry.keywords = newKeywords;
+           return pwEntry;
+         }
+
          $scope.submit = function() {
            let id = $scope.ngModel.id;
            let name = $scope.ngModel.name;
            $scope.ngModel.extras = _.filter($scope.ngModel.extras, function(e) {
              return ! e.deleted;
            });
+
+           // Map the keyword strings to their actual counterparts, if possible.
+           // If not, create new ones.
+           mapKeywordStrings($scope.ngModel);
+
            log.debug(`Saving password entry. name=${name}, url=${$scope.saveUrl}`);
+           log.debug(JSON.stringify($scope.ngModel));
            pwgAjax.post($scope.saveUrl, $scope.ngModel, function() {
              pwgFlash.info("Saved.", 5 /* second timeout */);
              if ($scope.onSave)

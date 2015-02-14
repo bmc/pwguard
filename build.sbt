@@ -51,7 +51,7 @@ libraryDependencies ++= Seq(
   "org.webjars"           % "font-awesome"               % "4.3.0",
   "org.webjars"           % "jquery"                     % "1.11.2",
   "org.webjars"           % "log4javascript"             % "1.4.10",
-  "org.webjars"           % "underscorejs"               % "1.7.0-1",
+  "org.webjars"           % "lodash"                     % "3.1.0",
   "org.webjars"           % "jasmine"                    % "2.1.3" % "test"
 )
 

@@ -1,10 +1,8 @@
 package dbservice
 
-import models.{BaseModel, PasswordEntryExtraField}
+import models.BaseModel
 
 import scala.slick.driver.JdbcProfile
-import java.sql.{ ResultSet, Timestamp }
-import java.net.URL
 
 /** Allows dynamic selection of database type.
   */
@@ -26,7 +24,8 @@ class DAL(override val profile: JdbcProfile)
   extends Profile
   with    UsersComponent
   with    PasswordEntriesComponent
-  with    PasswordEntriesExtraFieldsComponent
+  with    PasswordEntryExtraFieldsComponent
+  with    PasswordEntryKeywordsComponent
 
 trait UsersComponent {
   self: Profile =>
@@ -85,11 +84,11 @@ trait PasswordEntriesComponent {
   val PasswordEntries = TableQuery[PasswordEntriesTable]
 }
 
-trait PasswordEntriesExtraFieldsComponent {
+trait PasswordEntryExtraFieldsComponent {
   self: Profile with PasswordEntriesComponent =>
 
   import profile.simple._
-  import models.PasswordEntry
+  import models.PasswordEntryExtraField
 
   class PasswordEntryExtraFieldsTable(tag: Tag)
     extends ModelTable[PasswordEntryExtraField](tag, "password_entry_extra_fields") {
@@ -110,4 +109,28 @@ trait PasswordEntriesExtraFieldsComponent {
   }
 
   val PasswordEntryExtraFields = TableQuery[PasswordEntryExtraFieldsTable]
+}
+
+trait PasswordEntryKeywordsComponent {
+  self: Profile with PasswordEntriesComponent =>
+
+  import profile.simple._
+  import models.PasswordEntryKeyword
+
+  class PasswordEntryKeywordsTable(tag: Tag)
+    extends ModelTable[PasswordEntryKeyword](tag, "password_entry_keywords") {
+
+    def id              = column[Int]("id", O.PrimaryKey, O.AutoInc)
+    def passwordEntryID = column[Int]("password_entry_id")
+    def keyword         = column[String]("keyword")
+
+    def passwordEntry = foreignKey("pwek_id_fk", passwordEntryID, PasswordEntries)(
+      _.id, onUpdate = ForeignKeyAction.Restrict
+    )
+
+    def * = (id.?, passwordEntryID.?, keyword) <>
+      (PasswordEntryKeyword.tupled, PasswordEntryKeyword.unapply)
+  }
+
+  val PasswordEntryKeywords = TableQuery[PasswordEntryKeywordsTable]
 }

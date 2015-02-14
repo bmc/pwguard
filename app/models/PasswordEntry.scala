@@ -20,6 +20,17 @@ trait BasePasswordEntry {
   val notes:             Option[String]
 }
 
+/** A password entry record.
+  *
+  * @param id                 The database ID, if the record is saved
+  * @param userID             The ID of the user who owns this record
+  * @param name               The name associated with this entry
+  * @param description        Optional freeform description
+  * @param loginID            Login ID
+  * @param encryptedPassword  Encrypted password
+  * @param url                URL, if any
+  * @param notes              Freeform notes field
+  */
 case class PasswordEntry(id:                Option[Int],
                          userID:            Int,
                          name:              String,
@@ -30,10 +41,20 @@ case class PasswordEntry(id:                Option[Int],
                          notes:             Option[String])
   extends BasePasswordEntry with BaseModel {
 
-  def toFullEntry(extras: Set[PasswordEntryExtraField] = Set.empty[PasswordEntryExtraField]) = {
-    FullPasswordEntry(id, userID, name, description, loginID,
-                      encryptedPassword, url, notes, extras)
-  }
+  def toFullEntry(
+    extras: Set[PasswordEntryExtraField] = Set.empty[PasswordEntryExtraField],
+    keywords: Set[PasswordEntryKeyword]  = Set.empty[PasswordEntryKeyword]) = {
+    FullPasswordEntry(id                = id,
+                      userID            = userID,
+                      name              = name,
+                      description       = description,
+                      loginID           = loginID,
+                      encryptedPassword = encryptedPassword,
+                      url               = url,
+                      notes             = notes,
+                      keywords          = keywords,
+                      extraFields       = extras)
+    }
 }
 
 case class FullPasswordEntry(id:                Option[Int],
@@ -44,16 +65,24 @@ case class FullPasswordEntry(id:                Option[Int],
                              encryptedPassword: Option[String],
                              url:               Option[String],
                              notes:             Option[String],
+                             keywords:          Set[PasswordEntryKeyword],
                              extraFields:       Set[PasswordEntryExtraField])
   extends BasePasswordEntry with BaseModel {
 
-  def toBaseEntry = PasswordEntry(id, userID, name, description, loginID,
-                                  encryptedPassword, url, notes)
+  def toBaseEntry = PasswordEntry(id                = id,
+                                  userID            = userID,
+                                  name              = name,
+                                  description       = description,
+                                  loginID           = loginID,
+                                  encryptedPassword = encryptedPassword,
+                                  url               = url,
+                                  notes             = notes)
 }
 
 object PasswordEntryHelper {
   object json {
     object implicits {
+
       implicit val urlWrites = new Writes[URL] {
         def writes(url: URL) = Json.toJson(url.toString)
       }
@@ -81,22 +110,24 @@ object PasswordEntryHelper {
       )(PasswordEntry.apply _)
 
       import PasswordEntryExtraFieldHelper.json.implicits._
+      import PasswordEntryKeywordHelper.json.implicits._
 
       implicit val fullPasswordEntryWrites = new Writes[FullPasswordEntry] {
         def writes(o: FullPasswordEntry): JsValue = {
           // JsValue doesn't have a "+", but JsObject does. This downcast,
           // while regrettable, is pretty much the only option.
           val j: JsObject = Json.toJson(o.toBaseEntry).asInstanceOf[JsObject]
-          j + ("extras" -> Json.toJson(o.extraFields.toArray))
+          j + ("extras" -> Json.toJson(o.extraFields.toArray)) +
+              ("keywords" -> Json.toJson(o.keywords.toArray))
         }
       }
 
       implicit val fullPasswordEntryReads = new Reads[FullPasswordEntry] {
         def reads(json: JsValue): JsResult[FullPasswordEntry] = {
           json.validate[PasswordEntry].flatMap { p =>
-            (json \ "extras").validate[Array[PasswordEntryExtraField]].map { e =>
-              p.toFullEntry(e.toSet)
-            }
+            for { extras <- (json \ "extras").validate[Array[PasswordEntryExtraField]]
+                  keywords <- (json \ "keywords").validate[Array[PasswordEntryKeyword]] }
+            yield p.toFullEntry(extras = extras.toSet, keywords = keywords.toSet)
           }
         }
       }

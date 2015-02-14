@@ -43,6 +43,7 @@ object ImportFieldMapping extends Enumeration {
   val Description = Value
   val Login       = Value
   val Password    = Value
+  val Keywords    = Value
   val URL         = Value
   val Notes       = Value
 
@@ -67,16 +68,18 @@ case class ImportData(csv:      File,
                       promise:  Promise[Int])
 
 
-private case class MappedHeaders(nameHeader:  String,
-                                 descHeader:  Option[String],
-                                 loginHeader: Option[String],
-                                 notesHeader: Option[String],
-                                 pwHeader:    Option[String],
-                                 urlHeader:   Option[String]) {
+private case class MappedHeaders(nameHeader:     String,
+                                 descHeader:     Option[String],
+                                 loginHeader:    Option[String],
+                                 notesHeader:    Option[String],
+                                 keywordsHeader: Option[String],
+                                 pwHeader:       Option[String],
+                                 urlHeader:      Option[String]) {
   val All = Set(Some(nameHeader),
                 descHeader,
                 loginHeader,
                 notesHeader,
+                keywordsHeader,
                 pwHeader,
                 urlHeader).flatten
 }
@@ -224,12 +227,13 @@ object ImportExportService {
       val mappings    = data.mappings
 
       val headers = MappedHeaders(
-        nameHeader  = mappingFor(ImportFieldMapping.Name, mappings).get,
-        descHeader  = mappingFor(ImportFieldMapping.Description, mappings),
-        loginHeader = mappingFor(ImportFieldMapping.Login, mappings),
-        notesHeader = mappingFor(ImportFieldMapping.Notes, mappings),
-        pwHeader    = mappingFor(ImportFieldMapping.Password, mappings),
-        urlHeader   = mappingFor(ImportFieldMapping.URL, mappings)
+        nameHeader     = mappingFor(ImportFieldMapping.Name, mappings).get,
+        descHeader     = mappingFor(ImportFieldMapping.Description, mappings),
+        loginHeader    = mappingFor(ImportFieldMapping.Login, mappings),
+        notesHeader    = mappingFor(ImportFieldMapping.Notes, mappings),
+        pwHeader       = mappingFor(ImportFieldMapping.Password, mappings),
+        keywordsHeader = mappingFor(ImportFieldMapping.Keywords, mappings),
+        urlHeader      = mappingFor(ImportFieldMapping.URL, mappings)
       )
 
       // processNext() is recursive, allowing us to chain an arbitrary
