@@ -326,11 +326,12 @@ pwGuardApp.controller('LoginCtrl',
 
     pwgCheckRoute('login', currentUser);
 
-    var pwgAjax     = $injector.get('pwgAjax');
-    var pwgFlash    = $injector.get('pwgFlash');
-    var pwgLogging  = $injector.get('pwgLogging');
-    var pwgRoutes   = $injector.get('pwgRoutes');
-    var pwgUser     = $injector.get('pwgUser');
+    var pwgAjax       = $injector.get('pwgAjax');
+    var pwgFlash      = $injector.get('pwgFlash');
+    var pwgLogging    = $injector.get('pwgLogging');
+    var pwgRoutes     = $injector.get('pwgRoutes');
+    var pwgUser       = $injector.get('pwgUser');
+    var pwgSearchTerm = $injector.get('pwgSearchTerm');
 
     var log = pwgLogging.logger('LoginCtrl');
 
@@ -345,6 +346,7 @@ pwGuardApp.controller('LoginCtrl',
         function(response) {
           pwgUser.setLoggedInUser(response.user);
           log.debug("Login successful");
+          pwgSearchTerm.clearSavedTerm();
           pwgRoutes.redirectToDefaultRoute();
         },
 
@@ -459,7 +461,7 @@ pwGuardApp.controller('InnerSearchCtrl',
     var pwgModal       = $injector.get('pwgModal');
     var pwgLogging     = $injector.get('pwgLogging');
     var pwgRoutes      = $injector.get('pwgRoutes');
-    var $cookies       = $injector.get('$cookies');
+    var pwgSearchTerm  = $injector.get('pwgSearchTerm');
     var $filter        = $injector.get('$filter');
     var inflector      = $filter('pwgInflector');
     var ellipsize      = $filter('pwgEllipsize');
@@ -505,7 +507,7 @@ pwGuardApp.controller('InnerSearchCtrl',
       let url = routes.controllers.PasswordEntryController.searchPasswordEntries().url;
       log.debug(`Issuing search: ${$scope.searchTerm}`);
       pwgAjax.post(url, {searchTerm: $scope.searchTerm}, function(response) {
-        $cookies.lastSearch = $scope.searchTerm;
+        pwgSearchTerm.saveSearchTerm($scope.searchTerm);
         $scope.searchResults = adjustResults(response.results);
       });
     }
@@ -516,7 +518,7 @@ pwGuardApp.controller('InnerSearchCtrl',
       var url = routes.controllers.PasswordEntryController.all().url;
       pwgAjax.get(url,
         function(response) {
-          $cookies.lastSearch = SEARCH_ALL_MARKER;
+          pwgSearchTerm.saveSearchTerm(SEARCH_ALL_MARKER);
           $scope.searchResults = adjustResults(response.results);
         }
       );
@@ -533,7 +535,7 @@ pwGuardApp.controller('InnerSearchCtrl',
     }
 
     var reissueLastSearch = () => {
-      let lastSearch = $cookies.lastSearch;
+      let lastSearch = pwgSearchTerm.getSavedTerm();
       if (lastSearch) {
         if (lastSearch === SEARCH_ALL_MARKER) {
           $scope.showAll();

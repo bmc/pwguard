@@ -490,6 +490,21 @@ pwgServices.factory('pwgFormHelper', ['$injector', function($injector) {
 }]);
 
 // ----------------------------------------------------------------------------
+// Service to manage saving last search term
+// ----------------------------------------------------------------------------
+
+pwgServices.factory('pwgSearchTerm', ['$injector', function($injector) {
+  var $cookieStore = $injector.get('$cookieStore');
+  var SAVED_TERM_COOKIE = "lastSearch";
+
+  return {
+    saveSearchTerm: (term) => { $cookieStore.put(SAVED_TERM_COOKIE, term); },
+    clearSavedTerm: ()     => { $cookieStore.remove(SAVED_TERM_COOKIE); },
+    getSavedTerm:   ()     => { return $cookieStore.get(SAVED_TERM_COOKIE); }
+  }
+}]);
+
+// ----------------------------------------------------------------------------
 // Route-related services
 // ----------------------------------------------------------------------------
 
