@@ -402,6 +402,7 @@ object ImportExportService {
     val notes                = e.notes.getOrElse("")
     val url                  = e.url.getOrElse("")
     val encryptedPasswordOpt = e.encryptedPassword
+    val keywords             = e.keywords map { _.keyword } mkString (",")
 
     def getEncryptedPassword(): Future[String] = {
       encryptedPasswordOpt map { epw =>
@@ -432,11 +433,13 @@ object ImportExportService {
                            ImportFieldMapping.Description.toString -> description,
                            ImportFieldMapping.Login.toString       -> loginID,
                            ImportFieldMapping.URL.toString         -> url,
+                           ImportFieldMapping.Keywords.toString    -> keywords,
                            ImportFieldMapping.Notes.toString       -> notes)
-      addCustomFields(e.extraFields.toList, initialMap)
+      val m = addCustomFields(e.extraFields.toList, initialMap)
+      logger.error(s"m: $m")
+      m
     }
   }
-
 
   private def createDownload(entries: Set[FullPasswordEntry],
                              user:    User,
