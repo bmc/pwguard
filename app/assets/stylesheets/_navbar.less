@@ -1,4 +1,8 @@
 
+//@activeBackground: darken(@navbarBackground, 10%);
+@activeTabBackground: @logoColor;
+@activeTabForeground: white;
+
 #navbar {
   background-color: @navbarBackground;
   width:            100%;
@@ -6,9 +10,41 @@
   padding:          0;
   position:         relative; // Allow for absolute positioning of children
 
-  .navbar {
+  .navbar-nav {
     height:           @navbarHeight;
     background-color: @navbarBackground;
+
+    li {
+      // We want to center the <a> element, which contains the label,
+      // within the <li>. To do that, since the containing <li> element
+      // element has a known fixed height, we can simply set the <li>
+      // container's line-height to fill its height. See
+      // http://stackoverflow.com/a/84616/53495
+
+      height:           @navbarHeight;
+      line-height:      @navbarHeight;
+      background-color: @navbarBackground;
+
+      a {
+        background-color: transparent;
+        display:          inline-block;
+        text-align:       center;
+
+        .tab-label {
+          .icon {
+            font-size: larger;
+          }
+        }
+      }
+
+      &.active {
+        background-color: @activeTabBackground;
+
+        a {
+          color:       @activeTabForeground;
+        }
+      }
+    }
   }
 
   .navbar-collapse {

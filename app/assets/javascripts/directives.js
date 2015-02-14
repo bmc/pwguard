@@ -14,6 +14,23 @@ var pwgDirectives = angular.module('pwguard-directives', ['pwguard-services']);
 
 var templateURL   = window.angularTemplateURL;
 
+// ----------------------------------------------------------------------------
+// Navbar button
+// ----------------------------------------------------------------------------
+
+pwgDirectives.directive('pwgTabLabel', function() {
+  return {
+    restrict:    'E',
+    transclude:  false,
+    replace:     true,
+    templateUrl: templateURL('directives/pwgTabLabel.html'),
+    scope: {
+      icon: '@',
+      text: '@'
+    }
+  }
+});
+
 // -----------------------------------------------------------------------------
 // Sort indicator
 // -----------------------------------------------------------------------------

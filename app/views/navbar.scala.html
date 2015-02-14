@@ -32,41 +32,39 @@
         <ul class="nav navbar-nav">
           <li>
             <a href="" ng-click="logout()" ng-show="isLoggedIn()">
-              <i class="fa fa-sign-out"></i> Logout
+              <pwg-tab-label icon="fa-sign-out" text="Logout"></pwg-tab-label>
             </a>
           </li>
           <li ng-class="{active: routeIsActive('login')}" ng-hide="isLoggedIn()">
             <a ng-href="{{ hrefForRouteName('login') }}">
-              <i class="fa fa-sign-in"></i> Login
+              <pwg-tab-label icon="fa-sign-in" text="Login"></pwg-tab-label>
             </a>
           </li>
           <li ng-class="{active: routeIsActive('search')}" ng-show="isLoggedIn()">
             <a ng-href="{{ hrefForRouteName('search') }}">
-              <i class="fa fa-search"></i> Search
+              <pwg-tab-label icon="fa-search" text="Search"></pwg-tab-label>
             </a>
           </li>
           <li ng-class="{active: routeIsActive('profile')}" ng-show="isLoggedIn()">
             <a ng-href="{{ hrefForRouteName('profile') }}">
-              <i class="fa fa-wrench"></i> Profile
+              <pwg-tab-label icon="fa-wrench" text="Profile"></pwg-tab-label>
             </a>
           </li>
           <li ng-class="{active: routeIsActive('import-export')}"
               ng-hide="isMobile || !isLoggedIn()">
             <a ng-href="{{ hrefForRouteName('import-export') }}">
-              <i class="fa fa-folder-o" ng-hide="segmentIsActive('import-export')"></i>
-              <i class="fa fa-folder-open-o" ng-show="segmentIsActive('import-export')"></i>
-              Import &amp; Export
+              <pwg-tab-label icon="fa-folder-o" text="Import &amp; Export"></pwg-tab-label>
             </a>
           </li>
           <li ng-class="{active: routeIsActive('admin-users')}"
               ng-show="userIsAdmin()">
             <a ng-href="{{ hrefForRouteName('admin-users') }}">
-              <i class="fa fa-users"></i> Edit Users
+              <pwg-tab-label icon="fa-users" text="Edit Users"></pwg-tab-label>
             </a>
           </li>
           <li ng-class="{active: routeIsActive('about')}">
             <a ng-href="{{ hrefForRouteName('about') }}">
-              <i class="fa fa-question-circle"></i> About
+              <pwg-tab-label icon="fa-question-circle" text="About"></pwg-tab-label>
             </a>
           </li>
         </ul>
