@@ -11,8 +11,11 @@
   position:         relative; // Allow for absolute positioning of children
 
   .navbar-nav {
-    height:           @navbarHeight;
+
     background-color: @navbarBackground;
+    &.desktop {
+      height: @navbarHeight;
+    }
 
     li {
       // We want to center the <a> element, which contains the label,
@@ -21,27 +24,47 @@
       // container's line-height to fill its height. See
       // http://stackoverflow.com/a/84616/53495
 
-      height:           @navbarHeight;
-      line-height:      @navbarHeight;
       background-color: @navbarBackground;
+
+      &.desktop {
+        height:      @navbarHeight;
+        line-height: @navbarHeight;
+      }
+
+      .pwg-tab-label {
+        .icon {
+          font-size: larger;
+        }
+
+        &.label-text {
+          font-size: larger;
+        }
+      }
+
+      &.mobile {
+
+        .pwg-tab-label {
+          .icon {
+            font-size: smaller !important;
+          }
+
+          &.label-text {
+            font-size: smaller !important;
+          }
+        }
+      }
 
       a {
         background-color: transparent;
         display:          inline-block;
         text-align:       center;
-
-        .tab-label {
-          .icon {
-            font-size: larger;
-          }
-        }
       }
 
       &.active {
         background-color: @activeTabBackground;
 
         a {
-          color:       @activeTabForeground;
+          color:  @activeTabForeground;
         }
       }
     }

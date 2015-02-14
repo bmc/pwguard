@@ -1,74 +1,84 @@
-@()
+@(isMobile: Boolean)
 
-<div id="navbar" ng-controller="NavbarCtrl">
-  <div class="navbar navbar-default navbar-fixed-top" role="navigation">
-    <div class="container-fluid">
+@defining(if (isMobile) "mobile" else "desktop") { browserClass =>
 
-      <div class="navbar-header">
-        <button type="button" class="navbar-toggle collapsed"
-                data-toggle="collapse" data-target="#navbar-collapse">
-          <span class="sr-only">Toggle Navigation</span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-        </button>
-        <span class="navbar-brand">
-          <ng-include src="templateURL('logo.html')">
-          </ng-include>
+  <div id="navbar" class="@browserClass" ng-controller="NavbarCtrl">
+    <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+      <div class="container-fluid">
 
-          <span ng-show="isMobile" class="qualifier">
-            Mobile
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed"
+                  data-toggle="collapse" data-target="#navbar-collapse">
+            <span class="sr-only">Toggle Navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <span class="navbar-brand">
+            <ng-include src="templateURL('logo.html')">
+            </ng-include>
+
+            <span class="qualifier visible-xs-inline visible-sm-inline">
+              Mobile
+            </span>
           </span>
+        </div>
 
+        <div id="loading-spinner" ng-show="showSpinner">
+          <i class="fa fa-spinner fa-spin"></i>
+        </div>
 
-        </span>
-      </div>
-
-      <div id="loading-spinner" ng-show="showSpinner">
-        <i class="fa fa-spinner fa-spin"></i>
-      </div>
-
-      <div class="collapse navbar-collapse" id="navbar-collapse">
-        <ul class="nav navbar-nav">
-          <li>
-            <a href="" ng-click="logout()" ng-show="isLoggedIn()">
-              <pwg-tab-label icon="fa-sign-out" text="Logout"></pwg-tab-label>
-            </a>
-          </li>
-          <li ng-class="{active: routeIsActive('login')}" ng-hide="isLoggedIn()">
-            <a ng-href="{{ hrefForRouteName('login') }}">
-              <pwg-tab-label icon="fa-sign-in" text="Login"></pwg-tab-label>
-            </a>
-          </li>
-          <li ng-class="{active: routeIsActive('search')}" ng-show="isLoggedIn()">
-            <a ng-href="{{ hrefForRouteName('search') }}">
-              <pwg-tab-label icon="fa-search" text="Search"></pwg-tab-label>
-            </a>
-          </li>
-          <li ng-class="{active: routeIsActive('profile')}" ng-show="isLoggedIn()">
-            <a ng-href="{{ hrefForRouteName('profile') }}">
-              <pwg-tab-label icon="fa-wrench" text="Profile"></pwg-tab-label>
-            </a>
-          </li>
-          <li ng-class="{active: routeIsActive('import-export')}"
-              ng-hide="isMobile || !isLoggedIn()">
-            <a ng-href="{{ hrefForRouteName('import-export') }}">
-              <pwg-tab-label icon="fa-folder-o" text="Import &amp; Export"></pwg-tab-label>
-            </a>
-          </li>
-          <li ng-class="{active: routeIsActive('admin-users')}"
-              ng-show="userIsAdmin()">
-            <a ng-href="{{ hrefForRouteName('admin-users') }}">
-              <pwg-tab-label icon="fa-users" text="Edit Users"></pwg-tab-label>
-            </a>
-          </li>
-          <li ng-class="{active: routeIsActive('about')}">
-            <a ng-href="{{ hrefForRouteName('about') }}">
-              <pwg-tab-label icon="fa-question-circle" text="About"></pwg-tab-label>
-            </a>
-          </li>
-        </ul>
-      </div>
-    </div> <!-- container-fluid -->
-  </div> <!-- navbar-fixed-top -->
-</div>
+        <div class="collapse navbar-collapse" id="navbar-collapse">
+          <ul class="nav navbar-nav @browserClass">
+            <li class="@browserClass">
+              <a href="" ng-click="logout()" ng-show="isLoggedIn()">
+                <pwg-tab-label icon="fa-sign-out" text="Logout"></pwg-tab-label>
+              </a>
+            </li>
+            <li ng-class="{active: routeIsActive('login')}"
+                ng-hide="isLoggedIn()"
+                class="@browserClass">
+              <a ng-href="{{ hrefForRouteName('login') }}">
+                <pwg-tab-label icon="fa-sign-in" text="Login"></pwg-tab-label>
+              </a>
+            </li>
+            <li ng-class="{active: routeIsActive('search')}"
+                ng-show="isLoggedIn()"
+                class="@browserClass">
+              <a ng-href="{{ hrefForRouteName('search') }}">
+                <pwg-tab-label icon="fa-search" text="Search"></pwg-tab-label>
+              </a>
+            </li>
+            <li ng-class="{active: routeIsActive('profile')}"
+                ng-show="isLoggedIn()"
+                class="@browserClass">
+              <a ng-href="{{ hrefForRouteName('profile') }}">
+                <pwg-tab-label icon="fa-wrench" text="Profile"></pwg-tab-label>
+              </a>
+            </li>
+            <li ng-class="{active: routeIsActive('import-export')}"
+                ng-hide="isMobile || !isLoggedIn()"
+                class="@browserClass">
+              <a ng-href="{{ hrefForRouteName('import-export') }}">
+                <pwg-tab-label icon="fa-folder-o" text="Import &amp; Export"></pwg-tab-label>
+              </a>
+            </li>
+            <li ng-class="{active: routeIsActive('admin-users')}"
+                ng-show="userIsAdmin()"
+                class="@browserClass">
+              <a ng-href="{{ hrefForRouteName('admin-users') }}">
+                <pwg-tab-label icon="fa-users" text="Edit Users"></pwg-tab-label>
+              </a>
+            </li>
+            <li ng-class="{active: routeIsActive('about')}"
+                class="@browserClass">
+              <a ng-href="{{ hrefForRouteName('about') }}">
+                <pwg-tab-label icon="fa-question-circle" text="About"></pwg-tab-label>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div> <!-- container-fluid -->
+    </div> <!-- navbar-fixed-top -->
+  </div>
+}

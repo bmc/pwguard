@@ -28,7 +28,11 @@ pwgDirectives.directive('pwgTabLabel', function() {
     scope: {
       icon: '@',
       text: '@'
+    },
+    link: function(scope, element, attrs) {
+      scope.isMobile = window.browserIsMobile;
     }
+
   }
 });
 

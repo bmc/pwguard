@@ -128,7 +128,12 @@
   <body ng-app="PWGuardApp" ng-cloak class="container-fluid">
     <div ng-controller="MainCtrl">
 
-      @navbar()
+      <div class="visible-xs-block visible-sm-block">
+        @navbar(true)
+      </div>
+      <div class="visible-md-block visible-lg-block">
+        @navbar(false)
+      </div>
 
       <div id="content">
 

@@ -1,10 +1,10 @@
 <div id="search-screen">
 
-  <div ng-if="isMobile">
+  <div class="visible-xs-block visible-sm-block">
     <ng-include src="templateURL('_search-mobile.html')"></ng-include>
   </div>
 
-  <div ng-if="!isMobile">
+  <div class="visible-md-block visible-lg-block">
     <ng-include src="templateURL('_search-desktop.html')"></ng-include>
   </div>
 
