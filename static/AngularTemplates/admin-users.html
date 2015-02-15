@@ -39,7 +39,7 @@
         </div>
 
         <div class="form-group">
-          <label for="first-name" class="control-label">First name:</label>
+          <label for="firstName" class="control-label">First name:</label>
           <input class="form-control" ng-model="addingUser.firstName"
                  name="first-name" type="text" placeholder="First name"
                  id="firstName" required/>
@@ -50,7 +50,7 @@
         </div>
 
         <div class="form-group">
-          <label for="last-name" class="control-label">Last name:</label>
+          <label for="lastName" class="control-label">Last name:</label>
           <input class="form-control" ng-model="addingUser.lastName"
                  name="last-name" type="text" placeholder="Last name"
                  id="lastName" required/>
@@ -67,7 +67,7 @@
         </div>
 
         <div class="form-group checkbox">
-          <input class="form-control" type="checkbox" name="admin"
+          <input class="form-control" type="checkbox" name="admin" id="admin"
                    ng-model="addingUser.admin"/>
           <label for="admin" class="control-label">Admin</label>
         </div>
@@ -152,71 +152,74 @@
     </div> <!-- results-header -->
 
     <div class="results-body">
-      <div class="row"
-           ng-repeat="user in users | orderBy:sortColumn:reverse"
-           ng-class="{admin: user.admin, even: $even, odd: $odd}">
-        <form name="userForm{{$index}}">
+      <div ng-repeat="user in users | orderBy:sortColumn:reverse">
+        <div ng-class="{admin: user.admin, even: $even, odd: $odd}"
+             class="results-row">
+          <div class="row">
+            <form name="userForm{{$index}}">
 
-          <div class="col-md-2">{{user.email}}</div>
+              <div class="col-md-2">{{user.email}}</div>
 
-          <div class="col-md-2">
-            <span ng-hide="user.editing">{{user.displayName}}</span>
-            <span ng-show="user.editing">
-              <input class="standalone" ng-model="user.firstName"
-                     type="text" placeholder="First name"/>
-              <input class="standalone" ng-model="user.lastName"
-                     type="text" placeholder="Last name"/>
-            </span>
+              <div class="col-md-2">
+                <span ng-hide="user.editing">{{user.displayName}}</span>
+                <span ng-show="user.editing">
+                  <input class="standalone" ng-model="user.firstName"
+                         type="text" placeholder="First name"/>
+                  <input class="standalone" ng-model="user.lastName"
+                         type="text" placeholder="Last name"/>
+                </span>
+              </div>
+
+              <div class="col-md-2" ng-show="user.editing">
+                <input class="standalone" ng-model="user.password1"
+                       type="password" placeholder="Password"/>
+                <input class="standalone" ng-model="user.password2"
+                       type="password" placeholder="Password (again)"/>
+              </div>
+
+              <div class="col-md-2">
+                <span ng-hide="user.editing">
+                  {{user.admin|pwgBoolean}}
+                </span>
+                <span ng-show="user.editing">
+                  <input class="standalone" ng-model="user.admin" type="checkbox"/>
+                </span>
+              </div>
+
+              <div class="col-md-2">
+                <span ng-hide="user.editing">
+                  {{user.active|pwgBoolean}}
+                </span>
+                <span ng-show="user.editing">
+                  <input class=standalone" ng-model="user.active" type="checkbox"/>
+                </span>
+              </div>
+
+              <div class="col-md-1">
+                <button class="btn btn-borderless"
+                        ng-click="user.edit()"
+                        ng-hide="user.editing">
+                  <i class="fa fa-pencil"></i>
+                </button>
+                <button class="btn btn-borderless"
+                        ng-click="user.delete()"
+                        ng-hide="user.editing">
+                  <i class="fa fa-trash-o"></i>
+                </button>
+                <button class="btn btn-borderless save"
+                        ng-click="user.save()"
+                        ng-show="user.editing">
+                  <i class="fa fa-save"></i>
+                </button>
+                <button class="btn btn-borderless cancel"
+                        ng-click="user.cancel()"
+                        ng-show="user.editing">
+                  <i class="fa fa-times"></i>
+                </a>
+              </div>
+            </form>
           </div>
-
-          <div class="col-md-2" ng-show="user.editing">
-            <input class="standalone" ng-model="user.password1"
-                   type="password" placeholder="Password"/>
-            <input class="standalone" ng-model="user.password2"
-                   type="password" placeholder="Password (again)"/>
-          </div>
-
-          <div class="col-md-2">
-            <span ng-hide="user.editing">
-              {{user.admin|pwgBoolean}}
-            </span>
-            <span ng-show="user.editing">
-              <input class="standalone" ng-model="user.admin" type="checkbox"/>
-            </span>
-          </div>
-
-          <div class="col-md-2">
-            <span ng-hide="user.editing">
-              {{user.active|pwgBoolean}}
-            </span>
-            <span ng-show="user.editing">
-              <input class=standalone" ng-model="user.active" type="checkbox"/>
-            </span>
-          </div>
-
-          <div class="col-md-1">
-            <button class="btn btn-borderless"
-                    ng-click="user.edit()"
-                    ng-hide="user.editing">
-              <i class="fa fa-pencil"></i>
-            </button>
-            <button class="btn btn-borderless"
-                    ng-click="user.delete()"
-                    ng-hide="user.editing">
-              <i class="fa fa-trash-o"></i>
-            </button>
-            <button class="btn btn-borderless save"
-                    ng-click="user.save()"
-                    ng-show="user.editing">
-              <i class="fa fa-save"></i>
-            </button>
-            <button class="btn btn-borderless cancel"
-                    ng-click="user.cancel()"
-                    ng-show="user.editing">
-              <i class="fa fa-times"></i>
-            </a>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   </div>

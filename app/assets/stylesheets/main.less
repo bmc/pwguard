@@ -132,23 +132,35 @@ header {
     font-weight: bold;
     margin-bottom: 10px;
 
-    &.row {
-      padding: 5px;
+    .row {
+      padding: 0;
       border:  1px solid @resultsTableHeaderBorderColor;
     }
   }
 
   .results-body {
-    .row {
-      &.even {
-        background-color: @resultsTableRowEvenColor;
-        padding-top:      @resultsTableRowEvenPaddingTop;
-        padding-bottom:   @resultsTableRowEvenPaddingBottom;
-      }
-      &.odd {
-        background-color: @resultsTableRowOddColor;
-        padding-top:      @resultsTableRowOddPaddingTop;
-        padding-bottom:   @resultsTableRowOddPaddingBottom;
+    width: 100%;
+
+    .results-row {
+      width: 100% !important;
+      margin: 0;
+      padding-left: 0;
+      padding-right: 0;
+      .row {
+
+        &.even {
+          background-color: @resultsTableRowEvenColor;
+          padding-top:      @resultsTableRowEvenPaddingTop;
+          padding-bottom:   @resultsTableRowEvenPaddingBottom;
+          width:            100%;
+        }
+
+        &.odd {
+          background-color: @resultsTableRowOddColor;
+          padding-top:      @resultsTableRowOddPaddingTop;
+          padding-bottom:   @resultsTableRowOddPaddingBottom;
+          width:            100%;
+        }
       }
     }
 

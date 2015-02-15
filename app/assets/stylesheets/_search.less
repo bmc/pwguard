@@ -55,7 +55,10 @@
         display: inline-block;
       }
 
-      div.input {
+      input {
+        width:   90%;
+        display: inline-block;
+
         @media @desktop {
           .desktop-styles;
         }
@@ -117,7 +120,100 @@
       white-space: nowrap;
     }
 
-    // .results-body is styled in main.less, because it's shared.
+    .results-table {
+      table {
+        width: 100%;
+
+        thead {
+          border-bottom: 1px solid #cccccc;
+        }
+
+        tr {
+          padding: 10px;
+
+          &.even {
+            background-color: @resultsTableRowEvenColor;
+          }
+
+          &.odd {
+            background-color: @resultsTableRowOddColor;
+          }
+
+          td, th {
+            padding: 10px;
+
+            &.name {
+              max-width: 300px;
+            }
+
+            &.description {
+              min-width: 20%;
+              max-width: 600px;
+            }
+
+            &.select-checkbox {
+              max-width: 150px;
+              min-width: 100px;
+            }
+          }
+
+          th {
+          }
+
+          td {
+            &.password {
+              white-space: nowrap;
+            }
+
+            &.select-checkbox {
+              input {
+                vertical-align: middle;
+              }
+            }
+
+            .extras {
+              .toggle-button {
+                margin-top:    5px;
+                margin-bottom: 10px;
+              }
+
+              table {
+                width: auto;
+
+                td {
+                  border: 0;
+                }
+
+                tr {
+                  border-top:    0;
+                  border-bottom: 1px solid #999999;
+                  border-left:   0;
+                  border-right:  0;
+
+                  &:last-child {
+                    border: 0;
+                  }
+                }
+              }
+
+              .field-name {
+                font-weight: bold;
+              }
+            }
+          }
+        }
+
+        input[type="text"], input[type="passowrd"] {
+          width:          200px;
+          padding-top:    2px;
+          padding-bottom: 2px;
+          padding-left:   5px;
+          padding-right:  5px;
+          border-radius:  2px 2px 2px 2px;
+          border:         1px solid #999999;
+        }
+      }
+    }
 
     .hint {
       float:          right;
@@ -135,38 +231,6 @@
       .shown-password {
         font-family: monospace;
         width: 8em;
-      }
-    }
-
-    .select-checkbox {
-      display: inline-block;
-      margin-left: 10px;
-
-      input {
-        vertical-align: middle;
-      }
-    }
-
-    .extras {
-      .toggle-button {
-        margin-bottom: 10px;
-      }
-
-      table {
-        border: 0;
-        width: auto;
-
-        tr {
-          border: 0;
-        }
-
-        td {
-          border: 0;
-        }
-      }
-
-      .field-name {
-        font-weight: bold;
       }
     }
   }

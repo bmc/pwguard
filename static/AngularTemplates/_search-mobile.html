@@ -6,12 +6,17 @@
   <div class="row">
     <div class="search-box">
       <div class="col-md-12">
-        <form id="search-form" name="searchForm">
+        <form id="search-form" name="searchForm" ng-submit="issueSearch()"
+              novalidate>
           <div class="form-group">
             <input type="text" name="term" id="term" ng-trim="true"
                    ng-model="searchTerm" class="form-control search-term"
-                   ng-change="searchTermChanged()"
+                   ng-minlength="2"
                    placeholder="Enter at least two letters to search."/>
+            <button type="submit" ng-disabled="searchForm.$invalid"
+                    class="button btn btn-primary btn-sm">
+              <i class="fa fa-search"></i>
+            </button>
           </div>
           <div id="new-button">
             <button type="button" class="btn btn-success" ng-click="newEntry()">

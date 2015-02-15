@@ -484,20 +484,22 @@ pwGuardApp.controller('InnerSearchCtrl',
       return trimmed.length >= 2;
     }
 
-    $scope.pluralizeResults = function(n) { return pluralizeCount(n); }
+    $scope.pluralizeResults = (n) => { return pluralizeCount(n); }
 
     var clearResults = () => {
       originalEntries = {};
       $scope.searchResults = null;
     }
 
+    $scope.issueSearch = () => { doSearch(); }
+/*
     $scope.searchTermChanged = () => {
       if (validSearchTerm())
         doSearch();
       else
         clearResults();
     }
-
+*/
     $scope.mobileSelect = (i) => {
       $(`#results-${i}`).select();
     }
