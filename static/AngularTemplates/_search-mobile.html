@@ -98,7 +98,8 @@
                 </div>
 
                 <div class="extras" ng-show="pw.extras">
-                  <div ng-repeat="e in pw.extras" class="mobile-field">
+                  <div ng-repeat="e in pw.extras | orderBy:'fieldName'"
+                       class="mobile-field">
                     <span class="mobile-label">{{e.fieldName}}</span>
                     <span class="mobile-value">{{e.fieldValue}}</span>
                   </div>

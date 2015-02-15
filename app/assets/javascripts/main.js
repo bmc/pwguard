@@ -338,6 +338,11 @@ pwGuardApp.controller('LoginCtrl',
     $scope.email    = null;
     $scope.password = null;
 
+    $scope.clear = () => {
+      $scope.email    = null;
+      $scope.password = null;
+    }
+
     $scope.login = () => {
       let url = routes.controllers.SessionController.login().url;
       pwgAjax.post(url, {email: $scope.email, password: $scope.password},
@@ -492,14 +497,7 @@ pwGuardApp.controller('InnerSearchCtrl',
     }
 
     $scope.issueSearch = () => { doSearch(); }
-/*
-    $scope.searchTermChanged = () => {
-      if (validSearchTerm())
-        doSearch();
-      else
-        clearResults();
-    }
-*/
+
     $scope.mobileSelect = (i) => {
       $(`#results-${i}`).select();
     }

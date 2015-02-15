@@ -44,9 +44,12 @@
           <div>Found {{pluralizeResults(searchResults.length)}}.</div>
           <div ng-show="(searchResults.length > 0)">
             <span class="hint" ng-hide="newPasswordEntry">
-              You can click on a password to show it or hide it. You
-              can click any <i class="fa fa-plus"></i> to expand the
-              associated field.
+              You can click the switch next to a password to show or hide the.
+              password. You can click any
+              <span class="button btn btn-xs btn-default">
+                <i class="fa fa-plus"></i>
+              </span>
+              to expand the associated field.
             </span>
           </div>
         </div>
@@ -132,7 +135,7 @@
                   </a>
                   <table class="table table-condensed"
                          ng-show="pw.showExtras">
-                    <tr ng-repeat="e in pw.extras">
+                    <tr ng-repeat="e in pw.extras | orderBy:'fieldName'">
                       <td class="field-name">{{e.fieldName}}</td>
                       <td class="field-value">{{e.fieldValue}}</td>
                     </tr>
