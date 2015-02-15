@@ -4,7 +4,8 @@
 
 PWGuard is a simple web-based password vault, using the
 [Play Framework][] and [AngularJS][]. For complete documentation,
-please see the [wiki](https://github.com/bmc/pwguard/wiki).
+including screen shots, please see the
+[wiki](https://github.com/bmc/pwguard/wiki).
 
 ## License
 
