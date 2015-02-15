@@ -9,7 +9,7 @@
         <div class="col-md-3"></div>
         <div class="col-md-6">
           <form id="search-form" name="searchForm" ng-submit="issueSearch()"
-                novalidate>
+                novalidate class="desktop">
             <div class="form-group">
               <input type="text" name="searchTerm" id="searchTerm"
                      ng-model="searchTerm" class="form-control search-term"
@@ -19,31 +19,19 @@
                       class="button btn btn-primary btn-sm">
                 <i class="fa fa-search"></i>
               </button>
+              <button type="button" class="btn btn-sm btn-default"
+                      ng-click="showAll()">
+                All
+              </button>
+              <button type="button" class="btn btn-sm btn-success" role="button"
+                      ng-click="newEntry()">
+                New
+              </button>
             </div>
           </form>
         </div>
       </div>
     </div>
-
-    <div class="row">
-      <div class="col-md-3"></div>
-
-      <div class="col-md-6">
-        <div class="search-options mobile pull-right">
-          <span class="button">
-            <button type="button" class="btn btn-sm btn-default"
-                    ng-click="showAll()">
-              All
-            </button>
-            <a type="button" class="btn btn-sm btn-success" role="button"
-               ng-click="newEntry()">
-              New
-            </a>
-          </span>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <div id="desktop-results">
     <div class="row" ng-show="searchResults && (searchResults.length === 0)">
@@ -55,11 +43,11 @@
         <div class="desktop-results-header">
           <div>Found {{pluralizeResults(searchResults.length)}}.</div>
           <div ng-show="(searchResults.length > 0)">
-              <span class="hint" ng-hide="newPasswordEntry">
-                You can click on a password to show it or hide it. You
-                can click any <i class="fa fa-plus"></i> to expand the
-                associated field.
-              </span>
+            <span class="hint" ng-hide="newPasswordEntry">
+              You can click on a password to show it or hide it. You
+              can click any <i class="fa fa-plus"></i> to expand the
+              associated field.
+            </span>
           </div>
         </div>
       </div>

@@ -55,8 +55,20 @@
         display: inline-block;
       }
 
+      &.mobile {
+        input {
+          width:   80%;
+        }
+      }
+
+      &.desktop {
+        white-space: nowrap;
+        input {
+          width:   80%;
+        }
+      }
+
       input {
-        width:   90%;
         display: inline-block;
 
         @media @desktop {
