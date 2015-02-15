@@ -14,7 +14,7 @@ import scala.util.Try
 class UserDAO(_dal: DAL, _logger: Logger) extends BaseDAO[User](_dal, _logger) {
 
   import dal.profile.simple._
-  import dal.{UsersTable, Users, PasswordEntries}
+  import dal.{UsersTable, Users}
 
   private type UserQuery = Query[UsersTable, User, Seq]
 
