@@ -98,6 +98,56 @@ trait BaseController extends Logging {
     }
   }
 
+  /** Convenience method to process incoming secured JSON request, sending
+    * back a consistent error when no user is logged in or when the current
+    * user is not an administrator. Built on top of `ActionWithUser`.
+    *
+    * @param f   The handler returning the JSON result, wrapped in a Future
+    * @return    The actual action
+    */
+  def AdminJSONAction(f: (AuthenticatedRequest[JsValue]) => Future[Result]) = {
+    (CheckSSLAction andThen
+      LoggedAction andThen
+      AuthenticatedAction).async(parse.json) { authReq =>
+
+      adminOnlyAction(authReq, f)
+    }
+  }
+
+  /** Convenience method to processing incoming secured request, sending
+    * back a consistent error when no user is logged in or when the current
+    * user is not an administrator. Built on top of `ActionWithUser`.
+    *
+    * @param f   The handler returning the result, wrapped in a Future
+    * @return    The actual action
+    */
+  def AdminAction(f: (AuthenticatedRequest[AnyContent]) => Future[Result]) = {
+    (CheckSSLAction andThen
+      LoggedAction andThen
+      AuthenticatedAction).async { authReq =>
+
+      adminOnlyAction(authReq, f)
+    }
+  }
+
+  /** Convenience method to processing incoming secured request, sending
+    * back a consistent error when no user is logged in or when the current
+    * user is not an administrator. Built on top of `ActionWithUser`.
+    *
+    * @param parser  The desired body parser
+    * @param f       The handler returning the result, wrapped in a Future
+    * @return        The actual action
+    */
+  def AdminAction[T](parser: BodyParser[T])
+                      (f: (AuthenticatedRequest[T]) => Future[Result]) = {
+    (CheckSSLAction andThen
+      LoggedAction andThen
+      AuthenticatedAction).async(parser) { authReq =>
+
+      adminOnlyAction(authReq, f)
+    }
+  }
+
   /** Parameters to pass back in a new session.
     *
     * @param user the current user
@@ -167,7 +217,6 @@ trait BaseController extends Logging {
   /** Alternate version of `jsonError` taking an exception.
     *
     * @param exception   The exception
-    * @param status      HTTP status
     *
     * @return the JSON result
     */
@@ -179,5 +228,15 @@ trait BaseController extends Logging {
     getOrElse(clsName)
 
     jsonError(msg)
+  }
+
+  private def adminOnlyAction[T](authReq: AuthenticatedRequest[T],
+                                 f: (AuthenticatedRequest[T]) => Future[Result]):
+    Future[Result] = {
+
+    if (! authReq.user.admin)
+      Future.successful(Forbidden("You are not an administrator"))
+    else
+      f(authReq)
   }
 }

@@ -14,7 +14,7 @@ import scala.util.Try
 class UserDAO(_dal: DAL, _logger: Logger) extends BaseDAO[User](_dal, _logger) {
 
   import dal.profile.simple._
-  import dal.{UsersTable, Users}
+  import dal.{UsersTable, Users, PasswordEntries}
 
   private type UserQuery = Query[UsersTable, User, Seq]
 
@@ -26,9 +26,21 @@ class UserDAO(_dal: DAL, _logger: Logger) extends BaseDAO[User](_dal, _logger) {
     *
     * @return `Future(Set[User])`
     */
-  def all: Future[Set[User]] = {
+  def getAll: Future[Set[User]] = {
     withTransaction { implicit session =>
       loadMany( for { u <- Users } yield u )
+    }
+  }
+
+  /** Get all users, with a count of the number of passwords each one has.
+    *
+    * @return a future of tuples, with each user paired with a password count
+    */
+  def getAllWithPasswordCounts: Future[Seq[(User, Int)]] = {
+    withSession { implicit session =>
+      getAll flatMap { users =>
+        DAO.passwordEntryDAO.totalsForUsers(users)
+      }
     }
   }
 

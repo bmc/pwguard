@@ -192,7 +192,37 @@ object PasswordEntryController extends BaseController {
     getOrElse(Future.successful(BadRequest(jsonError("Missing search term"))))
   }
 
-  def all = SecuredAction { authReq =>
+  def getTotalForUser(userID: Int) = SecuredAction { authReq =>
+    implicit val request = authReq.request
+    val user = authReq.user
+
+    import DAO.userDAO
+
+    userDAO.findByID(userID) flatMap { userOpt =>
+      userOpt map { user =>
+        passwordEntryDAO.totalForUser(user).map { total =>
+          Ok(Json.obj("total" -> total))
+        }
+      } getOrElse {
+        Future.failed(new Exception(s"No user with ID $userID"))
+      }
+    } recover {
+      case NonFatal(e) => Ok(jsonError(s"Failed for $user", e))
+    }
+  }
+
+  def getTotal = SecuredAction { authReq =>
+    implicit val request = authReq.request
+    val user = authReq.user
+
+    passwordEntryDAO.totalForUser(user).map { total =>
+      Ok(Json.obj("total" -> total))
+    } recover {
+      case NonFatal(e) => Ok(jsonError(s"Failed for $user", e))
+    }
+  }
+
+  def getAll = SecuredAction { authReq =>
 
     implicit val request = authReq.request
     val user = authReq.user

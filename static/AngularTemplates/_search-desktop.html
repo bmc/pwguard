@@ -2,12 +2,9 @@
 
   <div id="desktop-search-box">
 
-    <!-- non-mobile -->
-
     <div class="row">
       <div class="search-box">
-        <div class="col-md-3"></div>
-        <div class="col-md-6">
+        <div class="col-md-6 col-md-offset-3">
           <form id="search-form" name="searchForm" ng-submit="issueSearch()"
                 novalidate class="desktop">
             <div class="form-group">
@@ -21,7 +18,7 @@
               </button>
               <button type="button" class="btn btn-sm btn-default"
                       ng-click="showAll()">
-                All
+                All&nbsp;&nbsp;<span class="badge">{{totalPasswords}}</span>
               </button>
               <button type="button" class="btn btn-sm btn-success" role="button"
                       ng-click="newEntry()">
@@ -32,6 +29,8 @@
         </div>
       </div>
     </div>
+
+  </div>
 
   <div id="desktop-results">
     <div class="row" ng-show="searchResults && (searchResults.length === 0)">

@@ -30,14 +30,64 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
 
   /** Get all entries for a particular user.
     *
+    * @param user  the user
+    *
     * @return A future containing the results, or a failed future.
     */
   def allForUser(user: User): Future[Set[PasswordEntry]] = {
     withSession { implicit session =>
       user.id.map { userID =>
         Future { compiledAllQuery(userID).run.toSet }
-      }.
-      getOrElse(Future.successful(Set.empty[PasswordEntry]))
+      } getOrElse {
+        Future.successful(Set.empty[PasswordEntry])
+      }
+    }
+  }
+
+  /** Get the count of the number of password entries for a user.
+    *
+    * @param user  the user
+    *
+    * @return A future containing the results, or a failed future.
+    */
+  def totalForUser(user: User): Future[Int] = {
+    withSession { implicit session =>
+      user.id.map { userID =>
+        Future {
+          val q = for { pw <- PasswordEntries if pw.userID === userID }
+                  yield pw
+          q.list.size
+        }
+      } getOrElse {
+        Future.successful(0)
+      }
+    }
+  }
+
+  /** Get the count of the number of password entries for a set of users.
+    *
+    * @param users the users
+    *
+    * @return A future containing `(User, count)` pairs.
+    */
+  def totalsForUsers(users: Set[User]): Future[Seq[(User, Int)]] = {
+    withSession { implicit session =>
+      val userIDs = users.flatMap { _.id }.toSet
+
+      val q = for { pw <- PasswordEntries if pw.userID inSet userIDs }
+              yield pw
+      val q2 = q.groupBy(_.userID).map { case (userID, entries) =>
+        (userID, entries.length)
+      }
+
+      Future {
+        val countsByUser = q2.list.toMap
+
+        users.toSeq map { u: User =>
+          val uid = u.id.getOrElse(-1)
+          (u, countsByUser.getOrElse(uid, 0))
+        }
+      }
     }
   }
 

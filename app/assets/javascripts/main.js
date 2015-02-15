@@ -76,6 +76,15 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
     return deferred.promise;
   }
 
+  function getTotalPasswords($q, pwgAjax) {
+    let url =  routes.controllers.PasswordEntryController.getTotal().url;
+    let deferred = $q.defer();
+    pwgAjax.get(url,
+                (response) => { deferred.resolve(response.total); },
+                (error) => { deferred.reject(error); });
+    return deferred.promise;
+  }
+
   $routeProvider.
     when("/login", {
       templateUrl: templateURL("login.html"),
@@ -98,8 +107,11 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
       postLogin:   true,
       preLogin:    false,
       resolve: {
-        currentUser: function($q, pwgUser, $rootScope) {
+        currentUser: ($q, pwgUser, $rootScope) => {
           return checkUser($q, pwgUser, $rootScope);
+        },
+        totalPasswords: ($q, pwgAjax) => {
+          return getTotalPasswords($q, pwgAjax);
         }
       }
     }).
@@ -440,15 +452,15 @@ pwGuardApp.controller('NewPasswordEntryCtrl',
 // instantiated. Only one outer controller will be.
 
 pwGuardApp.controller('SearchCtrl',
-  ['$scope', '$injector', 'pwgCheckRoute', 'currentUser',
-  function($scope, $injector, pwgCheckRoute, currentUser) {
+  ['$scope', '$injector', 'pwgCheckRoute', 'currentUser', 'totalPasswords',
+  function($scope, $injector, pwgCheckRoute, currentUser, totalPasswords) {
 
     pwgCheckRoute('search', currentUser);
 
     var pwgRoutes = $injector.get('pwgRoutes');
 
     $scope.newEntryURL =  pwgRoutes.hrefForRouteName('new-entry');
-
+    $scope.totalPasswords = totalPasswords;
   }
 ]);
 
@@ -516,7 +528,7 @@ pwGuardApp.controller('InnerSearchCtrl',
     $scope.showAll = () => {
       $scope.newPasswordEntry = null;
       $scope.searchTerm       = null;
-      var url = routes.controllers.PasswordEntryController.all().url;
+      var url = routes.controllers.PasswordEntryController.getAll().url;
       pwgAjax.get(url,
         function(response) {
           pwgSearchTerm.saveSearchTerm(SEARCH_ALL_MARKER);
@@ -1000,10 +1012,10 @@ pwGuardApp.controller('AdminUsersCtrl',
 
     var log = pwgLogging.logger('AdminUsersCtrl');
 
-    $scope.users      = null;
-    $scope.addingUser = null;
-    $scope.sortColumn = "email";
-    $scope.reverse    = false;
+    $scope.users          = null;
+    $scope.addingUser     = null;
+    $scope.sortColumn     = "email";
+    $scope.reverse        = false;
 
     $scope.sortBy = (column) => {
       if (column === $scope.sortColumn) {
@@ -1104,8 +1116,7 @@ pwGuardApp.controller('AdminUsersCtrl',
     var loadUsers = () => {
       originalUsers = {};
       $scope.users = null;
-      let url = routes.controllers.UserController.getAll().url;
-
+      let url = routes.controllers.UserController.getAllWithTotalPasswords().url;
       pwgAjax.get(url, (response) => {
         $scope.users = _.map(response.users, (u) => {
           if (currentUser && (u.id === currentUser.id)) {

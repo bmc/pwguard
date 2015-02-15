@@ -1,5 +1,6 @@
 package controllers
 
+import _root_.util.JsonHelpers
 import dbservice.DAO.userDAO
 import models.{UserHelpers, User}
 import models.UserHelpers.json._
@@ -62,23 +63,45 @@ object UserController extends BaseController {
     }
   }
 
-  def getAll = SecuredAction { authReq =>
+  def getAll = AdminAction { authReq =>
 
-    if (! authReq.user.admin) {
-      Future.successful(Forbidden("You are not an administrator"))
+    val res = for { users <- userDAO.getAll
+                    json  <- Future.sequence(users.map { safeUserJSON _ }) }
+              yield json
+
+    res map { json =>
+      Ok(Json.obj("users" -> json))
+    } recover {
+      case NonFatal(e) =>
+        InternalServerError(jsonError("Retrieval failed", e))
+    }
+  }
+
+  def getAllWithTotalPasswords = AdminAction { authReq =>
+
+    def createJSON(tuples: Seq[(User, Int)]): Future[Seq[JsValue]] = {
+      val users        = tuples.map(_._1)
+      val countsByUser = tuples.toMap
+
+      Future.sequence {
+        users.map { u => safeUserJSON(u) map { js => (u, js) } }
+
+      } map { jsonTuples =>
+        jsonTuples.map { case (u, js) =>
+          val total = countsByUser.getOrElse(u, 0)
+          JsonHelpers.addFields(js, ("totalPasswords" -> Json.toJson(total)))
+        }
+      }
     }
 
-    else {
-      val res = for { users <- userDAO.all
-                      json  <- Future.sequence(users.map { safeUserJSON _ }) }
-                yield json
+    val res = for { tuples <- userDAO.getAllWithPasswordCounts
+                    usersJS <- createJSON(tuples) }
+              yield usersJS
 
-      res map { json =>
-        Ok(Json.obj("users" -> json))
-      } recover {
-        case NonFatal(e) =>
-          InternalServerError(jsonError("Retrieval failed", e))
-      }
+    res map { json =>
+      Ok(Json.obj("users" -> json))
+    } recover {
+      case NonFatal(e) => InternalServerError(jsonError("Retrieval failed", e))
     }
   }
 
