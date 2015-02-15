@@ -2,7 +2,11 @@
 @import "_mixins.less";
 
 body {
-  font-family: Arial, Verdana;
+  font-family:   Arial, Verdana;
+  margin-left:   0;
+  margin-right:  0;
+  padding-left:  0;
+  padding-right: 0;
 
   @media @phone {
     font-size: @phoneFontSize;
@@ -116,11 +120,13 @@ header {
   }
 }
 
-@results-table-margin: 30px;
+.well {
+  background-color: @wellBackground !important;
+}
 
 .results-table {
-  margin-left:  @results-table-margin;
-  margin-right: @results-table-margin;
+  margin-left:  @resultsTableMargin;
+  margin-right: @resultsTableMargin;
 
   .results-header {
     font-weight: bold;
@@ -128,21 +134,24 @@ header {
 
     &.row {
       padding: 5px;
-      border:  1px solid darken(@panelBackground, 20%);
+      border:  1px solid @resultsTableHeaderBorderColor;
     }
   }
 
   .results-body {
     .row {
-      padding-top: 10px;
-
       &.even {
-        background-color: @panelBackground;
+        background-color: @resultsTableRowEvenColor;
+        padding-top:      @resultsTableRowEvenPaddingTop;
+        padding-bottom:   @resultsTableRowEvenPaddingBottom;
       }
       &.odd {
-        background-color: white;
+        background-color: @resultsTableRowOddColor;
+        padding-top:      @resultsTableRowOddPaddingTop;
+        padding-bottom:   @resultsTableRowOddPaddingBottom;
       }
     }
+
     .has-error {
       input {
         border-color: red !important;

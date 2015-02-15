@@ -105,17 +105,19 @@
 
   #desktop-results {
 
-    @horizontal-margin: 30px;
+    @horizontalMargin: 30px;
 
     .desktop-results-header {
-      margin-left:   @horizontal-margin;
-      margin-right:  @horizontal-margin;
+      margin-left:   @horizontalMargin;
+      margin-right:  @horizontalMargin;
       margin-bottom: 20px;
     }
 
     .pw-buttons {
       white-space: nowrap;
     }
+
+    // .results-body is styled in main.less, because it's shared.
 
     .hint {
       float:          right;
@@ -198,9 +200,9 @@
       margin-right: 10px;
 
       a.panel-toggle {
-        background-color: #f7f3ed;
+        background-color: @resultsAccordionPanelBackground;
         .panel-heading {
-          background-color: #f7f3ed;
+          background-color: @resultsAccordionPanelBackground;
         }
 
         height: 100%;

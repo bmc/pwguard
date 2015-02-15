@@ -1,7 +1,4 @@
 
-//@activeBackground: darken(@navbarBackground, 10%);
-@activeTabBackground: #428bca;
-@activeTabForeground: white;
 
 #navbar {
   background-color: @navbarBackground;
@@ -9,6 +6,11 @@
   margin:           0;
   padding:          0;
   position:         relative; // Allow for absolute positioning of children
+
+  .container-fluid {
+    margin: 0;
+    background-color: @navbarBackground;
+  }
 
   .navbar-nav {
 
@@ -58,6 +60,11 @@
         background-color: transparent;
         display:          inline-block;
         text-align:       center;
+        color:            @menuTextColor;
+
+        &:hover {
+          color: @menuHoverTextColor;
+        }
       }
 
       &.active {

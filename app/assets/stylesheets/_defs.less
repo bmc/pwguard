@@ -3,53 +3,68 @@
 @tablet:       ~"only screen and (min-width: 720px) and (max-width: 959px)";
 @phone:        ~"only screen and (min-width: 241px) and (max-width: 719px)";
 
-@phoneMinWidth:                  241px;
-@phoneMaxWidth:                  719px;
-@tabletMaxWidth:                 959px;
-@tabletMinWidth:                 720px;
+@phoneMinWidth:                    241px;
+@phoneMaxWidth:                    719px;
+@tabletMaxWidth:                   959px;
+@tabletMinWidth:                   720px;
 
-@panelBackground:                #f7f3ed;
-@logoColor:                      #fab85c;
-@headerColor:                    #8f8679;
-@borderColor:                    #dddddd;
-@buttonBorderColor:              #aaaaaa;
-@menuBorderColor:                #ddd;
-@menuTextColor:                  #555555;
-@menuHoverTextColor:             @logoColor;
-@navbarBackground:               @panelBackground;
-@menuBackground:                 @navbarBackground;
-@navbarHeight:                   80px;
-@navbarMobileHeight:             40px;
+@panelBackground:                  #f7f3ed;
+@logoColor:                        white;
+@headerColor:                      #8f8679;
+@borderColor:                      #dddddd;
+@buttonBorderColor:                #aaaaaa;
+@menuBorderColor:                  #ddd;
+@menuTextColor:                    #bbbbbb;
+@menuHoverTextColor:               @logoColor;
+@menuBackground:                   @navbarBackground;
+@navbarHeight:                     80px;
+@navbarMobileHeight:               40px;
+@activeTabBackground:              #428bca;
+@activeTabForeground:              white;
+@navbarBackground:                 darken(@activeTabBackground, 30%);
 
-@inputBorderColor:               @borderColor;
-@inputFocusBorderColor:          #52c2d1;
-@inputFocusBoxShadowColor:       #e1f7fa;
-@inputFocusBackgroundColor:      #faf8e1;
-@inputReadonlyColor:             #444444;
-@inputReadonlyBackgroundColor:   #fff4f4;
+@resultsTableRowEvenColor:         white;
+@resultsTableRowEvenPaddingTop:    5px;
+@resultsTableRowEvenPaddingBottom: 5px;
+@resultsTableRowOddColor:          #ddeeff;
+@resultsTableRowOddPaddingTop:     10px;
+@resultsTableRowOddPaddingBottom:  10px;
+@resultsTableHeaderBorderColor:    darken(@resultsTableRowOddColor, 20%);
+@resultsTableMargin:               30px;
 
-@accordionHeaderBackgroundColor: lighten(@logoColor, 10%);
-@accordionBorderColor:           @logoColor;
+@resultsAccordionPanelBackground:  @resultsTableRowOddColor;
 
-@baseFontSize:                   16px;
-@phoneFontSize:                  (@baseFontSize + 3px);
-@tabletFontSize:                 (@phoneFontSize + 3px);
-@desktopFontSize:                @baseFontSize;
+@wellBackground:                   #eefeff;
 
-@tinyButtonMinWidth:             20px;
-@tinyButtonMinHeight:            15px;
+@inputBorderColor:                 @borderColor;
+@inputFocusBorderColor:            #52c2d1;
+@inputFocusBoxShadowColor:         #e1f7fa;
+@inputFocusBackgroundColor:        #faf8e1;
+@inputReadonlyColor:               #444444;
+@inputReadonlyBackgroundColor:     #fff4f4;
 
-@smallButtonMinWidth:            40px;
-@smallButtonMinHeight:           30px;
+@accordionHeaderBackgroundColor:   lighten(@logoColor, 10%);
+@accordionBorderColor:             @logoColor;
 
-@normalButtonMinWidth:           60px;
-@normalButtonMinHeight:          40px;
+@baseFontSize:                     16px;
+@phoneFontSize:                    (@baseFontSize + 3px);
+@tabletFontSize:                   (@phoneFontSize + 3px);
+@desktopFontSize:                  @baseFontSize;
 
-@largeButtonMinWidth:            70px;
-@largeButtonMinHeight:           50px;
+@tinyButtonMinWidth:               20px;
+@tinyButtonMinHeight:              15px;
 
-@xlargeButtonMinWidth:           100px;
-@xlargeButtonMinHeight:          80px;
+@smallButtonMinWidth:              40px;
+@smallButtonMinHeight:             30px;
 
-@formLabelTextColor:             @headerColor;
-@formInputTextColor:             darken(@headerColor, 20%);
+@normalButtonMinWidth:             60px;
+@normalButtonMinHeight:            40px;
+
+@largeButtonMinWidth:              70px;
+@largeButtonMinHeight:             50px;
+
+@xlargeButtonMinWidth:             100px;
+@xlargeButtonMinHeight:            80px;
+
+@formLabelTextColor:               @headerColor;
+@formInputTextColor:               darken(@headerColor, 20%);

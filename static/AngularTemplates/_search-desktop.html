@@ -121,7 +121,8 @@
 
         <div class="results-body">
           <div ng-repeat="pw in searchResults | orderBy:sortColumn:reverse">
-            <div class="row" ng-class="{even: $even, odd: $odd}">
+            <div class="row"
+                 ng-class="{even: $even, odd: $odd}">
               <div class="col-md-1">
                 <span>{{pw.name}}</span>
               </div>

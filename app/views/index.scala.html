@@ -125,7 +125,7 @@
     </script>
   </head>
 
-  <body ng-app="PWGuardApp" ng-cloak class="container-fluid">
+  <body ng-app="PWGuardApp" ng-cloak>
     <div ng-controller="MainCtrl">
 
       <div class="visible-xs-block visible-sm-block">
@@ -135,7 +135,7 @@
         @navbar(false)
       </div>
 
-      <div id="content">
+      <div id="content" class="container-fluid">
 
         <div class="row" ng-show="isLoggedIn()">
           <div class="col-md-12">
