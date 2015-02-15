@@ -105,49 +105,51 @@
 
   <!-- List of existing users -->
 
-  <div class="results-table">
-    <div class="row results-header">
-      <div class="col-md-2">
-        <a href="" ng-click="sortBy('email')">Email</a>
-        <pwg-sort-indicator reverse="reverse"
-                            column="email"
-                            sort-column="sortColumn">
-        </pwg-sort-indicator>
-      </div>
+  <div class="results-table" ng-hide="addingUser">
+    <div class="results-header">
+      <div class="row">
+        <div class="header-column col-md-2">
+          <a href="" ng-click="sortBy('email')">Email</a>
+          <pwg-sort-indicator reverse="reverse"
+                              column="email"
+                              sort-column="sortColumn">
+          </pwg-sort-indicator>
+        </div>
 
-      <div class="col-md-2">
-        <a href="" ng-click="sortBy('displayName')">Name</a>
-        <pwg-sort-indicator reverse="reverse"
-                            column="displayName"
-                            sort-column="sortColumn">
-        </pwg-sort-indicator>
-      </div>
+        <div class="header-column col-md-2">
+          <a href="" ng-click="sortBy('displayName')">Name</a>
+          <pwg-sort-indicator reverse="reverse"
+                              column="displayName"
+                              sort-column="sortColumn">
+          </pwg-sort-indicator>
+        </div>
 
-      <div class="col-md-2" ng-show="editingAny()">
-        Password
-      </div>
+        <div class="header-column col-md-2" ng-show="editingAny()">
+          Password
+        </div>
 
-      <div class="col-md-2">
-        <a href="" ng-click="sortBy('admin')">Administrator</a>
-        <pwg-sort-indicator reverse="reverse"
-                            column="admin"
-                            sort-column="sortColumn">
-        </pwg-sort-indicator>
-      </div>
+        <div class="header-column col-md-2">
+          <a href="" ng-click="sortBy('admin')">Administrator</a>
+          <pwg-sort-indicator reverse="reverse"
+                              column="admin"
+                              sort-column="sortColumn">
+          </pwg-sort-indicator>
+        </div>
 
-      <div class="col-md-2">
-        <a href="" ng-click="sortBy('active')">Active</a>
-        <pwg-sort-indicator reverse="reverse"
-                            column="active"
-                            sort-column="sortColumn">
-        </pwg-sort-indicator>
-      </div>
+        <div class="header-column col-md-2">
+          <a href="" ng-click="sortBy('active')">Active</a>
+          <pwg-sort-indicator reverse="reverse"
+                              column="active"
+                              sort-column="sortColumn">
+          </pwg-sort-indicator>
+        </div>
 
-      <div class="col-md-1">
-        <a href="" ng-click="editNewUser()"
-           class="btn btn-borderless" ng-hide="editingAny()">
-          <i class="fa fa-plus"></i>
-        </a>
+        <div class="header-column col-md-1">
+          <button href="" ng-click="editNewUser()"
+                  class="btn btn-success btn-sm" ng-hide="editingAny()">
+            New
+          </button>
+        </div>
       </div>
     </div> <!-- results-header -->
 
@@ -158,9 +160,9 @@
           <div class="row">
             <form name="userForm{{$index}}">
 
-              <div class="col-md-2">{{user.email}}</div>
+              <div class="body-column col-md-2">{{user.email}}</div>
 
-              <div class="col-md-2">
+              <div class="body-column col-md-2">
                 <span ng-hide="user.editing">{{user.displayName}}</span>
                 <span ng-show="user.editing">
                   <input class="standalone" ng-model="user.firstName"
@@ -170,14 +172,14 @@
                 </span>
               </div>
 
-              <div class="col-md-2" ng-show="user.editing">
+              <div class="body-column col-md-2" ng-show="user.editing">
                 <input class="standalone" ng-model="user.password1"
                        type="password" placeholder="Password"/>
                 <input class="standalone" ng-model="user.password2"
                        type="password" placeholder="Password (again)"/>
               </div>
 
-              <div class="col-md-2">
+              <div class="body-column col-md-2">
                 <span ng-hide="user.editing">
                   {{user.admin|pwgBoolean}}
                 </span>
@@ -186,7 +188,7 @@
                 </span>
               </div>
 
-              <div class="col-md-2">
+              <div class="body-column col-md-2">
                 <span ng-hide="user.editing">
                   {{user.active|pwgBoolean}}
                 </span>
@@ -195,27 +197,27 @@
                 </span>
               </div>
 
-              <div class="col-md-1">
-                <button class="btn btn-borderless"
+              <div class="body-column col-md-1">
+                <button class="btn btn-default btn-sm"
                         ng-click="user.edit()"
                         ng-hide="user.editing">
-                  <i class="fa fa-pencil"></i>
+                  Edit
                 </button>
-                <button class="btn btn-borderless"
+                <button class="btn btn-danger btn-sm"
                         ng-click="user.delete()"
                         ng-hide="user.editing">
-                  <i class="fa fa-trash-o"></i>
+                  Delete
                 </button>
-                <button class="btn btn-borderless save"
+                <button class="btn btn-success btn-sm save"
                         ng-click="user.save()"
                         ng-show="user.editing">
-                  <i class="fa fa-save"></i>
+                  Save
                 </button>
-                <button class="btn btn-borderless cancel"
+                <button class="btn btn-default btn-sm cancel"
                         ng-click="user.cancel()"
                         ng-show="user.editing">
-                  <i class="fa fa-times"></i>
-                </a>
+                  Cancel
+                </button>
               </div>
             </form>
           </div>

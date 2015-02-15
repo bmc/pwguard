@@ -47,6 +47,43 @@
     }
   }
 
+  .results-table {
+    width: auto;
+
+    .results-header {
+      padding-left:   10px;
+      padding-right:  10px;
+
+      .row {
+        padding-bottom: 5px;
+        border-top:     none;
+        border-left:    none;
+        border-right:   none;
+        border-bottom:  1px solid @resultsTableHeaderBorderColor;
+      }
+    }
+
+    .results-body {
+
+      .results-row {
+        padding-left:  10px;
+        padding-right: 10px;
+
+        &.odd {
+          background-color: @resultsTableRowOddColor;
+          padding-top:      @resultsTableRowOddPaddingTop;
+          padding-bottom:   @resultsTableRowOddPaddingBottom;
+        }
+
+        &.even {
+          background-color: @resultsTableRowEvenColor;
+          padding-top:      @resultsTableRowEvenPaddingTop;
+          padding-bottom:   @resultsTableRowEvenPaddingBottom;
+        }
+      }
+    }
+  }
+
   #new-user {
     .form-group {
       &.checkbox {
