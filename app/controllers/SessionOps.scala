@@ -71,14 +71,29 @@ object SessionOps {
     * @param request current request
     * @tparam T      request type (not used)
     *
-    * @return `Some(email)` or `None`
+    * @return `Future(Some(email))` if there's a logged in user,
+    *         `Future(None)` if not
     */
   def loggedInEmail[T](request: Request[T]): Future[Option[String]] = {
-    val res = for { dataOpt <- getSession(request)
-                    data    <- dataOpt.toFuture("No session for request")
-                    userOpt <- DAO.userDAO.findByEmail(data.userIdentifier) }
+    val res = for { userOpt <- loggedInUser(request) }
               yield userOpt
     res map { userOpt => userOpt.map(_.email) }
+  }
+
+  /** Determine who's logged in, taking session expiry, IP addresses, etc.,
+    * into account.
+    *
+    * @param request current request
+    * @tparam T      request type (not used)
+    *
+    * @return `Future(Some(user))` if there's a logged in user,
+    *         `Future(None)` if not
+    */
+  def loggedInUser[T](request: Request[T]): Future[Option[User]] = {
+    for { dataOpt <- getSession(request)
+          data    <- dataOpt.toFuture("No session for request")
+          userOpt <- DAO.userDAO.findByEmail(data.userIdentifier) }
+    yield userOpt
   }
 
   /** Clear session data.

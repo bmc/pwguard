@@ -66,15 +66,10 @@ object SessionController extends BaseController {
 
     val NotLoggedIn = Json.obj("loggedIn" -> false)
 
-    val f = SessionOps.loggedInEmail(request).flatMap { emailOpt =>
-      emailOpt.map { email =>
-        for { optUser <- DAO.userDAO.findByEmail(email)
-              user    <- optUser.toFuture("No such user")
-              json    <- safeUserJSON(user) }
-        yield Ok(Json.obj("loggedIn" -> true, "user" -> json))
-      }.
-      getOrElse(Future.successful(Ok(NotLoggedIn)))
-    }
+    val f = for { userOpt <- SessionOps.loggedInUser(request)
+                  user    <- userOpt.toFuture("No logged in user")
+                  json    <- safeUserJSON(user) }
+            yield Ok((Json.obj("loggedIn" -> true, "user" -> json)))
 
     f recover {
       case NonFatal(e) => Ok(NotLoggedIn)

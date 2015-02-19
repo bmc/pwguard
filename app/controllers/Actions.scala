@@ -79,24 +79,23 @@ object AuthenticatedAction
   extends ActionBuilder[AuthenticatedRequest]
   with ActionRefiner[Request, AuthenticatedRequest] {
 
+  private val logger = Logger("controllers.AuthenticatedAction")
+
   def refine[T](request: Request[T]):
     Future[Either[Result, AuthenticatedRequest[T]]] = {
 
-    import DAO.userDAO
+    val f = for { optUser <- SessionOps.loggedInUser(request)
+                  user    <- optUser.toFuture("Invalid user in session") }
+            yield user
 
-    def NoUserAction = Redirect(routes.SessionController.login())
-
-    request.session.get("email").map { email =>
-      val f = for { optUser <- userDAO.findByEmail(email)
-                    user    <- optUser.toFuture("Invalid user in session") }
-      yield user
-
-      f map { user =>
-        Right(new AuthenticatedRequest[T](user, request))
-      } recover {
-        case NonFatal(e) => Left(NoUserAction)
+    f map { user =>
+      logger.debug(s"Logged in user: ${user.email}")
+      Right(new AuthenticatedRequest[T](user, request))
+    } recover {
+      case NonFatal(e) => {
+        logger.debug(e.getMessage)
+        Left(Unauthorized)
       }
-    }.
-      getOrElse(Future.successful(Left(NoUserAction)))
+    }
   }
 }

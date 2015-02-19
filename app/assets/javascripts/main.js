@@ -49,7 +49,10 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
 
   var templateURL = angularTemplateURL;
 
-  function checkUser($q, pwgUser, $rootScope) {
+  function checkUser($injector) {
+    let $q        = $injector.get('$q');
+    let pwgUser   = $injector.get('pwgUser');
+    let pwgRoutes = $injector.get('pwgRoutes');
     let deferred = $q.defer();
 
     let user = pwgUser.currentUser();
@@ -64,24 +67,17 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
             deferred.resolve(response.user);
           }
           else {
+            pwgRoutes.redirectToNamedRoute('login');
             deferred.resolve(null);
           }
         },
         function(response) {
+          pwgRoutes.redirectToNamedRoute('login');
           deferred.reject(response);
         }
       );
     }
 
-    return deferred.promise;
-  }
-
-  function getTotalPasswords($q, pwgAjax) {
-    let url =  routes.controllers.PasswordEntryController.getTotal().url;
-    let deferred = $q.defer();
-    pwgAjax.get(url,
-                (response) => { deferred.resolve(response.total); },
-                (error) => { deferred.reject(error); });
     return deferred.promise;
   }
 
@@ -94,8 +90,8 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
       postLogin:   false,
       preLogin:    true,
       resolve: {
-        currentUser: function($q, pwgUser, $rootScope) {
-          return checkUser($q, pwgUser, $rootScope);
+        currentUser: ($injector) => {
+          return checkUser($injector);
         }
       }
     }).
@@ -107,11 +103,8 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
       postLogin:   true,
       preLogin:    false,
       resolve: {
-        currentUser: ($q, pwgUser, $rootScope) => {
-          return checkUser($q, pwgUser, $rootScope);
-        },
-        totalPasswords: ($q, pwgAjax) => {
-          return getTotalPasswords($q, pwgAjax);
+        currentUser: ($injector) => {
+          return checkUser($injector);
         }
       }
     }).
@@ -123,8 +116,8 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
       postLogin:   true,
       preLogin:    false,
       resolve: {
-        currentUser: function($q, pwgUser, $rootScope) {
-          return checkUser($q, pwgUser, $rootScope);
+        currentUser: ($injector) => {
+          return checkUser($injector);
         }
       }
     }).
@@ -136,8 +129,8 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
       postLogin:   true,
       preLogin:    false,
       resolve: {
-        currentUser: function($q, pwgUser, $rootScope) {
-          return checkUser($q, pwgUser, $rootScope);
+        currentUser: ($injector) => {
+          return checkUser($injector);
         }
       }
     }).
@@ -149,8 +142,8 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
       postLogin:   true,
       preLogin:    false,
       resolve: {
-        currentUser: function($q, pwgUser, $rootScope) {
-          return checkUser($q, pwgUser, $rootScope);
+        currentUser: ($injector) => {
+          return checkUser($injector);
         }
       }
     }).
@@ -162,8 +155,8 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
       postLogin:   true,
       preLogin:    false,
       resolve: {
-        currentUser: function($q, pwgUser, $rootScope) {
-          return checkUser($q, pwgUser, $rootScope);
+        currentUser: ($injector) => {
+          return checkUser($injector);
         }
       }
     }).
@@ -175,8 +168,8 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
       postLogin:   true,
       preLogin:    false,
       resolve: {
-        currentUser: function($q, pwgUser, $rootScope) {
-          return checkUser($q, pwgUser, $rootScope);
+        currentUser: ($injector) => {
+          return checkUser($injector);
         }
       }
     }).
@@ -188,8 +181,8 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
       postLogin:   true,
       preLogin:    true,
       resolve: {
-        currentUser: function($q, pwgUser, $rootScope) {
-          return checkUser($q, pwgUser, $rootScope);
+        currentUser: ($injector) => {
+          return checkUser($injector);
         }
       }
     }).
@@ -269,12 +262,10 @@ pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
      pwgAjax.on401(function() {
        if (pwgUser.isLoggedIn()) {
          pwgUser.setLoggedInUser(null);
-         pwgRoutes.redirectToNamedRoute('login');
          $scope.flashAfterRouteChange = "Session timeout. Please log in again.";
        }
-       else {
-         pwgFlash.error("Login failure");
-       }
+
+       pwgRoutes.redirectToNamedRoute('login');
      });
    }
 ]);
@@ -406,7 +397,7 @@ pwGuardApp.controller('EditPasswordEntryCtrl',
         log.debug(`Editing: ${JSON.stringify($scope.passwordEntry)}`);
       },
       function(error) {
-        console.log(error);
+        log.error(JSON.stringify(error));
       }
     );
   }
@@ -452,15 +443,19 @@ pwGuardApp.controller('NewPasswordEntryCtrl',
 // instantiated. Only one outer controller will be.
 
 pwGuardApp.controller('SearchCtrl',
-  ['$scope', '$injector', 'pwgCheckRoute', 'currentUser', 'totalPasswords',
-  function($scope, $injector, pwgCheckRoute, currentUser, totalPasswords) {
+  ['$scope', '$injector', 'pwgCheckRoute', 'currentUser', 'pwgAjax',
+  function($scope, $injector, pwgCheckRoute, currentUser, pwgAjax) {
 
     pwgCheckRoute('search', currentUser);
+
+    let url =  routes.controllers.PasswordEntryController.getTotal().url;
+    pwgAjax.get(url, (response) => {
+      $scope.totalPasswords = response.total
+    });
 
     var pwgRoutes = $injector.get('pwgRoutes');
 
     $scope.newEntryURL =  pwgRoutes.hrefForRouteName('new-entry');
-    $scope.totalPasswords = totalPasswords;
   }
 ]);
 
