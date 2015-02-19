@@ -36,45 +36,24 @@ object Global extends WithFilters(CSRFFilter()) with GlobalSettings {
     import scala.slick.jdbc.JdbcBackend.Database
     import dbservice.DAL
 
-    val cfg = app.configuration
-    val useDB = cfg.getString("use_db").getOrElse("default")
+    val cfg       = app.configuration
+    val useDB     = cfg.getString("use_db").getOrElse("default")
     val cfgPrefix = s"db.$useDB"
-    val driver = cfg.getString(s"$cfgPrefix.driver")
-    val url = cfg.getString(s"$cfgPrefix.url")
-    val user = cfg.getString(s"$cfgPrefix.username")
-    val password = cfg.getString(s"$cfgPrefix.password")
+    val driver    = cfg.getString(s"$cfgPrefix.driver")
+    val url       = cfg.getString(s"$cfgPrefix.url")
+    val user      = cfg.getString(s"$cfgPrefix.username")
+    val password  = cfg.getString(s"$cfgPrefix.password")
 
     if (Seq(driver, url).flatMap { t => t }.length != 2) {
       sys.error("Missing 'url' and/or 'driver' in config section $cfgPrefix")
     }
 
-    val (dal, db) = driver.get match {
-      case "org.postgresql.Driver" => {
-        (new DAL(PostgresDriver),
-          Database.forURL(url.get,
-                          driver = driver.get,
-                          user = user.get,
-                          password = password.get)
-        )
-      }
-
-      case "com.mysql.jdbc.Driver" => {
-        (new DAL(MySQLDriver),
-          Database.forURL(url.get,
-                          driver = driver.get,
-                          user = user.get,
-                          password = password.get)
-        )
-      }
-
-      case "org.sqlite.JDBC" => {
-        (new DAL(SQLiteDriver),
-          Database.forURL(url.get,
-                          driver = driver.get,
-                          user = user.get,
-                          password = password.get)
-        )
-      }
+    val db = Database.forURL(url.get, driver = driver.get, user = user.get,
+                             password = password.get)
+    val dal = driver.get match {
+      case "org.postgresql.Driver" => new DAL(PostgresDriver)
+      case "com.mysql.jdbc.Driver" => new DAL(MySQLDriver)
+      case "org.sqlite.JDBC"       => new DAL(SQLiteDriver)
 
       case _ => {
         sys.error(s"Unsupported database driver: ${driver.get}")
