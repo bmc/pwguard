@@ -12,6 +12,7 @@ import play.api.Logger
 import pwguard.global.Globals.ExecutionContexts.Default._
 import util.EitherOptionHelpers.Implicits._
 import util.FutureHelpers._
+import util.JsonHelpers.angularJson
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -41,7 +42,7 @@ object SessionController extends BaseController {
                   SessionOps.SessionKey -> sessionData.sessionID,
                   "email"               -> user.email
                 )
-                Ok(payload) withSession (sessionPairs: _*)
+                angularJson(Ok, payload) withSession (sessionPairs: _*)
               }
 
       f recover {
@@ -69,10 +70,10 @@ object SessionController extends BaseController {
     val f = for { userOpt <- SessionOps.loggedInUser(request)
                   user    <- userOpt.toFuture("No logged in user")
                   json    <- safeUserJSON(user) }
-            yield Ok((Json.obj("loggedIn" -> true, "user" -> json)))
+            yield angularJson(Ok, (Json.obj("loggedIn" -> true, "user" -> json)))
 
     f recover {
-      case NonFatal(e) => Ok(NotLoggedIn)
+      case NonFatal(e) => angularJson(Ok, NotLoggedIn)
     }
   }
 

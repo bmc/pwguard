@@ -7,11 +7,10 @@ import models.PasswordEntryHelper.json.implicits._
 
 import play.api._
 import play.api.libs.json._
-import play.api.mvc.Request
 import play.api.mvc.Results._
-import play.api.mvc.BodyParsers._
 
 import _root_.util.JsonHelpers
+import JsonHelpers.angularJson
 import _root_.util.EitherOptionHelpers._
 import _root_.util.EitherOptionHelpers.Implicits._
 import pwguard.global.Globals.ExecutionContexts.Default._
@@ -55,11 +54,11 @@ object PasswordEntryController extends BaseController {
                   json   <- jsonPasswordEntry(user, saved) }
             yield json
 
-    f.map { json => Ok(json) }
+    f.map { json => angularJson(Ok, json) }
      .recover {
       case NonFatal(e) => {
         logger.error("Save error", e)
-        Ok(jsonError(e.getMessage))
+        angularJson(Ok, jsonError(e.getMessage))
       }
     }
   }
@@ -95,20 +94,20 @@ object PasswordEntryController extends BaseController {
                   json     <- jsonPasswordEntry(user, saved) }
             yield json
 
-    f.map { json => Ok(json) }
+    f.map { json => angularJson(Ok, json) }
      .recover {
       case NonFatal(e) => {
         logger.error("Create error", e)
-        Ok(jsonError(e.getMessage))
+        angularJson(Ok, jsonError(e.getMessage))
       }
     }
   }
 
   def delete(id: Int) = SecuredAction { authReq =>
     passwordEntryDAO.delete(id) map { status =>
-      Ok(Json.obj("ok" -> true))
+      angularJson(Ok, Json.obj("ok" -> true))
     } recover { case NonFatal(e) =>
-      Ok(jsonError(e.getMessage))
+      angularJson(Ok, jsonError(e.getMessage))
     }
   }
 
@@ -120,7 +119,7 @@ object PasswordEntryController extends BaseController {
     } flatMap { idsOpt =>
       idsOpt map { ids =>
         passwordEntryDAO.deleteMany(authReq.user, ids.toSet) map { count =>
-          Ok(Json.obj("total" -> count))
+          angularJson(Ok, Json.obj("total" -> count))
         }
       } getOrElse {
         throw new Exception("No IDs specified")
@@ -129,7 +128,7 @@ object PasswordEntryController extends BaseController {
     } recover {
       case NonFatal(e) => {
         logger.error(s"Unable to delete specified IDs", e)
-        BadRequest(jsonError(e.getMessage))
+        angularJson(BadRequest, jsonError(e.getMessage))
       }
     }
   }
@@ -150,14 +149,14 @@ object PasswordEntryController extends BaseController {
         yield {
           val js = JsonHelpers.addFields(Json.toJson(fpwe),
                                          ("password" -> Json.toJson(pw)))
-          Ok(Json.obj("passwordEntry" -> js))
+          angularJson(Ok, Json.obj("passwordEntry" -> js))
         }
       } getOrElse {
         Future.successful(NotFound)
       } recover {
         case NonFatal(e) => {
           logger.error(s"Can't load entry with ID $id for user ${user.email}")
-          BadRequest(jsonError(e.getMessage))
+          angularJson(BadRequest, jsonError(e.getMessage))
         }
       }
     }
@@ -184,9 +183,11 @@ object PasswordEntryController extends BaseController {
 
     searchTerm.map { term =>
       entriesToJSON(user) { searchDB(term) } map { json =>
-        Ok(json)
+        angularJson(Ok, json)
       } recover {
-        case NonFatal(e) => Ok(jsonError(s"Search failed for $user:", e))
+        case NonFatal(e) => {
+          angularJson(Ok, jsonError(s"Search failed for $user:", e))
+        }
       }
     }.
     getOrElse(Future.successful(BadRequest(jsonError("Missing search term"))))
@@ -201,13 +202,13 @@ object PasswordEntryController extends BaseController {
     userDAO.findByID(userID) flatMap { userOpt =>
       userOpt map { user =>
         passwordEntryDAO.totalForUser(user).map { total =>
-          Ok(Json.obj("total" -> total))
+          angularJson(Ok, Json.obj("total" -> total))
         }
       } getOrElse {
         Future.failed(new Exception(s"No user with ID $userID"))
       }
     } recover {
-      case NonFatal(e) => Ok(jsonError(s"Failed for $user", e))
+      case NonFatal(e) => angularJson(Ok, jsonError(s"Failed for $user", e))
     }
   }
 
@@ -216,9 +217,9 @@ object PasswordEntryController extends BaseController {
     val user = authReq.user
 
     passwordEntryDAO.totalForUser(user).map { total =>
-      Ok(Json.obj("total" -> total))
+      angularJson(Ok, Json.obj("total" -> total))
     } recover {
-      case NonFatal(e) => Ok(jsonError(s"Failed for $user", e))
+      case NonFatal(e) => angularJson(Ok, jsonError(s"Failed for $user", e))
     }
   }
 
@@ -230,9 +231,9 @@ object PasswordEntryController extends BaseController {
     entriesToJSON(user) {
       passwordEntryDAO.allForUser(user)
     } map {
-      json => Ok(json)
+      json => angularJson(Ok, json)
     } recover {
-      case NonFatal(e) => Ok(jsonError(s"Failed for $user", e))
+      case NonFatal(e) => angularJson(Ok, jsonError(s"Failed for $user", e))
     }
   }
 
@@ -241,9 +242,11 @@ object PasswordEntryController extends BaseController {
     val user = authReq.user
 
     DAO.passwordEntryKeywordsDAO.findUniqueKeywords(user) map { keywords =>
-      Ok(Json.obj("keywords" -> keywords.toSeq))
+      angularJson(Ok, Json.obj("keywords" -> keywords.toSeq))
     } recover {
-      case NonFatal(e) => Ok(jsonError(s"Can't get keywords for $user", e))
+      case NonFatal(e) => {
+        angularJson(Ok, jsonError(s"Can't get keywords for $user", e))
+      }
     }
   }
 

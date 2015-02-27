@@ -13,6 +13,7 @@ import play.api.Play.current
 import pwguard.global.Globals.ExecutionContexts.Default._
 import exceptions._
 import util.FutureHelpers._
+import util.JsonHelpers.angularJson
 import services.ImportFieldMapping
 
 import scala.concurrent.Future
@@ -69,15 +70,14 @@ object ImportExportController extends BaseController {
       yield {
         val opt = headers map { h =>
           Cache.set(FileCacheKey, f.getPath)
-          Ok(
-            Json.obj(
-              "headers" -> h,
-              "fields"  -> ImportFieldMapping.values.map { field =>
-                Json.obj("name"     -> field.toString,
-                         "required" -> ImportFieldMapping.isRequired(field))
-              }
-            )
+          val js = Json.obj(
+            "headers" -> h,
+            "fields"  -> ImportFieldMapping.values.map { field =>
+              Json.obj("name"     -> field.toString,
+                       "required" -> ImportFieldMapping.isRequired(field))
+            }
           )
+          angularJson(Ok, js)
         }
 
         opt.getOrElse {
@@ -91,7 +91,7 @@ object ImportExportController extends BaseController {
     } recover {
       case NonFatal(e) => {
         logger.error("Error preparing import", e)
-        BadRequest(jsonError(e))
+        angularJson(BadRequest, jsonError(e))
       }
     }
   }
@@ -130,7 +130,7 @@ object ImportExportController extends BaseController {
     } recover {
       case NonFatal(e) => {
         logger.error("Cannot complete import", e)
-        BadRequest(jsonError(e))
+        angularJson(BadRequest, jsonError(e))
       }
     } andThen {
       case _ => {

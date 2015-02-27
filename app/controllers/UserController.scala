@@ -8,14 +8,13 @@ import models.UserHelpers.json.implicits._
 
 import play.api._
 import play.api.libs.json._
-import play.api.mvc.{AnyContent, Action, Request}
-import play.api.mvc.BodyParsers._
 import play.api.mvc.Results._
 
 import pwguard.global.Globals.ExecutionContexts.Default._
 
 import _root_.util.EitherOptionHelpers.Implicits._
 import _root_.util.EitherOptionHelpers._
+import _root_.util.JsonHelpers.angularJson
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -41,9 +40,9 @@ object UserController extends BaseController {
               yield json
 
     res map { json =>
-      Ok(json)
+      angularJson(Ok, json)
     } recover { case NonFatal(e) =>
-      InternalServerError(jsonError("Save of user ID $id failed", e))
+      angularJson(InternalServerError, jsonError("Save of user ID $id failed", e))
     }
   }
 
@@ -57,9 +56,9 @@ object UserController extends BaseController {
               yield json
 
     res map { json =>
-      Ok(json)
+      angularJson(Ok, json)
     } recover { case NonFatal(e) =>
-      InternalServerError(jsonError("Failed to create user", e))
+      angularJson(InternalServerError, jsonError("Failed to create user", e))
     }
   }
 
@@ -70,10 +69,10 @@ object UserController extends BaseController {
               yield json
 
     res map { json =>
-      Ok(Json.obj("users" -> json))
+      angularJson(Ok, Json.obj("users" -> json))
     } recover {
       case NonFatal(e) =>
-        InternalServerError(jsonError("Retrieval failed", e))
+        angularJson(InternalServerError, jsonError("Retrieval failed", e))
     }
   }
 
@@ -99,19 +98,23 @@ object UserController extends BaseController {
               yield usersJS
 
     res map { json =>
-      Ok(Json.obj("users" -> json))
+      angularJson(Ok, Json.obj("users" -> json))
     } recover {
-      case NonFatal(e) => InternalServerError(jsonError("Retrieval failed", e))
+      case NonFatal(e) => {
+        angularJson(InternalServerError, jsonError("Retrieval failed", e))
+      }
     }
   }
 
   def delete(id: Int) = SecuredAction { authReq =>
 
     userDAO.delete(id) map { ok =>
-      Ok(Json.obj("ok" -> ok))
+      angularJson(Ok, Json.obj("ok" -> ok))
     } recover {
-      case NonFatal(e) =>
-        InternalServerError(jsonError(s"Failed to delete user with ID $id", e))
+      case NonFatal(e) => {
+        angularJson(InternalServerError,
+                    jsonError(s"Failed to delete user with ID $id", e))
+      }
     }
   }
 

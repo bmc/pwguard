@@ -1,10 +1,28 @@
 package util
 
+import play.api.Logger
 import play.api.libs.json._
+import play.api.mvc.Result
 
 /** JSON helpers.
   */
 object JsonHelpers {
+
+  import play.api.mvc.Results.Status
+
+  /** Given a status value, such as `Ok`, `BadRequest`, etc., and a
+    * JSON value, produce a `Result` object that encodes the JSON for
+    * AngularJS, which includes protecting against the JSON with Padding
+    * vulnerability.
+    *
+    * @param status  the status value
+    * @param js      the JSON
+    *
+    * @return the encoded result
+    */
+  def angularJson(status: Status, js: JsValue): Result = {
+    status(s")]}',\n${js.toString}").as("application/json")
+  }
 
   /** Add fields to a JSON object.
     *

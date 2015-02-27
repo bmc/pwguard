@@ -7,6 +7,7 @@
 
 GET           /                                          controllers.MainController.root(isMobile: Option[String])
 GET           /pwguard/                                  controllers.MainController.index(isMobile: Option[String])
+GET           /pwguard                                   controllers.MainController.index(isMobile: Option[String])
 
 POST          /pwguard/logged-in-user                    controllers.SessionController.getLoggedInUser
 POST          /pwguard/login                             controllers.SessionController.login

@@ -11,8 +11,8 @@ import pwguard.global.Globals
 import pwguard.global.Globals.ExecutionContexts.Default._
 import util.UserAgent.UserAgent
 import util.EitherOptionHelpers._
+import util.JsonHelpers._
 
-import java.util.Date
 import java.util.jar.{Manifest => JarManifest}
 
 import scala.concurrent.Future
@@ -114,9 +114,9 @@ object MainController extends BaseController {
       val files = Seq(s"static/bower/$path",
                       s"static/$path",
                       s"static/javascripts/$path")
-        .map { Play.getFile(_) }
-        .dropWhile { f => ! (f.exists) }
-        .take(1)
+                   .map { Play.getFile(_) }
+                   .dropWhile { f => ! (f.exists) }
+                   .take(1)
 
       files match {
         case Nil       => NotFound
@@ -172,10 +172,11 @@ object MainController extends BaseController {
   def getUserAgentInfo = UnsecuredAction { implicit request =>
 
     getUserAgent(request).map { userAgent: UserAgent =>
-      Ok(Json.obj("userAgentInfo" -> Json.obj("isMobile" -> userAgent.isMobile)))
+      val res = Json.obj("userAgentInfo" -> Json.obj("isMobile" -> userAgent.isMobile))
+      angularJson(Ok, res)
     }
     .recover { case _ =>
-      Ok(jsonError("Unable to get information about your browser."))
+      angularJson(Ok, jsonError("Unable to get information about your browser."))
     }
   }
 
@@ -183,7 +184,8 @@ object MainController extends BaseController {
     */
   def root(isMobile: Option[String]) = UnsecuredAction { implicit request =>
     Future {
-      Redirect(routes.MainController.index(isMobile))
+      val url: Call = routes.MainController.index(isMobile)
+      Redirect(url)
     }
   }
 
