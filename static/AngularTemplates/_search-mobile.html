@@ -65,7 +65,8 @@
               <div class="panel-body">
                 <div class="mobile-field description" ng-show="pw.description">
                   <span class="mobile-label">Description:</span>
-                  <span class="mobile-value">{{pw.description}}</span>
+                  <span class="mobile-value"
+                        ng-bind-html="pw.description | linky:'newPage'"></span>
                 </div>
 
                 <div class="mobile-field login" ng-show="pw.loginID">

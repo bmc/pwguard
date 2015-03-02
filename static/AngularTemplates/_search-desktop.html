@@ -125,7 +125,9 @@
               </td>
 
               <td class="description">
-                <div>{{pw.description}}</div>
+                <div>
+                  <span ng-bind-html="pw.description | linky:'newPage'"></span>
+                </div>
                 <div ng-show="pw.extras" class="extras">
                   <a href="" ng-click="pw.showExtras=!pw.showExtras"
                      role="button" class="btn btn-default btn-xs toggle-button">
