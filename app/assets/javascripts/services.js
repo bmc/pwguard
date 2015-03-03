@@ -580,6 +580,31 @@ pwgServices.factory('pwgRoutes', ['$injector', function($injector) {
     $location.path(url);
   }
 
+  function routeNameForURL(url) {
+    if (!url) url = "";
+    let m = URL_RE.exec(url);
+    let strippedURL;
+    if (m)
+      strippedURL = m[1];
+    else
+      strippedURL = url;
+
+    let result = null;
+    for (var pattern in $route.routes) {
+      let r = $route.routes[pattern];
+      if (! r.name)
+        continue;
+      if (! r.regexp)
+        continue;
+      if (r.regexp.test(strippedURL)) {
+        result = r.name;
+        break;
+      }
+    }
+
+    return result;
+  }
+
   var DEFAULT_ROUTE_PATH = pathForRouteName(DEFAULT_ROUTE_NAME);
   var DEFAULT_ROUTE_HREF = hrefForRouteName(DEFAULT_ROUTE_NAME);
 
@@ -625,28 +650,11 @@ pwgServices.factory('pwgRoutes', ['$injector', function($injector) {
     },
 
     routeNameForURL: (url) => {
-      if (!url) url = "";
-      let m = URL_RE.exec(url);
-      let strippedURL;
-      if (m)
-        strippedURL = m[1];
-      else
-        strippedURL = url;
+      return routeNameForURL(url);
+    },
 
-      let result = null;
-      for (var pattern in $route.routes) {
-        let r = $route.routes[pattern];
-        if (! r.name)
-          continue;
-        if (! r.regexp)
-          continue;
-        if (r.regexp.test(strippedURL)) {
-          result = r.name;
-          break;
-        }
-      }
-
-      return result;
+    currentRouteName: () => {
+      return routeNameForURL($location.path());
     }
   }
 }]);

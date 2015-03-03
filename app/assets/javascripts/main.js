@@ -67,7 +67,10 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
             deferred.resolve(response.user);
           }
           else {
-            pwgRoutes.redirectToNamedRoute('login');
+            let currentRoute = pwgRoutes.currentRouteName();
+            let isPreLoginRoute = pwgRoutes.isPreLoginRoute(currentRoute);
+            if (! isPreLoginRoute)
+              pwgRoutes.redirectToNamedRoute('login');
             deferred.resolve(null);
           }
         },
@@ -1157,8 +1160,14 @@ pwGuardApp.controller('AdminUsersCtrl',
 // --------------------------------------------------------------------------
 
 pwGuardApp.controller('AboutCtrl',
-  ['$scope', 'currentUser', 'pwgCheckRoute',
-  function($scope, currentUser, pwgCheckRoute) {
+  ['$scope', '$injector', 'currentUser', 'pwgCheckRoute',
+  function($scope, $injector, currentUser, pwgCheckRoute) {
+
+    var pwgLogging = $injector.get('pwgLogging');
+
+    var log = pwgLogging.logger('AboutCtrl');
+
+    log.debug(`Entry. currentUser=${JSON.stringify(currentUser)}`);
     pwgCheckRoute('about', currentUser);
   }
 ]);
