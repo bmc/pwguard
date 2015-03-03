@@ -516,6 +516,7 @@ pwgDirectives.directive('pwgEditPasswordEntryForm',
            let extra = augmentExtra(i, {
              fieldName:      null,
              fieldValue:     null,
+             isPassword:     false,
              id:             null
            });
            $scope.ngModel.extras.push(extra);
