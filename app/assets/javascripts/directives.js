@@ -32,7 +32,6 @@ pwgDirectives.directive('pwgTabLabel', function() {
     link: function(scope, element, attrs) {
       scope.isMobile = window.browserIsMobile;
     }
-
   }
 });
 
@@ -50,6 +49,33 @@ pwgDirectives.directive('pwgSortIndicator', function() {
       reverse:    '=',
       column:     '@',
       sortColumn: '='
+    }
+  }
+});
+
+// -----------------------------------------------------------------------------
+// Fake checkbox, useful when you want to support clicking outside the checkbox
+// itself
+// -----------------------------------------------------------------------------
+
+pwgDirectives.directive('pwgPasswordDisplay', function() {
+  return {
+    restrict:    'E',
+    transclude:  false,
+    replace:     true,
+    templateUrl: templateURL('directives/pwgPasswordDisplay.html'),
+    scope: {
+      plaintextPassword: "@"
+    },
+    link: function(scope, element, attrs) {
+      if (! attrs.plaintextPassword) {
+        throw new Error("plaintext-password attribute is required.");
+      }
+
+      scope.passwordIsVisible = false;
+      scope.togglePasswordVisibility = () => {
+        scope.passwordIsVisible = !scope.passwordIsVisible;
+      }
     }
   }
 });

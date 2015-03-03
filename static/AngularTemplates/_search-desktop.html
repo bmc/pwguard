@@ -156,29 +156,8 @@
                 <div>
                   <div>
                     <div ng-show="pw.plaintextPassword">
-                      <span class="show-hide-password">
-                        <a href="" ng-click="pw.togglePasswordVisibility()"
-                           class="toggle-password">
-                          <span class="fa fa-toggle-on"
-                                ng-show="pw.passwordVisible"></span>
-                          <span class="fa fa-toggle-off"
-                                ng-hide="pw.passwordVisible"></span>
-                        </a>
-                      </span>
-
-                      <span ng-show="pw.passwordVisible">
-                        <input type="text" readonly="readonly"
-                               class="shown-password clickable"
-                               pwg-select-on-click
-                               ng-show="pw.passwordVisible"
-                               ng-model="pw.plaintextPassword"/>
-                      </span>
-
-                      <span ng-show="!pw.passwordVisible"
-                            class="hidden-password clickable">
-                        **************
-                      </span>
-
+                      <pwg-password-display plaintext-password="{{pw.plaintextPassword}}">
+                      </pwg-password-display>
                     </div>
                   </div>
                 </div>
