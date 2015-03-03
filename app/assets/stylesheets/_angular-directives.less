@@ -28,7 +28,8 @@
   }
 
   .shown-password {
-    width: 8em;
+    min-width: 8em;
+    width: 100%;
   }
 }
 
@@ -62,11 +63,19 @@
 
   .password {
     input {
-      font-family: monospace;
+      font-family: @monospaceFont;
     }
   }
 
   .extra-fields {
+
+    input[type="checkbox"] {
+      height:      16px;
+      width:       16px;
+      position:    relative;
+      margin:      0;
+      padding:     0;
+    }
 
     table {
       width: 100%;
@@ -83,6 +92,16 @@
         td {
           .field-name {
             font-weight: bold;
+          }
+
+          .field-value {
+            &.password {
+              font-family: @monospaceFont;
+            }
+          }
+
+          &.checkbox {
+            text-align: center;
           }
         }
 

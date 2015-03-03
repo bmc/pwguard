@@ -97,6 +97,7 @@ trait PasswordEntryExtraFieldsComponent {
     def passwordEntryID = column[Int]("password_entry_id")
     def fieldName       = column[String]("field_name")
     def fieldValue      = column[String]("field_value")
+    def isPassword      = column[Boolean]("is_password")
 
     def passwordEntry = foreignKey("pweef_id_fk", passwordEntryID, PasswordEntries)(
       _.id, onUpdate = ForeignKeyAction.Restrict
@@ -104,7 +105,7 @@ trait PasswordEntryExtraFieldsComponent {
 
     def idIndex = index("pweef_ix_id", passwordEntryID, unique=false)
 
-    def * = (id.?, passwordEntryID.?, fieldName, fieldValue) <>
+    def * = (id.?, passwordEntryID.?, fieldName, fieldValue, isPassword) <>
             (PasswordEntryExtraField.tupled, PasswordEntryExtraField.unapply)
   }
 

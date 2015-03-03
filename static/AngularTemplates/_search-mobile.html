@@ -104,7 +104,14 @@
                   <div ng-repeat="e in pw.extras | orderBy:'fieldName'"
                        class="mobile-field">
                     <span class="mobile-label">{{e.fieldName}}</span>
-                    <span class="mobile-value">{{e.fieldValue}}</span>
+                    <span class="mobile-value">
+                      <input ng-if="e.isPassword"
+                             type="text" readonly="readonly"
+                             class="password shown-password"
+                             ng-model="e.fieldValue"
+                             pwg-select-on-click/>
+                      <span ng-if="!e.isPassword">{{e.fieldValue}}</span>
+                    </span>
                   </div>
                 </div>
 
