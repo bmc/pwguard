@@ -57,15 +57,17 @@
               </a>
             </li>
             <li ng-class="{active: routeIsActive('import-export')}"
-                ng-hide="isMobile || !isLoggedIn()"
-                class="@browserClass visible-md-block visible-lg-block">
+                ng-show="showImportExport()"
+                ng-class="{'showImportExport()': 'visible-md-block visible-lg-block'}"
+                class="@browserClass">
               <a ng-href="{{ hrefForRouteName('import-export') }}">
                 <pwg-tab-label icon="fa-folder-o" text="Import &amp; Export"></pwg-tab-label>
               </a>
             </li>
             <li ng-class="{active: routeIsActive('admin-users')}"
-                ng-show="userIsAdmin() && (!isMobile)"
-                class="@browserClass visible-md-block visible-lg-block">
+                ng-show="showUserAdmin()"
+                ng-class="{'showUserAdmin()': 'visible-md-block visible-lg-block'}"
+                class="@browserClass">
               <a ng-href="{{ hrefForRouteName('admin-users') }}">
                 <pwg-tab-label icon="fa-users" text="Edit Users"></pwg-tab-label>
               </a>

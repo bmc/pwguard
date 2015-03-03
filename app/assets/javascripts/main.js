@@ -259,6 +259,14 @@ pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
      $scope.userIsAdmin = pwgUser.userIsAdmin;
      $scope.isLoggedIn  = pwgUser.isLoggedIn;
 
+     $scope.showImportExport = () => {
+       return (! $scope.isMobile) && pwgUser.isLoggedIn();
+     }
+
+     $scope.showUserAdmin = () => {
+       return (! $scope.isMobile) && $scope.userIsAdmin();
+     }
+
      pwgAjax.on401(function() {
        if (pwgUser.isLoggedIn()) {
          pwgUser.setLoggedInUser(null);
