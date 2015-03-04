@@ -68,14 +68,26 @@ buildInfoKeys := Seq[BuildInfoKey](name, version)
 buildInfoPackage := "buildinfo"
 
 // ----------------------------------------------------------------------------
+// Command aliases
+// ----------------------------------------------------------------------------
+
+// Override the "dist" command to build a tarball, instead of a zip file.
+addCommandAlias("dist", "universal:package-zip-tarball")
+
+// ----------------------------------------------------------------------------
 // Special case task that runs traceur, then translates the results via
 // angular-injector. Assumes that Node.js, traceur and angular-injector
 // are installed and in the path.
 //
-// We could use sbt-traceur, but this proves to be more flexible. Plus, this
-// approach serves as a good illustration of an inline SBT task.
+// We could use sbt-traceur, but this proves to be more flexible. Among other
+// things, it allows easy drop-in of angular-injector, a Node.js command that
+// transforms AngularJS dependency injection so that it's minification-friendly.
+//
+// Plus, this approach serves as a good illustration of a non-trivial inline
+// SBT task.
 // ----------------------------------------------------------------------------
 
+// Simple utility functions for issuing and logging shell commands.
 def sh(cmd: String)(implicit log: sbt.Logger): Unit = {
   log.info(cmd)
   cmd.!!
@@ -83,6 +95,7 @@ def sh(cmd: String)(implicit log: sbt.Logger): Unit = {
 
 val traceur = taskKey[Seq[File]]("run traceur")
 
+// The actual task body.
 traceur := {
   import java.io.File
   import grizzled.file.util.joinPath
@@ -215,6 +228,8 @@ compile in Compile <<= (compile in Compile) map { compile =>
 }
 
 // ---------------------------------------------------------------------------
+// Asset pipeline configuration
+// ----------------------------------------------------------------------------
 
 includeFilter in (Assets, LessKeys.less) := "*.less"
 
@@ -228,13 +243,14 @@ mappings in Universal ++= (file("static") ** "*").get map { f =>
   f -> f.getPath
 }
 
-// Override the "dist" command to build a tarball, instead of a zip file.
-addCommandAlias("dist", "universal:package-zip-tarball")
+//includeFilter in uglify := GlobFilter("main.js")
+
+// ----------------------------------------------------------------------------
+// If we *were* using sbt-traceur, here's where we'd configure it.
+// ----------------------------------------------------------------------------
 
 //TraceurKeys.sourceFileNames in Assets := Seq("javascripts/main.js")
 
 //TraceurKeys.sourceFileNames in TestAssets := Seq.empty[String]
 
 //TraceurKeys.sourceFileNames in TestAssets := Seq("javascript-tests/main.js")
-
-//includeFilter in uglify := GlobFilter("main.js")
