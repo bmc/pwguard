@@ -40,13 +40,28 @@ pwgServices.factory('pwgLogging', function() {
   function mapLevel(stringLevel) {
 
     var level = null;
-    if (stringLevel === 'trace')      level = log4javascript.Level.TRACE;
-    else if (stringLevel === 'debug') level = log4javascript.Level.DEBUG;
-    else if (stringLevel === 'info')  level = log4javascript.Level.INFO;
-    else if (stringLevel === 'warn')  level = log4javascript.Level.WARN;
-    else if (stringLevel === 'error') level = log4javascript.Level.ERROR;
-    else if (stringLevel === 'fatal') level = log4javascript.Level.FATAL;
-    else                              level = log4javascript.Level.INFO;
+    switch (stringLevel) {
+      case 'trace':
+        level = log4javascript.Level.TRACE;
+        break;
+      case 'debug':
+        level = log4javascript.Level.DEBUG;
+        break;
+      case 'warn':
+        level = log4javascript.Level.WARN;
+        break;
+      case 'error':
+        level = log4javascript.Level.ERROR;
+        break;
+      case 'fatal':
+        level = log4javascript.Level.FATAL;
+        break;
+      case 'info':
+        // fall through is intentional
+      default:
+        level = log4javascript.Level.INFO;
+        break;
+    }
 
     return level;
   }
@@ -105,7 +120,7 @@ pwgServices.factory('pwgError', function() {
 // clearAll()         - convenience
 // ----------------------------------------------------------------------------
 
-pwgServices.factory('pwgFlash', ['$alert', function($alert) {
+pwgServices.factory('pwgFlash', ng(function($alert) {
 
   var infoAlert     = null
   var errorAlert    = null
@@ -172,14 +187,14 @@ pwgServices.factory('pwgFlash', ['$alert', function($alert) {
     }
   }
 
-}]);
+}));
 
 // ----------------------------------------------------------------------------
 // Front-end service for AJAX calls. Handles errors in a consistent way, and
 // fires up a spinner.
 // ----------------------------------------------------------------------------
 
-pwgServices.factory('pwgAjax', ['$injector', function($injector) {
+pwgServices.factory('pwgAjax', ng(function($injector) {
   var $http      = $injector.get('$http');
   var pwgSpinner = $injector.get('pwgSpinner');
   var pwgFlash   = $injector.get('pwgFlash');
@@ -297,14 +312,14 @@ pwgServices.factory('pwgAjax', ['$injector', function($injector) {
       callOn401 = callback;
     }
   }
-}])
+}));
 
 // ----------------------------------------------------------------------------
 // Simple spinner service. Assumes the existence of an element that's monitoring
 // the root scope's "showSpinner" variable.
 // ----------------------------------------------------------------------------
 
-pwgServices.factory('pwgSpinner', ['$rootScope', function($rootScope) {
+pwgServices.factory('pwgSpinner', ng(function($rootScope) {
   function pwgSpinner($rootScope) {
     $rootScope.showSpinner = true;
   }
@@ -313,24 +328,24 @@ pwgServices.factory('pwgSpinner', ['$rootScope', function($rootScope) {
     start: function() { $rootScope.showSpinner = true; },
     stop:  function() { $rootScope.showSpinner = false; }
   }
-}])
+}));
 
 // ----------------------------------------------------------------------------
 // A timeout service with arguments in a more sane order.
 // ----------------------------------------------------------------------------
 
-pwgServices.factory('pwgTimeout', ['$timeout', function($timeout) {
+pwgServices.factory('pwgTimeout', ng(function($timeout) {
   return {
     cancel:  function(promise) { $timeout.cancel(promise); },
     timeout: function(timeout, callback) { $timeout(callback, timeout); }
   }
-}]);
+}));
 
 // ----------------------------------------------------------------------------
 // Get info about the currently logged-in user
 // ----------------------------------------------------------------------------
 
-pwgServices.factory('pwgUser', ['$injector', function($injector) {
+pwgServices.factory('pwgUser', ng(function($injector) {
 
   var pwgLogging  = $injector.get('pwgLogging');
   var pwgAjax     = $injector.get('pwgAjax');
@@ -338,7 +353,7 @@ pwgServices.factory('pwgUser', ['$injector', function($injector) {
   var $q          = $injector.get('$q');
 
   function isLoggedIn() {
-    return currentUser != null;
+    return currentUser !== null;
   }
 
   return {
@@ -385,13 +400,13 @@ pwgServices.factory('pwgUser', ['$injector', function($injector) {
     }
   }
 
-}]);
+}));
 
 // ----------------------------------------------------------------------------
 // Modal service. Hides underlying implementation(s).
 // ----------------------------------------------------------------------------
 
-pwgServices.factory('pwgModal', ['$injector', function($injector) {
+pwgServices.factory('pwgModal', ng(function($injector) {
 
   var $q         = $injector.get('$q');
   var $modal     = $injector.get('$modal');
@@ -458,7 +473,7 @@ pwgServices.factory('pwgModal', ['$injector', function($injector) {
     }
   }
 
-}]);
+}));
 
 
 // ----------------------------------------------------------------------------
@@ -467,7 +482,7 @@ pwgServices.factory('pwgModal', ['$injector', function($injector) {
 // location.
 // ----------------------------------------------------------------------------
 
-pwgServices.factory('pwgFormHelper', ['$injector', function($injector) {
+pwgServices.factory('pwgFormHelper', ng(function($injector) {
 
   var pwgRoutes = $injector.get('pwgRoutes');
   var pwgModal  = $injector.get('pwgModal');
@@ -487,13 +502,13 @@ pwgServices.factory('pwgFormHelper', ['$injector', function($injector) {
       }
     }
   }
-}]);
+}));
 
 // ----------------------------------------------------------------------------
 // Service to manage saving last search term
 // ----------------------------------------------------------------------------
 
-pwgServices.factory('pwgSearchTerm', ['$injector', function($injector) {
+pwgServices.factory('pwgSearchTerm', ng(function($injector) {
   var $cookieStore = $injector.get('$cookieStore');
   var SAVED_TERM_COOKIE = "lastSearch";
 
@@ -502,13 +517,13 @@ pwgServices.factory('pwgSearchTerm', ['$injector', function($injector) {
     clearSavedTerm: ()     => { $cookieStore.remove(SAVED_TERM_COOKIE); },
     getSavedTerm:   ()     => { return $cookieStore.get(SAVED_TERM_COOKIE); }
   }
-}]);
+}));
 
 // ----------------------------------------------------------------------------
 // Route-related services
 // ----------------------------------------------------------------------------
 
-pwgServices.factory('pwgRoutes', ['$injector', function($injector) {
+pwgServices.factory('pwgRoutes', ng(function($injector) {
 
   var pwgLogging              = $injector.get('pwgLogging');
   var pwgError                = $injector.get('pwgError');
@@ -657,9 +672,9 @@ pwgServices.factory('pwgRoutes', ['$injector', function($injector) {
       return routeNameForURL($location.path());
     }
   }
-}]);
+}));
 
-pwgServices.factory('pwgCheckRoute', ['$injector', function($injector) {
+pwgServices.factory('pwgCheckRoute', ng(function($injector) {
   var pwgRoutes  = $injector.get('pwgRoutes');
   var pwgLogging = $injector.get('pwgLogging');
 
@@ -692,7 +707,6 @@ pwgServices.factory('pwgCheckRoute', ['$injector', function($injector) {
       }
     }
   }
-}]);
-
+}));
 
 /* jshint ignore:end */

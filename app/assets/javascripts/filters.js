@@ -84,7 +84,7 @@ pwgFilters.filter('pwgReplace', function() {
 // Converted embedded newlines to <br/>
 // ----------------------------------------------------------------------------
 
-pwgFilters.filter('pwgNewlinesToBRs', ['$filter', function($filter) {
+pwgFilters.filter('pwgNewlinesToBRs', ng(function($filter) {
   var NEWLINES = ["\n", "&#10;", "&#x0a;"];
 
   return function(input) {
@@ -96,13 +96,13 @@ pwgFilters.filter('pwgNewlinesToBRs', ['$filter', function($filter) {
 
     return res;
   }
-}]);
+}));
 
 // ----------------------------------------------------------------------------
 // Shorten a string, adding a ellipsis, if it exceeds a certain length.
 // ----------------------------------------------------------------------------
 
-pwgFilters.filter('pwgEllipsize', [function() {
+pwgFilters.filter('pwgEllipsize', function() {
   return function(input, max = 30) {
     var res = input;
     if (input) {
@@ -121,13 +121,13 @@ pwgFilters.filter('pwgEllipsize', [function() {
 
     return res;
   }
-}]);
+});
 
 // ----------------------------------------------------------------------------
 // Shorten a URL to a preview.
 // ----------------------------------------------------------------------------
 
-pwgFilters.filter('pwgUrlPreview', ['$filter', function($filter) {
+pwgFilters.filter('pwgUrlPreview', ng(function($filter) {
   let ellipsize = $filter('pwgEllipsize');
   // Note: The ".*?" construct means "match .*, but non-greedily". This
   // is necessary to prevent the ".*" from capturing trailing "/" characters
@@ -152,6 +152,6 @@ pwgFilters.filter('pwgUrlPreview', ['$filter', function($filter) {
     return res;
   }
 
-}]);
+}));
 
 /* jshint ignore:end */

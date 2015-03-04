@@ -5,8 +5,6 @@
 
 /* jshint ignore:start */
 
-"use strict";
-
 import * as util from './util';
 import * as filters from './filters';
 import * as services from './services';
@@ -45,7 +43,7 @@ function checkMissingFeatures() {
   }
 }
 
-pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provide) {
+pwGuardApp.config(ng(function($routeProvider, $provide) {
 
   var templateURL = angularTemplateURL;
 
@@ -56,7 +54,7 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
     let deferred = $q.defer();
 
     let user = pwgUser.currentUser();
-    if (user != null) {
+    if (user !== null) {
       deferred.resolve(user);
     }
 
@@ -196,9 +194,9 @@ pwGuardApp.config(['$routeProvider', '$provide', function($routeProvider, $provi
     });
 
   checkMissingFeatures();
-}]);
+}));
 
-pwGuardApp.run(['$rootScope', '$injector', function($rootScope, $injector) {
+pwGuardApp.run(ng(function($rootScope, $injector) {
 
   var pwgLogging = $injector.get('pwgLogging');
   var pwgRoutes  = $injector.get('pwgRoutes');
@@ -209,7 +207,7 @@ pwGuardApp.run(['$rootScope', '$injector', function($rootScope, $injector) {
     return pwgRoutes.hrefForRouteName(name);
   }
 
-}]);
+}));
 
 // ##########################################################################
 // Controllers
@@ -219,8 +217,7 @@ pwGuardApp.run(['$rootScope', '$injector', function($rootScope, $injector) {
 // Main Controller
 // --------------------------------------------------------------------------
 
-pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
-   function($scope, $injector) {
+pwGuardApp.controller('MainCtrl', ng(function($scope, $injector) {
 
      var $rootScope         = $injector.get('$rootScope');
      var $location          = $injector.get('$location');
@@ -279,14 +276,13 @@ pwGuardApp.controller('MainCtrl', ['$scope', '$injector',
        pwgRoutes.redirectToNamedRoute('login');
      });
    }
-]);
+));
 
 // --------------------------------------------------------------------------
 // Navbar Controller
 // --------------------------------------------------------------------------
 
-pwGuardApp.controller('NavbarCtrl',
-  ['$scope', '$injector', function($scope, $injector) {
+pwGuardApp.controller('NavbarCtrl', ng(function($scope, $injector) {
 
     var pwgAjax   = $injector.get('pwgAjax');
     var pwgModal  = $injector.get('pwgModal');
@@ -327,16 +323,15 @@ pwGuardApp.controller('NavbarCtrl',
       )
     }
 
-  }]
-)
+  }
+));
 
 // --------------------------------------------------------------------------
 // Login Controller
 // --------------------------------------------------------------------------
 
 pwGuardApp.controller('LoginCtrl',
-  ['$scope', '$injector', 'currentUser', 'pwgCheckRoute',
-  function($scope, $injector, currentUser, pwgCheckRoute) {
+  ng(function($scope, $injector, currentUser, pwgCheckRoute) {
 
     pwgCheckRoute('login', currentUser);
 
@@ -378,15 +373,14 @@ pwGuardApp.controller('LoginCtrl',
     }
 
   }
-]);
+));
 
 // --------------------------------------------------------------------------
 // Edit Entry Controller
 // --------------------------------------------------------------------------
 
 pwGuardApp.controller('EditPasswordEntryCtrl',
-  ['$scope', '$injector', 'currentUser', 'pwgCheckRoute',
-  function($scope, $injector, currentUser, pwgCheckRoute) {
+  ng(function($scope, $injector, currentUser, pwgCheckRoute) {
 
     pwgCheckRoute('edit-entry', currentUser);
 
@@ -412,15 +406,14 @@ pwGuardApp.controller('EditPasswordEntryCtrl',
       }
     );
   }
-]);
+));
 
 // --------------------------------------------------------------------------
 // New Entry Controller
 // --------------------------------------------------------------------------
 
 pwGuardApp.controller('NewPasswordEntryCtrl',
-  ['$scope', '$injector', 'currentUser', 'pwgCheckRoute',
-  function($scope, $injector, currentUser, pwgCheckRoute) {
+  ng(function($scope, $injector, currentUser, pwgCheckRoute) {
 
     pwgCheckRoute('new-entry', currentUser)
 
@@ -444,7 +437,7 @@ pwGuardApp.controller('NewPasswordEntryCtrl',
 
     $scope.saveURL = routes.controllers.PasswordEntryController.create().url;
   }
-]);
+));
 
 // --------------------------------------------------------------------------
 // Search Controllers
@@ -454,8 +447,7 @@ pwGuardApp.controller('NewPasswordEntryCtrl',
 // instantiated. Only one outer controller will be.
 
 pwGuardApp.controller('SearchCtrl',
-  ['$scope', '$injector', 'pwgCheckRoute', 'currentUser', 'pwgAjax',
-  function($scope, $injector, pwgCheckRoute, currentUser, pwgAjax) {
+  ng(function($scope, $injector, pwgCheckRoute, currentUser, pwgAjax) {
 
     pwgCheckRoute('search', currentUser);
 
@@ -468,10 +460,9 @@ pwGuardApp.controller('SearchCtrl',
 
     $scope.newEntryURL =  pwgRoutes.hrefForRouteName('new-entry');
   }
-]);
+));
 
-pwGuardApp.controller('InnerSearchCtrl',
-  ['$scope', '$injector', function($scope, $injector) {
+pwGuardApp.controller('InnerSearchCtrl', ng(function($scope, $injector) {
 
     $scope.searchTerm    = "";
     $scope.searchResults = null;
@@ -704,16 +695,15 @@ pwGuardApp.controller('InnerSearchCtrl',
     // Initialization.
 
     reissueLastSearch();
-  }]
-)
+  }
+));
 
 // --------------------------------------------------------------------------
 // Profile Controllers
 // --------------------------------------------------------------------------
 
 pwGuardApp.controller('ProfileCtrl',
-  ['$scope', '$injector', 'currentUser', 'pwgCheckRoute',
-  function($scope, $injector, currentUser, pwgCheckRoute) {
+  ng(function($scope, $injector, currentUser, pwgCheckRoute) {
 
     pwgCheckRoute('profile', currentUser);
 
@@ -725,7 +715,7 @@ pwGuardApp.controller('ProfileCtrl',
 
     var log = pwgLogging.logger('ProfileCtrl');
 
-    if (currentUser == null) {
+    if (currentUser === null) {
       console.log("ERROR: Not logged in.");
       pwgRoutes.redirectToNamedRoute('login');
     }
@@ -767,16 +757,15 @@ pwGuardApp.controller('ProfileCtrl',
         form.$setPristine();
       });
     }
-  }]
-)
+  }
+));
 
 // --------------------------------------------------------------------------
 // Import/Export Controllers
 // --------------------------------------------------------------------------
 
 pwGuardApp.controller('ImportExportCtrl',
-  ['$scope', '$injector', 'currentUser', 'pwgCheckRoute',
-  function($scope, $injector, currentUser, pwgCheckRoute) {
+  ng(function($scope, $injector, currentUser, pwgCheckRoute) {
 
     pwgCheckRoute('import-export', currentUser);
 
@@ -997,16 +986,15 @@ pwGuardApp.controller('ImportExportCtrl',
       $scope.mimeType       = null;
       $scope.importFile     = null;
     }
-  }]
-)
+  }
+));
 
 // --------------------------------------------------------------------------
 // Admin Users Controller
 // --------------------------------------------------------------------------
 
 pwGuardApp.controller('AdminUsersCtrl',
-  ['$scope', '$injector', 'currentUser', 'pwgCheckRoute',
-  function($scope, $injector, currentUser, pwgCheckRoute) {
+  ng(function($scope, $injector, currentUser, pwgCheckRoute) {
 
     pwgCheckRoute('admin-users', currentUser);
 
@@ -1152,7 +1140,7 @@ pwGuardApp.controller('AdminUsersCtrl',
 
     loadUsers();
   }
-]);
+));
 
 
 // --------------------------------------------------------------------------
@@ -1160,8 +1148,7 @@ pwGuardApp.controller('AdminUsersCtrl',
 // --------------------------------------------------------------------------
 
 pwGuardApp.controller('AboutCtrl',
-  ['$scope', '$injector', 'currentUser', 'pwgCheckRoute',
-  function($scope, $injector, currentUser, pwgCheckRoute) {
+  ng(function($scope, $injector, currentUser, pwgCheckRoute) {
 
     var pwgLogging = $injector.get('pwgLogging');
 
@@ -1169,8 +1156,8 @@ pwGuardApp.controller('AboutCtrl',
 
     log.debug(`Entry. currentUser=${JSON.stringify(currentUser)}`);
     pwgCheckRoute('about', currentUser);
-  }
-]);
+  })
+);
 
 
 /* jshint ignore:end */
