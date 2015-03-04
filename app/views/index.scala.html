@@ -82,7 +82,7 @@
       place sbt-traceur puts the compiled file doesn't allow a "javascripts"
       prefix on the path, hence the second argument, below.
     *@
-    @scriptAsset("main.js", includePrefix=false)
+    @scriptAsset("pwguard.js", includePrefix=false)
 
     @helper.javascriptRouter("routes")(
       routes.javascript.SessionController.getLoggedInUser,

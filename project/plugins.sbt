@@ -3,7 +3,7 @@ resolvers += "Typesafe repository" at "https://repo.typesafe.com/typesafe/releas
 resolvers ++= Seq("mdedetrich-releases" at "http://artifactory.mdedetrich.com/plugins-release")
 
 // The Play plugin
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.3.7")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.3.8")
 
 // web plugins
 
@@ -11,7 +11,8 @@ addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.3.7")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-less" % "1.0.0")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-jshint" % "1.0.1")
+// Since we're using traceur, we don't really need jshint.
+//addSbtPlugin("com.typesafe.sbt" % "sbt-jshint" % "1.0.1")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-rjs" % "1.0.1")
 
@@ -19,7 +20,8 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-digest" % "1.0.0")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-mocha" % "1.0.0")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-traceur" % "1.0.1")
+// Note: We're doing this manually. See build.sbt.
+//addSbtPlugin("com.typesafe.sbt" % "sbt-traceur" % "1.0.1")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-uglify" % "1.0.3")
 
@@ -30,3 +32,7 @@ addSbtPlugin("com.atlassian.labs" % "sbt-git-stamp" % "0.1.2")
 
 // gather build information
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.3.2")
+
+libraryDependencies ++= Seq(
+  "org.clapper" %% "grizzled-scala" % "1.3"
+)
