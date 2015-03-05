@@ -1,3 +1,5 @@
+import build.helpers._
+
 name := """pwguard"""
 
 version := "1.0.1"
@@ -87,11 +89,6 @@ addCommandAlias("dist", "universal:package-zip-tarball")
 // SBT task.
 // ----------------------------------------------------------------------------
 
-// Simple utility functions for issuing and logging shell commands.
-def sh(cmd: String)(implicit log: sbt.Logger): Unit = {
-  log.info(cmd)
-  cmd.!!
-}
 
 val traceur = taskKey[Seq[File]]("run traceur")
 
@@ -100,12 +97,6 @@ traceur := {
   import java.io.File
   import grizzled.file.util.joinPath
   implicit val log = streams.value.log
-  // If we were using sbt-traceur, we could invoke it like this.
-  // See http://stackoverflow.com/a/20123930/53495
-  //
-  /*
-  (traceur in Assets).value
-  */
   //
   // We'll want some temp files.
   //
@@ -134,11 +125,11 @@ traceur := {
   val mappings = sources pair relativeTo(sourceDir)
   //
   // Map them to the outputs. There's only one output file, but it needs to
-  // be a sequence of one (file -> string) pair, where:
+  // be a sequence of one (file1 -> file2) pair, where:
   //
-  // file   = the File object pointing to output file we're creating in the
-  //          temp directory
-  // string = the final location of the output file.
+  // file1 = the File object pointing to output file we're creating in the
+  //         temp directory
+  // file2 = the final location of the output file.
   //
   // IO.copy will use this information to copy our generated file to the
   // output directory.
@@ -159,9 +150,11 @@ traceur := {
   val output = outputs.map(_._2).head
   //
   // Get the source file paths, as a string, to poke into the traceur command.
+  // The paths are full. Make them relative (mostly because they'll still work
+  // fine, and they'll display better).
   //
   val sourceNames   = sources.getPaths
-  val sourcesString = sourceNames mkString " "
+  val sourcesString = sourceNames map { relativePath(_) } mkString " "
   //
   // Invoke traceur, writing output to the first temp file.
   //
@@ -179,22 +172,24 @@ traceur := {
   val traceurRuntimePath = nodeModules / "traceur" / "bin" / "traceur-runtime.js"
   val traceurRuntime     = IO.read(traceurRuntimePath)
   val transpiled         = IO.read(tempFile2)
-    //out.write(Source.fromFile(tempPath2).mkString)
   IO.write(tempFile3, traceurRuntime + transpiled)
   //
   // Copy the result to the output directory.
   //
-  IO.copy(outputs)
-  log.info(s"$outputs")
+  copyAll(outputs)
   //
   // Delete the temp files.
   //
-  tempFiles.foreach(_.delete())
+  rm_f(tempFiles)
   //
   // ...and, the result.
   //
   outputs map (_._2)
 }
+
+// ---------------------------------------------------------------------------
+// Task to run "bower install"
+// ----------------------------------------------------------------------------
 
 val bower = taskKey[Unit]("run 'bower install'")
 
@@ -204,28 +199,24 @@ bower := {
   sh("bower install")
 }
 
-// custom compilation task
-
-val customCompile = taskKey[Unit]("custom compilation tasks")
-
-customCompile := {
-  bower.value
-  traceur.value
-}
-
 sourceGenerators in Assets <+= traceur
+
+// ---------------------------------------------------------------------------
+// Custom compilation logic
+// ----------------------------------------------------------------------------
 
 // Some components aren't available in WebJars, so we use Bower. Note that
 // the .bowerrc file ensures that Bower components are installed in the
 // same directory as WebJars components, thus ensuring that we can move
 // components into WebJars references, when they become available.
 //
-// Run "bower install" whenever we do a compile. See
-// http://stackoverflow.com/a/17734236/53495
-compile in Compile <<= (compile in Compile) map { compile =>
-  "bower install".!!
-  compile
+val customCompile = taskKey[Unit]("custom compilation tasks")
+
+customCompile := {
+  bower.value
 }
+
+compile in Compile <<= (compile in Compile) dependsOn(customCompile)
 
 // ---------------------------------------------------------------------------
 // Asset pipeline configuration
