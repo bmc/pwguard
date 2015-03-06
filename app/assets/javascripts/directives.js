@@ -183,7 +183,6 @@ pwgDirectives.directive('pwgPopover', function() {
       content:   "@"
     },
     link: function(scope, element, attrs) {
-      console.log(attrs.icon);
       requiredAttr(scope, 'placement');
       requiredAttr(scope, 'icon');
       requiredAttr(scope, 'trigger');

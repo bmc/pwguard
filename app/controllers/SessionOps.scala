@@ -36,19 +36,24 @@ object SessionOps {
     *
     * @param request current request
     * @param user    the user
+    * @param timeout overridden timeout or None for the default.
     * @tparam T      the request type (not used)
     *
     * @return `Left(error)` or `Right(sessionData)`
     */
-  def newSessionDataFor[T](request: Request[T], user: User):
+  def newSessionDataFor[T](request: Request[T],
+                           user:    User,
+                           timeout: Option[JodaDuration]):
     Future[SessionData] = {
 
+    val duration = timeout.getOrElse(SessionTimeout)
     val sessionData = SessionUtil.newSessionData(
       userIdentifier = user.email,
       ipAddress      = request.remoteAddress,
-      duration       = SessionTimeout
+      duration       = duration
     )
 
+    logger.debug { s"New session for ${user.email}, ${duration}" }
     sessionStore.storeSessionData(sessionData).map { _ =>
       sessionData
     }

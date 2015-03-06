@@ -2,7 +2,7 @@ import build.helpers._
 
 name := """pwguard"""
 
-version := "1.0.1"
+version := "1.0.2"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 
@@ -54,6 +54,7 @@ libraryDependencies ++= Seq(
   "org.webjars"           % "log4javascript"             % "1.4.10",
   "org.webjars"           % "lodash"                     % "3.1.0",
   "org.webjars"           % "ng-tags-input"              % "2.1.1",
+  "org.webjars"           % "momentjs"                   % "2.9.0",
   "org.webjars"           % "jasmine"                    % "2.1.3" % "test"
 )
 
@@ -88,7 +89,6 @@ addCommandAlias("dist", "universal:package-zip-tarball")
 // Plus, this approach serves as a good illustration of a non-trivial inline
 // SBT task.
 // ----------------------------------------------------------------------------
-
 
 val traceur = taskKey[Seq[File]]("run traceur")
 
@@ -187,6 +187,8 @@ traceur := {
   outputs map (_._2)
 }
 
+sourceGenerators in Assets <+= traceur
+
 // ---------------------------------------------------------------------------
 // Task to run "bower install"
 // ----------------------------------------------------------------------------
@@ -198,8 +200,6 @@ bower := {
   implicit val log = streams.value.log
   sh("bower install")
 }
-
-sourceGenerators in Assets <+= traceur
 
 // ---------------------------------------------------------------------------
 // Custom compilation logic

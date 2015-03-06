@@ -4,6 +4,9 @@ import dbservice.DAO
 import models.{UserHelpers, User}
 import models.UserHelpers.json._
 import models.UserHelpers.json.implicits._
+
+import org.joda.time.{Duration => JodaDuration}
+
 import play.api.libs.json.{Json, JsValue}
 import play.api.mvc._
 import play.api.mvc.Results._
@@ -33,8 +36,12 @@ object SessionController extends BaseController {
     */
   def login = UnsecuredJSONAction { implicit request: Request[JsValue] =>
 
-    def resultWithSession(user: User): Future[Result] = {
-      val f = for { sessionData <- SessionOps.newSessionDataFor(request, user)
+    def resultWithSession(user: User, rememberOpt: Option[JodaDuration]):
+      Future[Result] = {
+
+      val f = for { sessionData <- SessionOps.newSessionDataFor(request,
+                                                                user,
+                                                                rememberOpt)
                     json        <- safeUserJSON(user) }
               yield {
                 val payload = Json.obj("user" -> json)
@@ -53,8 +60,8 @@ object SessionController extends BaseController {
       }
     }
 
-    handleLogin(request) flatMap { user =>
-      resultWithSession(user)
+    handleLogin(request) flatMap { case (user, rememberOpt) =>
+      resultWithSession(user, rememberOpt)
     } recover {
       case NonFatal(e) => Unauthorized("Login failed")
     }
@@ -101,12 +108,21 @@ object SessionController extends BaseController {
   // Private methods
   // --------------------------------------------------------------------------
 
+  /** Handles a login request.
+    *
+    * @param request login request
+    *
+    * @return A future of `(User, Option[JodaDuration])`, where the duration,
+    *         if defined, represents how long to make the session last.
+    */
   private def handleLogin(request: Request[JsValue]):
-    Future[User] = {
+    Future[(User, Option[JodaDuration])] = {
 
-    val json = request.body
-    val emailOpt = (json \ "email").asOpt[String]
+    val json        = request.body
+    val emailOpt    = (json \ "email").asOpt[String]
     val passwordOpt = (json \ "password").asOpt[String]
+    val rememberOpt = (json \ "rememberTime").asOpt[Long]
+                                             .map(JodaDuration.millis(_))
 
     def matchPassword(user: User): Future[Boolean] = {
       passwordOpt.map { password =>
@@ -116,7 +132,7 @@ object SessionController extends BaseController {
     }
 
     if (Seq(emailOpt, passwordOpt).flatten.length != 2) {
-      failedFuture[User]("Missing email and/or password")
+      failedFuture("Missing email and/or password")
     }
 
     else {
@@ -125,7 +141,7 @@ object SessionController extends BaseController {
         for { userOpt <- DAO.userDAO.findByEmail(email)
               user    <- userOpt.toFuture(s"No such user: $email")
               matches <- matchPassword(user) if user.active }
-        yield user
+        yield (user, rememberOpt)
 
       f recoverWith {
         case NonFatal(e) => {

@@ -344,8 +344,10 @@ pwGuardApp.controller('LoginCtrl',
 
     var log = pwgLogging.logger('LoginCtrl');
 
-    $scope.email    = null;
-    $scope.password = null;
+    $scope.email            = null;
+    $scope.password         = null;
+    $scope.rememberTime     = 10;
+    $scope.rememberUserDays = null;
 
     $scope.clear = () => {
       $scope.email    = null;
@@ -354,7 +356,17 @@ pwGuardApp.controller('LoginCtrl',
 
     $scope.login = () => {
       let url = routes.controllers.SessionController.login().url;
-      pwgAjax.post(url, {email: $scope.email, password: $scope.password},
+      let rememberTime = null;
+      let days = parseInt($scope.rememberUserDays);
+      if (! isNaN(days))
+        rememberTime = moment.duration(days, "days").asMilliseconds();
+
+      let data = {
+        email:        $scope.email,
+        password:     $scope.password,
+        rememberTime: rememberTime
+      }
+      pwgAjax.post(url, data,
 
         // Success.
         function(response) {

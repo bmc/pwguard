@@ -1,6 +1,6 @@
 # PWGuard Change Log
 
-1.0-SNAPSHOT
+Version 1.0.0
 
 * Initial version. Still underway.
 

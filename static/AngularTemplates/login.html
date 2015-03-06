@@ -37,6 +37,19 @@
               </a>
             </div>
           </div>
+          <div class="button-bar">
+            <div class="buttons">
+              <input type="checkbox" id="remember"
+                     ng-model="rememberUserDays"
+                     ng-true-value="{{rememberTime}}"
+                     ng-false-value="null"/>
+              <span>Remember me for {{rememberTime}} days</span>
+              <pwg-popover placement="right" icon="fa-question-circle"
+                           trigger="click" title="Remember me"
+                           content="PWGuard will remember your login for {{rememberTime}} days. Don't use this on a public or unlocked mobile browser!">
+              </pwg-popover>
+            </div>
+          </div>
         </form>
       </div>
     </div>
