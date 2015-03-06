@@ -75,7 +75,7 @@ buildInfoPackage := "buildinfo"
 // ----------------------------------------------------------------------------
 
 // Override the "dist" command to build a tarball, instead of a zip file.
-addCommandAlias("dist", "universal:package-zip-tarball")
+addCommandAlias("dist", ";clean;compile;universal:package-zip-tarball")
 
 // ----------------------------------------------------------------------------
 // Special case task that runs traceur, then translates the results via
@@ -107,11 +107,10 @@ traceur := {
   }
   val (tempPath1, tempFile1) = newTempFile("pwguard.js")
   val (tempPath2, tempFile2) = newTempFile("_pwguard2.js")
-  val (tempPath3, tempFile3) = newTempFile("_pwguard3.js")
-  val tempFiles = Seq(tempFile1, tempFile2, tempFile3)
+  val tempFiles = Seq(tempFile1, tempFile2)
   //
   // Much of this logic is adapted from
-  // https://github.com/sbt/sbt-web\#writing-a-source-file-task
+  // https://github.com/sbt/sbt-web#writing-a-source-file-task
   //
   // Get the source directory
   val sourceDir = (sourceDirectory in Assets).value
@@ -140,7 +139,7 @@ traceur := {
   map {
     case (file, path) => {
       val finalOutputDir = (resourceManaged in Assets).value
-      tempFile3 -> finalOutputDir / path.replace("main.js", "pwguard.js")
+      tempFile2 -> finalOutputDir / path.replace("main.js", "pwguard.js")
     }
   }
   //
@@ -165,14 +164,6 @@ traceur := {
   // temp file.
   //
   sh(s"angular-injector $tempPath1 $tempPath2")
-  //
-  // Add the traceur runtime to the result.
-  //
-  val nodeModules        = target.value / "web" / "web-modules" / "main" / "webjars" / "lib"
-  val traceurRuntimePath = nodeModules / "traceur" / "bin" / "traceur-runtime.js"
-  val traceurRuntime     = IO.read(traceurRuntimePath)
-  val transpiled         = IO.read(tempFile2)
-  IO.write(tempFile3, traceurRuntime + transpiled)
   //
   // Copy the result to the output directory.
   //
