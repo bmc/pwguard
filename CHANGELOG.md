@@ -4,6 +4,7 @@ Version 1.0.2 (Mar ..., 2014)
 
 * Added ability to save session for 10 days, on login. If not specified,
   assumes 15-minute default.
+* Extra fields are now sorted by field name on edit-entry page.
 
 Version 1.0.1 (Mar 4, 2014)
 
