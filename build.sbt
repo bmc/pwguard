@@ -180,6 +180,67 @@ traceur := {
 
 sourceGenerators in Assets <+= traceur
 
+val tsc = taskKey[Seq[File]]("run TypeScript compiler")
+
+// The actual task body.
+tsc := {
+  import java.io.File
+  import grizzled.file.util.{joinPath, dirnameBasenameExtension}
+  implicit val log = streams.value.log
+  //
+  // Much of this logic is adapted from
+  // https://github.com/sbt/sbt-web#writing-a-source-file-task
+  //
+  // Get the source directory
+  val sourceDir = (sourceDirectory in Assets).value
+  //
+  // Get the list of Javascript sources
+  //
+  val sources = sourceDir ** "*.ts"
+  //
+  // Map them to a list of (File -> relative-path-string) pairs
+  //
+  val mappings = sources pair relativeTo(sourceDir)
+  //
+  // Map them to the outputs.
+  //
+  // IO.copy will use this information to copy our generated file to the
+  // output directory.
+  def tmpNameFor(typeScriptSource: String) = {
+    val (_, base, ext) = dirnameBasenameExtension(typeScriptSource)
+    joinPath("tmp", base + ".js")
+  }
+  val outputs = mappings.map {
+    case (file, path) => {
+      val finalOutputDir = (resourceManaged in Assets).value
+      val jsName = tmpNameFor(path)
+      new File(jsName) -> finalOutputDir / path.replace(".ts", ".js")
+    }
+  }
+  //
+  // Get the source file paths, as a string, to poke into the traceur command.
+  // The paths are full. Make them relative (mostly because they'll still work
+  // fine, and they'll display better).
+  //
+  val sourceNames   = sources.getPaths
+  val sourcesString = sourceNames map { relativePath(_) } mkString " "
+  //
+  // Invoke traceur, writing output to the first temp file.
+  //
+  sh("mkdir -p tmp")
+  sourceNames.foreach { path =>
+    val out = tmpNameFor(path)
+    sh(s"tsc --out $out ${relativePath(path)}")
+  }
+  //
+  // ...and, the result.
+  //
+  copyAll(outputs)
+  outputs map (_._2)
+}
+
+sourceGenerators in Assets <+= tsc
+
 // ---------------------------------------------------------------------------
 // Task to run "bower install"
 // ----------------------------------------------------------------------------
