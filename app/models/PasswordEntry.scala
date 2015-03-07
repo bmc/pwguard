@@ -43,8 +43,10 @@ case class PasswordEntry(id:                Option[Int],
   extends BasePasswordEntry with BaseModel {
 
   def toFullEntry(
-    extras: Set[PasswordEntryExtraField] = Set.empty[PasswordEntryExtraField],
-    keywords: Set[PasswordEntryKeyword]  = Set.empty[PasswordEntryKeyword]) = {
+    extras:            Set[PasswordEntryExtraField] = Set.empty[PasswordEntryExtraField],
+    keywords:          Set[PasswordEntryKeyword]  = Set.empty[PasswordEntryKeyword],
+    securityQuestions: Set[PasswordEntrySecurityQuestion] = Set.empty[PasswordEntrySecurityQuestion]
+  ) = {
     FullPasswordEntry(id                = id,
                       userID            = userID,
                       name              = name,
@@ -54,7 +56,8 @@ case class PasswordEntry(id:                Option[Int],
                       url               = url,
                       notes             = notes,
                       keywords          = keywords,
-                      extraFields       = extras)
+                      extraFields       = extras,
+                      securityQuestions = securityQuestions)
     }
 }
 
@@ -67,7 +70,9 @@ case class FullPasswordEntry(id:                Option[Int],
                              url:               Option[String],
                              notes:             Option[String],
                              keywords:          Set[PasswordEntryKeyword],
-                             extraFields:       Set[PasswordEntryExtraField])
+                             extraFields:       Set[PasswordEntryExtraField],
+                             securityQuestions: Set[PasswordEntrySecurityQuestion])
+
   extends BasePasswordEntry with BaseModel {
 
   def toBaseEntry = PasswordEntry(id                = id,
@@ -112,21 +117,30 @@ object PasswordEntryHelper {
 
       import PasswordEntryExtraFieldHelper.json.implicits._
       import PasswordEntryKeywordHelper.json.implicits._
+      import PasswordEntrySecurityQuestionHelper.json.implicits._
 
       implicit val fullPasswordEntryWrites = new Writes[FullPasswordEntry] {
         def writes(o: FullPasswordEntry): JsValue = {
-          JsonHelpers.addFields(Json.toJson(o.toBaseEntry),
-                                ("extras" -> Json.toJson(o.extraFields.toArray)),
-                                ("keywords" -> Json.toJson(o.keywords.toArray)))
+          JsonHelpers.addFields(
+            Json.toJson(o.toBaseEntry),
+            ("extras"            -> Json.toJson(o.extraFields.toArray)),
+            ("keywords"          -> Json.toJson(o.keywords.toArray)),
+            ("securityQuestions" -> Json.toJson(o.securityQuestions.toArray))
+          )
         }
       }
 
       implicit val fullPasswordEntryReads = new Reads[FullPasswordEntry] {
         def reads(json: JsValue): JsResult[FullPasswordEntry] = {
           json.validate[PasswordEntry].flatMap { p =>
-            for { extras <- (json \ "extras").validate[Array[PasswordEntryExtraField]]
-                  keywords <- (json \ "keywords").validate[Array[PasswordEntryKeyword]] }
-            yield p.toFullEntry(extras = extras.toSet, keywords = keywords.toSet)
+            for {
+              e <- (json \ "extras").validate[Array[PasswordEntryExtraField]]
+              k <- (json \ "keywords").validate[Array[PasswordEntryKeyword]]
+              q <- (json \ "securityQuestions").validate[Array[PasswordEntrySecurityQuestion]]
+            }
+            yield p.toFullEntry(extras            = e.toSet,
+                                keywords          = k.toSet,
+                                securityQuestions = q.toSet)
           }
         }
       }

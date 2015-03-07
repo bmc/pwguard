@@ -9,6 +9,12 @@ Version 1.0.2 (Mar ..., 2014)
   allowing it to be bookmarked. When the term is restored and reissued
   (e.g., upon reload), the query string is checked before the saved term
   in the session cookie.
+* PWGuard now supports explicit "security questions" fields that behave more
+  or less like custom fields, with a couple minor differences:
+  - Because PWGuard _knows_ they are security questions, the user doesn't have
+    to number them explicitly.
+  - They can be handled and displayed slightly differently (and more
+    appropriately) than the more free-form custom fields.
 
 Version 1.0.1 (Mar 4, 2014)
 

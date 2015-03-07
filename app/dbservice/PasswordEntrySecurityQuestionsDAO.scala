@@ -1,36 +1,38 @@
 package dbservice
 
-import models.{FullPasswordEntry, PasswordEntryExtraField, PasswordEntry}
+import models.{PasswordEntrySecurityQuestion, PasswordEntry}
 import play.api.Logger
 import pwguard.global.Globals.ExecutionContexts.DB._
 import scala.concurrent.Future
 import scala.util.{Success, Failure, Try}
 
-class PasswordEntryExtraFieldsDAO(_dal: DAL, _logger: Logger)
-  extends BaseDAO[PasswordEntryExtraField](_dal, _logger) {
+class PasswordEntrySecurityQuestionsDAO(_dal: DAL, _logger: Logger)
+  extends BaseDAO[PasswordEntrySecurityQuestion](_dal, _logger) {
 
-  override val logger = Logger("pwguard.dbservice.PasswordEntryExtraFieldsDAO")
+  override val logger = Logger("pwguard.dbservice.PasswordEntrySecurityQuestionsDAO")
 
   import dal.profile.simple._
-  import dal.{PasswordEntryExtraFieldsTable, PasswordEntryExtraFields}
+  import dal.{PasswordEntrySecurityQuestionsTable, PasswordEntrySecurityQuestions}
 
-  private type PWEntryExtraFieldsQuery = Query[PasswordEntryExtraFieldsTable,
-                                               PasswordEntryExtraField,
-                                               Seq]
+  private type PWEntrySecurityQuestionsQuery =
+    Query[PasswordEntrySecurityQuestionsTable,
+          PasswordEntrySecurityQuestion,
+          Seq]
 
   // --------------------------------------------------------------------------
   // Public methods
   // ------------------------------------------------------------------------
 
-  /** Find all password entry extra field objects with the specified IDs.
+  /** Find all password entry security question objects with the specified IDs.
     *
     * @param idSet the IDs
     *
     * @return A future containing the results, or a failed future.
     */
-  def findByIDs(idSet: Set[Int]): Future[Set[PasswordEntryExtraField]] = {
+  def findByIDs(idSet: Set[Int]): Future[Set[PasswordEntrySecurityQuestion]] = {
     withSession { implicit session =>
-      val q = for (p <- PasswordEntryExtraFields if p.id inSet idSet) yield p
+      val q = for (p <- PasswordEntrySecurityQuestions if p.id inSet idSet)
+              yield p
       Future { q.list.toSet }
     }
   }
@@ -50,7 +52,7 @@ class PasswordEntryExtraFieldsDAO(_dal: DAL, _logger: Logger)
     */
   private[dbservice] def findForPasswordEntry(pwe: PasswordEntry)
                                              (implicit session: SlickSession):
-    Future[Set[PasswordEntryExtraField]] = {
+    Future[Set[PasswordEntrySecurityQuestion]] = {
 
     Future {
       loadForPasswordEntry(pwe)
@@ -70,19 +72,19 @@ class PasswordEntryExtraFieldsDAO(_dal: DAL, _logger: Logger)
     */
   private[dbservice] def findForPasswordEntries(entries: Set[PasswordEntry])
                                                (implicit session: SlickSession):
-    Future[Map[PasswordEntry, Set[PasswordEntryExtraField]]] = {
+    Future[Map[PasswordEntry, Set[PasswordEntrySecurityQuestion]]] = {
 
     Future {
       val entryIDs = entries.collect {
         case p: PasswordEntry if p.id.isDefined => p.id.get
       }
 
-      val q = for { e <- PasswordEntryExtraFields
+      val q = for { e <- PasswordEntrySecurityQuestions
                     if e.passwordEntryID inSet entryIDs }
               yield e
 
       val extrasMap = q.list.groupBy(_.passwordEntryID.get)
-      val noExtras = Set.empty[PasswordEntryExtraField]
+      val noExtras = Set.empty[PasswordEntrySecurityQuestion]
       entries.map { entry =>
         entry.id.map { id =>
           (entry, extrasMap.getOrElse(id, noExtras).toSet)
@@ -102,9 +104,9 @@ class PasswordEntryExtraFieldsDAO(_dal: DAL, _logger: Logger)
     *
     * @return A future of the saved entries
     */
-  private[dbservice] def saveMany(entries: Set[PasswordEntryExtraField])
+  private[dbservice] def saveMany(entries: Set[PasswordEntrySecurityQuestion])
                                  (implicit session: SlickSession):
-    Future[Set[PasswordEntryExtraField]] = {
+    Future[Set[PasswordEntrySecurityQuestion]] = {
 
     Future {
       val tries = entries map { saveSyncInSession(_) }
@@ -113,7 +115,7 @@ class PasswordEntryExtraFieldsDAO(_dal: DAL, _logger: Logger)
         case Failure(e) => e
       }
 
-      val successes: Set[PasswordEntryExtraField] = tries.collect {
+      val successes: Set[PasswordEntrySecurityQuestion] = tries.collect {
         case Success(p) => p
       }
 
@@ -156,8 +158,8 @@ class PasswordEntryExtraFieldsDAO(_dal: DAL, _logger: Logger)
                                                (implicit session: SlickSession):
     Future[Int] = {
 
-    val q = for { p <- PasswordEntryExtraFields if p.passwordEntryID === id }
-            yield p
+    val q = for { p <- PasswordEntrySecurityQuestions if p.passwordEntryID === id }
+    yield p
 
     Future { q.delete }
   }
@@ -174,10 +176,10 @@ class PasswordEntryExtraFieldsDAO(_dal: DAL, _logger: Logger)
     */
   private[dbservice] def deleteForPasswordEntries(ids: Set[Int])
                                                  (implicit sess: SlickSession):
-  Future[Int] = {
+    Future[Int] = {
 
-    val q = for { p <- PasswordEntryExtraFields if p.passwordEntryID inSet ids }
-            yield p
+    val q = for { p <- PasswordEntrySecurityQuestions if p.passwordEntryID inSet ids }
+    yield p
     Future { q.delete }
   }
 
@@ -185,27 +187,27 @@ class PasswordEntryExtraFieldsDAO(_dal: DAL, _logger: Logger)
   // Protected methods
   // ------------------------------------------------------------------------
 
-  protected def queryByID(id: Int): PWEntryExtraFieldsQuery = {
-    for (p <- PasswordEntryExtraFields if p.id === id) yield p
+  protected def queryByID(id: Int): PWEntrySecurityQuestionsQuery = {
+    for (p <- PasswordEntrySecurityQuestions if p.id === id) yield p
   }
 
-  protected val baseQuery = PasswordEntryExtraFields
+  protected val baseQuery = PasswordEntrySecurityQuestions
 
-  protected def insert(item: PasswordEntryExtraField)
+  protected def insert(item: PasswordEntrySecurityQuestion)
                       (implicit session: SlickSession):
-    Try[PasswordEntryExtraField] = {
+  Try[PasswordEntrySecurityQuestion] = {
 
     doInsert(item) map { id => item.copy(id = Some(id)) }
   }
 
-  protected def update(item: PasswordEntryExtraField)
+  protected def update(item: PasswordEntrySecurityQuestion)
                       (implicit session: SlickSession):
-    Try[PasswordEntryExtraField] = {
+  Try[PasswordEntrySecurityQuestion] = {
 
     Try {
-      val q = for { p <- PasswordEntryExtraFields if p.id === item.id.get }
-              yield (p.fieldName, p.fieldValue, p.passwordEntryID)
-      q.update((item.fieldName, item.fieldValue, item.passwordEntryID.get))
+      val q = for { p <- PasswordEntrySecurityQuestions if p.id === item.id.get }
+              yield (p.question, p.answer)
+      q.update((item.question, item.answer))
       item
     }
   }
@@ -216,9 +218,9 @@ class PasswordEntryExtraFieldsDAO(_dal: DAL, _logger: Logger)
 
   private def loadForPasswordEntry(pwe: PasswordEntry)
                                   (implicit session: SlickSession):
-    Set[PasswordEntryExtraField] = {
+    Set[PasswordEntrySecurityQuestion] = {
 
-    val q = for (p <- PasswordEntryExtraFields
+    val q = for (p <- PasswordEntrySecurityQuestions
                  if p.passwordEntryID === pwe.id.get) yield p
 
     q.list.toSet

@@ -26,6 +26,7 @@ class DAL(override val profile: JdbcProfile)
   with    PasswordEntriesComponent
   with    PasswordEntryExtraFieldsComponent
   with    PasswordEntryKeywordsComponent
+  with    PasswordEntrySecurityQuestionsComponent
 
 trait UsersComponent {
   self: Profile =>
@@ -110,6 +111,33 @@ trait PasswordEntryExtraFieldsComponent {
   }
 
   val PasswordEntryExtraFields = TableQuery[PasswordEntryExtraFieldsTable]
+}
+
+trait PasswordEntrySecurityQuestionsComponent {
+  self: Profile with PasswordEntriesComponent =>
+
+  import profile.simple._
+  import models.PasswordEntrySecurityQuestion
+
+  class PasswordEntrySecurityQuestionsTable(tag: Tag)
+    extends ModelTable[PasswordEntrySecurityQuestion](tag, "password_entry_security_questions") {
+
+    def id              = column[Int]("id", O.PrimaryKey, O.AutoInc)
+    def passwordEntryID = column[Int]("password_entry_id")
+    def question        = column[String]("question")
+    def answer          = column[String]("answer")
+
+    def passwordEntry = foreignKey("pwesq_id_fk", passwordEntryID, PasswordEntries)(
+      _.id, onUpdate = ForeignKeyAction.Restrict
+    )
+
+    def idIndex = index("pwesq_ix_id", passwordEntryID, unique=false)
+
+    def * = (id.?, passwordEntryID.?, question, answer) <>
+      (PasswordEntrySecurityQuestion.tupled, PasswordEntrySecurityQuestion.unapply)
+  }
+
+  val PasswordEntrySecurityQuestions = TableQuery[PasswordEntrySecurityQuestionsTable]
 }
 
 trait PasswordEntryKeywordsComponent {

@@ -286,14 +286,11 @@ object PasswordEntryController extends BaseController {
     def handleExisting(existing: FullPasswordEntry, newData: FullPasswordEntry):
       Future[FullPasswordEntry] = {
 
-      val toSave = existing.copy(
-        name        = newData.name,
+      val toSave = newData.copy(
         loginID     = newData.loginID.orElse(existing.loginID),
         description = newData.description.orElse(existing.description),
         url         = newData.url.orElse(existing.url),
-        notes       = newData.notes.orElse(existing.notes),
-        extraFields = newData.extraFields,
-        keywords    = newData.keywords
+        notes       = newData.notes.orElse(existing.notes)
       )
 
       maybeEncryptPassword(toSave)

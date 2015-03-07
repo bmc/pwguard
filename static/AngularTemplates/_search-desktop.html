@@ -131,14 +131,14 @@
                 <div ng-show="pw.extras" class="extras">
                   <a href="" ng-click="pw.showExtras=!pw.showExtras"
                      role="button" class="btn btn-default btn-xs toggle-button">
-                    <span ng-show="pw.showExtras">Hide Custom Fields</span>
-                    <span ng-hide="pw.showExtras">Show Custom Fields</span>
+                    <span ng-show="pw.showExtras">Hide Extra Fields</span>
+                    <span ng-hide="pw.showExtras">Show Extra Fields</span>
                   </a>
                   <table class="table table-condensed"
                          ng-show="pw.showExtras">
                     <tr ng-repeat="e in pw.extras | orderBy:'fieldName'">
                       <td class="field-name">{{e.fieldName}}</td>
-                      <td class="field-value">
+                      <td colspan="2" class="field-value">
                         <div ng-if="e.isPassword">
                           <pwg-password-display plaintext-password="{{e.fieldValue}}">
                           </pwg-password-display>
@@ -146,6 +146,18 @@
                         <span ng-if="!e.isPassword">
                           {{e.fieldValue}}
                         </span>
+                      </td>
+                    </tr>
+                    <tr ng-repeat="q in pw.securityQuestions | orderBy:'question'">
+                      <td class="field-name">
+                        Security question {{$index + 1}}
+                      </td>
+                      <td class="field-value">
+                        {{q.question}}
+                      </td>
+                      <td class="field-value">
+                        <pwg-password-display plaintext-password="{{q.answer}}">
+                        </pwg-password-display>
                       </td>
                     </tr>
                   </table>

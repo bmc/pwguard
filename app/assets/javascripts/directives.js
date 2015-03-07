@@ -428,24 +428,43 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
       function augmentExtra(index, extra) {
         _.assign(extra, {
           deleted:        false,
-          delete:         function() {
-            extra.deleted = true;
-            setFormDirtyFlag(true);
-          },
           inputNameName:  `extraFieldName${index}`,
           inputValueName: `extraFieldValue${index}`,
           originalName:   extra.fieldName,
           originalValue:  extra.fieldValue,
-          isValid:        function() {
-            let v = (extra.fieldName !== null) &&
-                    (extra.fieldName.trim().length > 0) &&
+          isValid:        () => {
+            return (extra.fieldName !== null) &&
+                   (extra.fieldName.trim().length > 0) &&
                     (extra.fieldValue !== null) &&
                     (extra.fieldValue.trim().length > 0);
-            return v;
+          },
+          delete:         () => {
+            extra.deleted = true;
+            setFormDirtyFlag(true);
           }
         });
 
         return extra;
+      }
+
+      function augmentSecurityQuestion(index, q) {
+        _.assign(q, {
+          deleted:          false,
+          inputNameName:    `inputQuestionName${index}`,
+          inputValueName:   `inputAnswerName${index}`,
+          originalQuestion: q.question,
+          originalAnswer:   q.answer,
+          isValid:          () => {
+            return (q.question !== null) && (q.question.trim().length > 0) &&
+                   (q.answer !== null) && (q.answer.trim().length > 0);
+          },
+          delete:           () => {
+            q.deleted = true;
+            setFormDirtyFlag(true);
+          }
+        });
+
+        return q;
       }
 
       let allUniqueKeywords = null;
@@ -486,6 +505,10 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
             v.extras[i] = augmentExtra(i, v.extras[i]);
           }
 
+          for (let i = 0; i < v.securityQuestions.length; i++) {
+            v.securityQuestions[i] = augmentSecurityQuestion(i, v.securityQuestions[i]);
+          }
+
           // Filter out any empty keywords that happen to be posted.
           v.keywords = _.filter(v.keywords, (k) => {
             return k.keyword && k.keyword.trim().length > 0
@@ -508,6 +531,10 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
         return function(extra) { return !extra.deleted; }
       }
 
+      $scope.questionNotDeleted = function() {
+        return function(q) { return !q.deleted; }
+      }
+
       $scope.addExtra = function() {
         let i = $scope.ngModel.extras.length
         let extra = augmentExtra(i, {
@@ -521,35 +548,57 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
         $scope.checkExtraField(extra);
       }
 
+      $scope.addSecurityQuestion = function() {
+        let i = $scope.ngModel.securityQuestions.length;
+        let q = augmentSecurityQuestion(i, {
+          question: null,
+          answer:   null,
+          id:       null
+        });
+        $scope.ngModel.securityQuestions.push(q);
+        setFormDirtyFlag(true);
+        $scope.checkSecurityQuestion(q);
+      }
+
       $scope.cancel = function() {
        pwgFormHelper.validateCancellation($scope.entryForm,
                                           $scope.cancelRoute);
       }
 
+      function checkField(thing) {
+        // Save the current form status.
+        let formOrigState = formIsValid();
+        let formValid     = true;
+
+        // Check the extra.
+        if (thing.isValid())
+          formValid = formOrigState;
+        else
+          formValid = false;
+
+        // It'd be nice if (a) Angular handled dynamically-added form fields
+        // properly (it doesn't), or (b) it provided a better mechanism for
+        // marking a form valid/invalid.
+        setFormValidity(formValid);
+        return formValid;
+      }
+
       $scope.checkExtraField = function(extra) {
-       // Save the current form status.
-       let formOrigState = formIsValid();
-       let formValid = true;
+        checkField(extra);
 
-       // Check the extra.
-       if (extra.isValid()) {
-         formValid = formOrigState;
-       }
+        if ((extra.fieldName !== extra.originalName) ||
+            (extra.fieldValue !== extra.originalValue)) {
+          $scope.entryForm.$setDirty();
+        }
+      }
 
-       else {
-         formValid = false;
-       }
+      $scope.checkSecurityQuestion = function(q) {
+        checkField(q);
 
-       // It'd be nice if (a) Angular handled dynamically-added form fields
-       // properly (it doesn't), or (b) it provided a better mechanism for
-       // marking a form valid/invalid.
-       setFormValidity(formValid);
-
-       if ((extra.fieldName !== extra.originalName) ||
-          (extra.fieldValue !== extra.originalValue)) {
-         $scope.entryForm.$setDirty();
-       }
-
+        if ((q.question !== q.originalQuestion) ||
+            (q.answer   !== q.originalAnswer)) {
+          $scope.entryForm.$setDirty();
+        }
       }
 
       function formIsValid() {

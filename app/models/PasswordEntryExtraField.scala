@@ -23,14 +23,18 @@ case class PasswordEntryExtraField(id:              Option[Int],
 object PasswordEntryExtraFieldHelper {
   object json {
     object implicits {
-      implicit val passwordEntryExtraFieldWrites: Writes[PasswordEntryExtraField] = (
+      implicit val passwordEntryExtraFieldWrites:
+        Writes[PasswordEntryExtraField] = (
+
         (JsPath \ "id").write[Option[Int]] and
         (JsPath \ "fieldName").write[String] and
         (JsPath \ "fieldValue").write[String] and
         (JsPath \ "isPassword").write[Boolean]
       )(unlift(unapply))
 
-      implicit val passwordEntryExtraFieldReads: Reads[PasswordEntryExtraField] = (
+      implicit val passwordEntryExtraFieldReads:
+        Reads[PasswordEntryExtraField] = (
+
         (JsPath \ "id").read[Option[Int]] and
         (JsPath \ "fieldName").read[String] and
         (JsPath \ "fieldValue").read[String] and

@@ -100,7 +100,7 @@
                        ng-bind-html="pw.url | linky:'newPage'"/>
                 </div>
 
-                <div class="extras" ng-show="pw.extras">
+                <div class="extras">
                   <div ng-repeat="e in pw.extras | orderBy:'fieldName'"
                        class="mobile-field">
                     <span class="mobile-label">{{e.fieldName}}</span>
@@ -112,6 +112,21 @@
                              pwg-select-on-click/>
                       <span ng-if="!e.isPassword">{{e.fieldValue}}</span>
                     </span>
+                  </div>
+                  <div ng-repeat="q in pw.securityQuestions | orderBy:'question'">
+                    <div class="mobile-field">
+                      <span class="mobile-label">Security question {{$index + 1}}</span>
+                      <span class="mobile-value">{{q.question}}</span>
+                    </div>
+                    <div class="mobile-field">
+                      <span class="mobile-label"></span>
+                      <span class="mobile-value">
+                        <input type="text" readonly="readonly"
+                               class="password shown-password"
+                               ng-model="q.answer"
+                               pwg-select-on-click/>
+                      </span>
+                    </div>
                   </div>
                 </div>
 

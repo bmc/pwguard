@@ -444,7 +444,8 @@ pwGuardApp.controller('NewPasswordEntryCtrl',
       description:       "",
       url:               "",
       notes:             "",
-      extras:            []
+      extras:            [],
+      securityQuestions: []
     }
 
     $scope.saveURL = routes.controllers.PasswordEntryController.create().url;

@@ -16,6 +16,9 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
 
   import dal.profile.simple._
   import dal.{PasswordEntriesTable, PasswordEntries, PasswordEntryKeywords}
+  import DAO.{passwordEntryExtraFieldsDAO,
+              passwordEntryKeywordsDAO,
+              passwordEntrySecurityQuestionsDAO}
 
   private type PWEntryQuery = Query[PasswordEntriesTable, PasswordEntry, Seq]
 
@@ -273,23 +276,22 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
 
   /** Save a full password entry, with all its dependents.
     *
-    * @param entryToSave  the full password entry
+    * @param entry  the full password entry
     *
     * @return A future of the saved entry, which may be modified
     */
-  def saveWithDependents(entryToSave: FullPasswordEntry):
+  def saveWithDependents(entry: FullPasswordEntry):
     Future[FullPasswordEntry] = {
 
     withTransaction { implicit session =>
-      val baseEntry = entryToSave.toBaseEntry
+      val baseEntry = entry.toBaseEntry
 
-      for { savedBaseEntry  <- save(baseEntry)
-            fullEntry       = savedBaseEntry.toFullEntry()
-            savedFullEntry1 <- saveExtraFieldChanges(fullEntry,
-                                                     entryToSave.extraFields)
-            savedFullEntry2 <- saveKeywordChanges(savedFullEntry1,
-                                                  entryToSave.keywords) }
-      yield savedFullEntry2
+      for { savedBase <- save(baseEntry)
+            full       = savedBase.toFullEntry()
+            saved1    <- saveExtraFieldChanges(full, entry.extraFields)
+            saved2    <- saveKeywordChanges(saved1, entry.keywords)
+            saved3    <- saveSecurityQuestionChanges(saved2, entry.securityQuestions) }
+      yield saved3
     }
   }
 
@@ -370,11 +372,11 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
                                 (implicit session: SlickSession):
     Future[FullPasswordEntry] = {
 
-    val kwDAO = DAO.passwordEntryKeywordsDAO
+    val kwDAO = passwordEntryKeywordsDAO
 
     // Keep it simple for now.
     kwDAO.deleteForPasswordEntry(pwEntry.id.get) flatMap { n =>
-      val adjustedKeywords = keywords.map {
+      val adjustedKeywords = keywords map {
         _.copy(id = None, passwordEntryID = pwEntry.id)
       }
 
@@ -384,29 +386,51 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
     }
   }
 
+  private def saveSecurityQuestionChanges(pwEntry:   FullPasswordEntry,
+                                          questions: Set[PasswordEntrySecurityQuestion])
+                                         (implicit session: SlickSession):
+    Future[FullPasswordEntry] = {
+
+    val sqDAO = passwordEntrySecurityQuestionsDAO
+
+    // Keep it simple for now
+    sqDAO.deleteForPasswordEntry(pwEntry.id.get) flatMap { n =>
+      val adjustedQuestions = questions map {
+        _.copy(id = None, passwordEntryID = pwEntry.id)
+      }
+
+      sqDAO.saveMany(adjustedQuestions) map { savedQuestions =>
+        pwEntry.copy(securityQuestions = savedQuestions)
+      }
+    }
+  }
+
   private def deleteDependents(ids: Set[Int])
                               (implicit session: SlickSession): Future[Int] = {
-    for { n1 <- DAO.passwordEntryExtraFieldsDAO.deleteForPasswordEntries(ids)
-          n2 <- DAO.passwordEntryKeywordsDAO.deleteForPasswordEntries(ids) }
-    yield n1 + n2
+    for { n1 <- passwordEntryExtraFieldsDAO.deleteForPasswordEntries(ids)
+          n2 <- passwordEntryKeywordsDAO.deleteForPasswordEntries(ids)
+          n3 <- passwordEntrySecurityQuestionsDAO.deleteForPasswordEntries(ids) }
+    yield n1 + n2 + n3
   }
 
   private def deleteDependents(id: Int)
                               (implicit session: SlickSession): Future[Int] = {
-    for { n1 <- DAO.passwordEntryExtraFieldsDAO.deleteForPasswordEntry(id)
-          n2 <- DAO.passwordEntryKeywordsDAO.deleteForPasswordEntry(id) }
-    yield n1 + n2
+    for { n1 <- passwordEntryExtraFieldsDAO.deleteForPasswordEntry(id)
+          n2 <- passwordEntryKeywordsDAO.deleteForPasswordEntry(id)
+          n3 <- passwordEntrySecurityQuestionsDAO.deleteForPasswordEntry(id) }
+    yield n1 + n2 + n3
   }
 
   private def loadDependents(pw: PasswordEntry)
                             (implicit session: SlickSession):
     Future[FullPasswordEntry] = {
 
-    import DAO.{passwordEntryExtraFieldsDAO, passwordEntryKeywordsDAO}
-
     for { extras <- passwordEntryExtraFieldsDAO.findForPasswordEntry(pw)
-          kw     <-  passwordEntryKeywordsDAO.findForPasswordEntry(pw) }
-    yield pw.toFullEntry(extras = extras, keywords = kw)
+          kw     <- passwordEntryKeywordsDAO.findForPasswordEntry(pw)
+          q      <- passwordEntrySecurityQuestionsDAO.findForPasswordEntry(pw) }
+    yield pw.toFullEntry(extras            = extras,
+                         keywords          = kw,
+                         securityQuestions = q)
   }
 
   /** Load all dependents for a set of password entries.
@@ -417,15 +441,19 @@ class PasswordEntryDAO(_dal: DAL, _logger: Logger)
                             (implicit session: SlickSession):
     Future[Set[FullPasswordEntry]] = {
 
-    import DAO.{passwordEntryExtraFieldsDAO, passwordEntryKeywordsDAO}
-
-    for { exMap <- passwordEntryExtraFieldsDAO.findForPasswordEntries(entries)
-          kwMap <- passwordEntryKeywordsDAO.findForPasswordEntries(entries) }
+    for {
+      exMap <- passwordEntryExtraFieldsDAO.findForPasswordEntries(entries)
+      kwMap <- passwordEntryKeywordsDAO.findForPasswordEntries(entries)
+      sqMap <- passwordEntrySecurityQuestionsDAO.findForPasswordEntries(entries)
+    }
     yield {
       entries map { entry =>
         val extras = exMap.getOrElse(entry, Set.empty[PasswordEntryExtraField])
         val keywords = kwMap.getOrElse(entry, Set.empty[PasswordEntryKeyword])
-        entry.toFullEntry(extras = extras, keywords = keywords)
+        val questions = sqMap.getOrElse(entry, Set.empty[PasswordEntrySecurityQuestion])
+        entry.toFullEntry(extras            = extras,
+                          keywords          = keywords,
+                          securityQuestions = questions)
       }
     }
   }
