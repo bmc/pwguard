@@ -93,7 +93,6 @@ pwgServices.factory('pwgError', function() {
   }
 });
 
-
 // ----------------------------------------------------------------------------
 // Simple flash service. Use in conjunction with the pwg-flash directive.
 //
@@ -535,6 +534,7 @@ pwgServices.factory('pwgRoutes', ng(function($injector) {
   var PRE_LOGIN_ROUTES        = [];
   var ADMIN_ONLY_ROUTES       = [];
   var REVERSE_ROUTES          = {};
+  var ROUTES_BY_NAME          = {};
 
   var log = pwgLogging.logger("pwgRoutes");
 
@@ -542,6 +542,8 @@ pwgServices.factory('pwgRoutes', ng(function($injector) {
     let route = $route.routes[pattern];
     if (!route)
       continue;
+
+    ROUTES_BY_NAME[route.name] = route;
 
     if (route.isDefault) { // This is the default route
       DEFAULT_ROUTE_NAME = route.defaultName;
@@ -558,6 +560,10 @@ pwgServices.factory('pwgRoutes', ng(function($injector) {
   }
 
   var URL_RE = /^.*#(.*)$/;
+
+  var routeForName = (name) => {
+    return ROUTES_FOR_NAME[name];
+  }
 
   var isPostLoginRoute = (name) => {
     return (POST_LOGIN_ROUTES.indexOf(name) >= 0);
@@ -596,6 +602,14 @@ pwgServices.factory('pwgRoutes', ng(function($injector) {
   }
 
   function routeNameForURL(url) {
+    var route = routeForURL(url);
+    if (route)
+      return route.name;
+    else
+      return undefined;
+  }
+
+  function routeForURL(url) {
     if (!url) url = "";
     let m = URL_RE.exec(url);
     let strippedURL;
@@ -612,7 +626,7 @@ pwgServices.factory('pwgRoutes', ng(function($injector) {
       if (! r.regexp)
         continue;
       if (r.regexp.test(strippedURL)) {
-        result = r.name;
+        result = r;
         break;
       }
     }
@@ -624,25 +638,19 @@ pwgServices.factory('pwgRoutes', ng(function($injector) {
   var DEFAULT_ROUTE_HREF = hrefForRouteName(DEFAULT_ROUTE_NAME);
 
   return {
-    isAdminOnlyRoute: (name) => {
-      return ADMIN_ONLY_ROUTES.indexOf(name) >= 0;
-    },
+    isAdminOnlyRoute: (name) => { return ADMIN_ONLY_ROUTES.indexOf(name) >= 0; },
 
-    isPostLoginRoute: (name) => {
-      return isPostLoginRoute(name);
-    },
+    isPostLoginRoute: (name) => { return isPostLoginRoute(name); },
 
-    isPreLoginRoute: (name) => {
-      return isPreLoginRoute(name);
-    },
+    isPreLoginRoute: (name) => { return isPreLoginRoute(name); },
 
     hrefForRouteName: (name, params = {}) => {
       return hrefForRouteName(name, params);
     },
 
-    pathForRouteName: (name) => {
-      return pathForRouteName(name);
-    },
+    pathForRouteName: (name) => { return pathForRouteName(name); },
+
+    routeForRouteName: (name) => { return routeForName(name); },
 
     // These are functions to ensure no one can modify the values.
     defaultRouteName: () => { return DEFAULT_ROUTE_NAME; },
@@ -651,9 +659,7 @@ pwgServices.factory('pwgRoutes', ng(function($injector) {
 
     defaultRouteHref: () => { return hrefForRouteName(DEFAULT_ROUTE_NAME); },
 
-    redirectToDefaultRoute: () => {
-      redirectToNamedRoute(DEFAULT_ROUTE_NAME);
-    },
+    redirectToDefaultRoute: () => { redirectToNamedRoute(DEFAULT_ROUTE_NAME); },
 
     routeIsActive: (name) => {
       let path = pathForRouteName(name);
@@ -664,13 +670,11 @@ pwgServices.factory('pwgRoutes', ng(function($injector) {
       redirectToNamedRoute(name, params);
     },
 
-    routeNameForURL: (url) => {
-      return routeNameForURL(url);
-    },
+    routeNameForURL: (url) => { return routeNameForURL(url); },
 
-    currentRouteName: () => {
-      return routeNameForURL($location.path());
-    }
+    routeForURL: (url) => { return routeForURL(url); },
+
+    currentRouteName: () => { return routeNameForURL($location.path()); }
   }
 }));
 
