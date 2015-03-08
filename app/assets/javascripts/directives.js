@@ -433,10 +433,7 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
           originalName:   extra.fieldName,
           originalValue:  extra.fieldValue,
           isValid:        () => {
-            return (extra.fieldName !== null) &&
-                   (extra.fieldName.trim().length > 0) &&
-                    (extra.fieldValue !== null) &&
-                    (extra.fieldValue.trim().length > 0);
+            return extra.fieldName && extra.fieldValue;
           },
           delete:         () => {
             extra.deleted = true;
@@ -455,8 +452,7 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
           originalQuestion: q.question,
           originalAnswer:   q.answer,
           isValid:          () => {
-            return (q.question !== null) && (q.question.trim().length > 0) &&
-                   (q.answer !== null) && (q.answer.trim().length > 0);
+            return q.question && q.answer;
           },
           delete:           () => {
             q.deleted = true;
@@ -588,16 +584,16 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
 
         if ((extra.fieldName !== extra.originalName) ||
             (extra.fieldValue !== extra.originalValue)) {
-          $scope.entryForm.$setDirty();
+          setFormDirtyFlag(true);
         }
       }
 
       $scope.checkSecurityQuestion = function(q) {
+console.log("Checking question", q);
         checkField(q);
-
         if ((q.question !== q.originalQuestion) ||
             (q.answer   !== q.originalAnswer)) {
-          $scope.entryForm.$setDirty();
+          setFormDirtyFlag(true);
         }
       }
 
@@ -667,8 +663,14 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
         mapKeywordTags($scope.ngModel);
 
         log.debug(`Saving password entry. name=${name}, url=${$scope.saveUrl}`);
-        log.debug(JSON.stringify($scope.ngModel));
-        pwgAjax.post($scope.saveUrl, $scope.ngModel, function() {
+        // Make sure the extra fields and security questions have no leftovers.
+        var data = $scope.ngModel;
+        data.extras= _.filter(data.extras,
+                              (ex) => { return ex.name !== null; });
+        data.securityQuestions = _.filter(data.securityQuestions,
+                                          (q) => { return q.question !== null });
+        log.debug(JSON.stringify(data));
+        pwgAjax.post($scope.saveUrl, data, function() {
           pwgFlash.info("Saved.", 5 /* second timeout */);
           if ($scope.onSave)
             $scope.onSave($scope.ngModel);

@@ -265,6 +265,7 @@ object PasswordEntryController extends BaseController {
 
     def objFromJSON(json: JsValue): Future[FullPasswordEntry] = {
       Future {
+logger.error(json.toString)
         json.validate[FullPasswordEntry] match {
           case pwe: JsSuccess[FullPasswordEntry] => pwe.get
           case e: JsError => throw new Exception(JsonHelpers.jsErrorToString(e))
