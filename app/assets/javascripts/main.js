@@ -97,12 +97,13 @@ pwGuardApp.config(ng(function($routeProvider, $provide) {
       }
     }).
     when("/search", {
-      templateUrl: templateURL("search.html"),
-      controller:  'SearchCtrl',
-      name:        'search',
-      admin:       false,
-      postLogin:   true,
-      preLogin:    false,
+      templateUrl:      templateURL("search.html"),
+      controller:       'SearchCtrl',
+      name:             'search',
+      admin:            false,
+      postLogin:        true,
+      preLogin:         false,
+      allowQueryString: true,
       resolve: {
         currentUser: ($injector) => {
           return checkUser($injector);
@@ -200,12 +201,31 @@ pwGuardApp.run(ng(function($rootScope, $injector) {
 
   var pwgLogging = $injector.get('pwgLogging');
   var pwgRoutes  = $injector.get('pwgRoutes');
+  var $location  = $injector.get('$location');
 
   var log = pwgLogging.logger('rootScope');
 
   $rootScope.hrefForRouteName = function(name) {
     return pwgRoutes.hrefForRouteName(name);
   }
+
+  $rootScope.$on('$routeChangeSuccess', function(e) {
+    var route = pwgRoutes.routeForURL($location.path());
+    if (route) {
+      if (! route.allowQueryString) {
+        // If there's something already in the query string (from a previous
+        // search, for instance), AngularJS will not remove the query string
+        // when the user moves to a different route. That's probably because,
+        // with "#" routes, the URL is actually the same document, and
+        // AngularJS's route module doesn't mess with query strings at all.
+        // So, since the browser thinks it's the same route, it leaves the
+        // query string intact. Since, to this application, the routes really
+        // are different, if the route is defined as not supporting a query
+        // string (see the routing table), clear the query string manually.
+        $location.search({});
+      }
+    }
+  });
 
 }));
 
