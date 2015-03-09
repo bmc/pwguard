@@ -4,7 +4,6 @@ Version 1.0.2 (Mar ..., 2014)
 
 * Added ability to save session for 10 days, on login. If not specified,
   assumes 15-minute default.
-* Extra fields are now sorted by field name on edit-entry page.
 * The search term (on the search page) is now added to the URL query string,
   allowing it to be bookmarked. When the term is restored and reissued
   (e.g., upon reload), the query string is checked before the saved term
