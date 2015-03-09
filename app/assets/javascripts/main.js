@@ -542,8 +542,9 @@ pwGuardApp.controller('InnerSearchCtrl', ng(function($scope, $injector) {
       $(`#results-${i}`).select();
     }
 
-    function addTermToURL() {
-      $location.search('q', $scope.searchTerm);
+    function saveSearchTerm(term) {
+      pwgSearchTerm.saveSearchTerm(term);
+      $location.search('q', term);
      }
 
     function getTermFromURL() {
@@ -557,8 +558,7 @@ pwGuardApp.controller('InnerSearchCtrl', ng(function($scope, $injector) {
       log.debug(`Issuing search: ${$scope.searchTerm}`);
       pwgAjax.post(url, {searchTerm: $scope.searchTerm}, function(response) {
         // Save the search term, and put it in the URL for bookmarking.
-        pwgSearchTerm.saveSearchTerm($scope.searchTerm);
-        addTermToURL();
+        saveSearchTerm($scope.searchTerm);
 
         $scope.searchResults = adjustResults(response.results);
       });
@@ -571,7 +571,7 @@ pwGuardApp.controller('InnerSearchCtrl', ng(function($scope, $injector) {
       var url = routes.controllers.PasswordEntryController.getAll().url;
       pwgAjax.get(url,
         function(response) {
-          pwgSearchTerm.saveSearchTerm(SEARCH_ALL_MARKER);
+          saveSearchTerm(SEARCH_ALL_MARKER);
           $scope.searchResults = adjustResults(response.results);
         }
       );
