@@ -239,64 +239,63 @@ pwGuardApp.run(ng(function($rootScope, $injector) {
 
 pwGuardApp.controller('MainCtrl', ng(function($scope, $injector) {
 
-     var $rootScope         = $injector.get('$rootScope');
-     var $location          = $injector.get('$location');
-     var pwgTimeout         = $injector.get('pwgTimeout');
-     var pwgAjax            = $injector.get('pwgAjax');
-     var pwgFlash           = $injector.get('pwgFlash');
-     var pwgLogging         = $injector.get('pwgLogging');
-     var pwgRoutes          = $injector.get('pwgRoutes');
-     var angularTemplateURL = $injector.get('angularTemplateURL');
-     var pwgError           = $injector.get('pwgError');
-     var pwgModal           = $injector.get('pwgModal');
-     var pwgUser            = $injector.get('pwgUser');
+  var $rootScope         = $injector.get('$rootScope');
+  var $location          = $injector.get('$location');
+  var pwgTimeout         = $injector.get('pwgTimeout');
+  var pwgAjax            = $injector.get('pwgAjax');
+  var pwgFlash           = $injector.get('pwgFlash');
+  var pwgLogging         = $injector.get('pwgLogging');
+  var pwgRoutes          = $injector.get('pwgRoutes');
+  var angularTemplateURL = $injector.get('angularTemplateURL');
+  var pwgError           = $injector.get('pwgError');
+  var pwgModal           = $injector.get('pwgModal');
+  var pwgUser            = $injector.get('pwgUser');
 
-     // Put the template URL in the scope, because it's used inside templates
-     // (e.g., within ng-include directives).
+  // Put the template URL in the scope, because it's used inside templates
+  // (e.g., within ng-include directives).
 
-     $scope.templateURL = angularTemplateURL;
-     $scope.version     = window.version;
-     $scope.gitVersion  = window.gitVersion;
+  $scope.templateURL = angularTemplateURL;
+  $scope.version     = window.version;
+  $scope.gitVersion  = window.gitVersion;
 
-     $scope.debugMessages = [];
-     $scope.debug = (msg) => {
-       $scope.debugMessages.push(msg);
-     }
+  $scope.debugMessages = [];
+  $scope.debug = (msg) => {
+    $scope.debugMessages.push(msg);
+  }
 
-     var log = pwgLogging.logger("MainCtrl");
+  var log = pwgLogging.logger("MainCtrl");
 
-     $scope.dialogConfirmTitle    = null;
-     $scope.dialogConfirmMessage  = null;
-     $scope.urlOnLoad             = $location.path();
-     $scope.initializing          = true;
-     $scope.flashAfterRouteChange = null;
-     $scope.isMobile              = window.browserIsMobile;
-     $scope.defaultHref           = pwgRoutes.defaultRouteHref();
+  $scope.dialogConfirmTitle    = null;
+  $scope.dialogConfirmMessage  = null;
+  $scope.urlOnLoad             = $location.path();
+  $scope.initializing          = true;
+  $scope.flashAfterRouteChange = null;
+  $scope.isMobile              = window.browserIsMobile;
+  $scope.defaultHref           = pwgRoutes.defaultRouteHref();
 
-     $scope.routeIsActive = pwgRoutes.routeIsActive;
+  $scope.routeIsActive = pwgRoutes.routeIsActive;
 
-     $scope.currentUser = pwgUser.currentUser;
-     $scope.userIsAdmin = pwgUser.userIsAdmin;
-     $scope.isLoggedIn  = pwgUser.isLoggedIn;
+  $scope.currentUser = pwgUser.currentUser;
+  $scope.userIsAdmin = pwgUser.userIsAdmin;
+  $scope.isLoggedIn  = pwgUser.isLoggedIn;
 
-     $scope.showImportExport = () => {
-       return (! $scope.isMobile) && pwgUser.isLoggedIn();
-     }
+  $scope.showImportExport = () => {
+    return (! $scope.isMobile) && pwgUser.isLoggedIn();
+  }
 
-     $scope.showUserAdmin = () => {
-       return (! $scope.isMobile) && $scope.userIsAdmin();
-     }
+  $scope.showUserAdmin = () => {
+    return (! $scope.isMobile) && $scope.userIsAdmin();
+  }
 
-     pwgAjax.on401(function() {
-       if (pwgUser.isLoggedIn()) {
-         pwgUser.setLoggedInUser(null);
-         $scope.flashAfterRouteChange = "Session timeout. Please log in again.";
-       }
+  pwgAjax.on401(function() {
+    if (pwgUser.isLoggedIn()) {
+      pwgUser.setLoggedInUser(null);
+      $scope.flashAfterRouteChange = "Session timeout. Please log in again.";
+    }
 
-       pwgRoutes.redirectToNamedRoute('login');
-     });
-   }
-));
+    pwgRoutes.redirectToNamedRoute('login');
+  });
+}));
 
 // --------------------------------------------------------------------------
 // Navbar Controller
@@ -304,47 +303,45 @@ pwGuardApp.controller('MainCtrl', ng(function($scope, $injector) {
 
 pwGuardApp.controller('NavbarCtrl', ng(function($scope, $injector) {
 
-    var pwgAjax   = $injector.get('pwgAjax');
-    var pwgModal  = $injector.get('pwgModal');
-    var pwgRoutes = $injector.get('pwgRoutes');
-    var pwgUser   = $injector.get('pwgUser');
+  var pwgAjax   = $injector.get('pwgAjax');
+  var pwgModal  = $injector.get('pwgModal');
+  var pwgRoutes = $injector.get('pwgRoutes');
+  var pwgUser   = $injector.get('pwgUser');
 
-    $scope.logout = () => {
+  $scope.logout = () => {
 
-      pwgModal.confirm("Really log out?", "Confirm logout").then(
-        function() {
-          if (pwgUser.isLoggedIn()) {
-            let url = routes.controllers.SessionController.logout().url
+    pwgModal.confirm("Really log out?", "Confirm logout").then(
+      function() {
+        if (pwgUser.isLoggedIn()) {
+          let url = routes.controllers.SessionController.logout().url
 
-            let always = () => {
-              pwgUser.setLoggedInUser(null);
-              pwgRoutes.redirectToNamedRoute('login');
-            }
-
-            pwgAjax.post(url, {},
-              function(response) {
-                // Success
-                always();
-              },
-
-              function(response) {
-                // Failure
-                console.log(`WARNING: Server logout error: ${response.status}`)
-                always();
-              }
-            )
+          let always = () => {
+            pwgUser.setLoggedInUser(null);
+            pwgRoutes.redirectToNamedRoute('login');
           }
-        },
 
-        // Rejection function.
-        function() {
-          // Rejected. Nothing to do.
+          pwgAjax.post(url, {},
+            function(response) {
+              // Success
+              always();
+            },
+
+            function(response) {
+              // Failure
+              console.log(`WARNING: Server logout error: ${response.status}`)
+              always();
+            }
+          )
         }
-      )
-    }
+      },
 
+      // Rejection function.
+      function() {
+        // Rejected. Nothing to do.
+      }
+    )
   }
-));
+}));
 
 // --------------------------------------------------------------------------
 // Login Controller

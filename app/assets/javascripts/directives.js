@@ -218,7 +218,7 @@ pwgDirectives.directive('pwgPopover', function() {
 //   onError:       Optional name of function to be called when an error occurs.
 //                  Called with an error message.
 
-pwgDirectives.directive('pwgDropFile', ['pwgLogging', function(pwgLogging) {
+pwgDirectives.directive('pwgDropFile', ng(function(pwgLogging) {
   var logger = pwgLogging.logger('pwgDropFile');
 
   return {
@@ -355,7 +355,7 @@ pwgDirectives.directive('pwgDropFile', ['pwgLogging', function(pwgLogging) {
       });
     }
   }
-}]);
+}));
 
 // ----------------------------------------------------------------------------
 // Allow setting a form field's name from a model.
@@ -376,6 +376,64 @@ pwgDirectives.directive('pwgName', ng(function($injector) {
         if (!n) n = "";
         element.attr("name", n);
       });
+    }
+  }
+}));
+
+// ----------------------------------------------------------------------------
+// Spinner directive, used to create the spinner HTML. Used in conjunction
+// with the pwgSpinner service.
+// ----------------------------------------------------------------------------
+
+pwgDirectives.directive('pwgSpinner', ng(function($injector) {
+  return {
+    restrict: 'E',
+    scope: {
+    },
+    templateUrl: templateURL('directives/pwgSpinner.html'),
+
+    link: function($scope, element, attrs) {
+      var pwgSpinner = $injector.get('pwgSpinner');
+      var pwgLogging = $injector.get('pwgLogging');
+      var pwgTimeout = $injector.get('pwgTimeout');
+      var log        = pwgLogging.logger('pwgSpinner');
+
+      $scope.showSpinner = false;
+      pwgSpinner.register($scope);
+
+      var modal = element.find(".modal");
+      modal.modal({
+        backdrop: 'static',
+        keyboard: false,
+        show:     false
+      });
+
+      var timerPromise = null;
+
+      var show = () => { modal.modal('show'); }
+      var hide = () => { modal.modal('hide'); }
+
+      $scope.$watch("showSpinner", function() {
+        // To prevent the spinner from flashing without actually being seen,
+        // use $timeout to ensure that it's up at least 300 milliseconds
+        // before we clear it.
+        if ($scope.showSpinner) {
+          show();
+          // The $timeout promise will contain the value of the function.
+          log.debug("Starting timer...");
+          timerPromise = pwgTimeout.timeout(500, function() {
+            log.debug("Timeout promise fired.");
+            return true;
+          });
+        }
+
+        else {
+          if (timerPromise)
+            timerPromise.then(hide);
+          else
+            hide();
+        }
+      })
     }
   }
 }));
@@ -589,7 +647,6 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
       }
 
       $scope.checkSecurityQuestion = function(q) {
-console.log("Checking question", q);
         checkField(q);
         if ((q.question !== q.originalQuestion) ||
             (q.answer   !== q.originalAnswer)) {

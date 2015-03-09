@@ -1,5 +1,7 @@
 // Styles used by local Angular.js services.
 
+@import "_defs.less";
+
 @errorBgColor:   #f2dede;
 @errorTextColor: #b65f5e;
 @infoBgColor:    #d9edf7;
@@ -12,6 +14,22 @@
     width: auto;
     text-align: right;
     font-weight: bold;
+  }
+}
+
+.pwg-spinner {
+  .modal {
+    margin-top: 100px;
+  }
+  .modal-body {
+    background: @navbarBackground;
+    color:      white;
+    font-size: 30px;
+    text-align: center;
+
+    .fa {
+      font-size: 50px;
+    }
   }
 }
 

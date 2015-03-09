@@ -32,7 +32,7 @@ pwgServices.factory('pwgLogging', function() {
   // way. To log objects, dump them as JSON.
 
   appender.setLayout(
-    new log4javascript.PatternLayout("%d{HH:mm:ss} (%-5p) %c: %m")
+    new log4javascript.PatternLayout("%d{HH:mm:ss.SSS} (%-5p) %c: %m")
   );
 
   log.addAppender(appender);
@@ -259,7 +259,6 @@ pwgServices.factory('pwgAjax', ng(function($injector) {
 
     pwgFlash.clearAll();
     pwgSpinner.start();
-
     $http(config).success(succeeded).error(failed);
   }
 
@@ -319,13 +318,23 @@ pwgServices.factory('pwgAjax', ng(function($injector) {
 // ----------------------------------------------------------------------------
 
 pwgServices.factory('pwgSpinner', ng(function($rootScope) {
-  function pwgSpinner($rootScope) {
-    $rootScope.showSpinner = true;
+  // This scope is registered pwgSpinner directives scope.
+  var $scope = null;
+  function setSpinner(onOff) {
+    if ($scope)
+      $scope.showSpinner = onOff;
   }
 
   return {
-    start: function() { $rootScope.showSpinner = true; },
-    stop:  function() { $rootScope.showSpinner = false; }
+    start: function() { setSpinner(true); },
+    stop:  function() { setSpinner(false); },
+
+    // register() is only used by the companion pwgSpinner directive.
+    // DO NOT CALL THIS FUNCTION.
+    register: function(scope) {
+      $scope = scope;
+      setSpinner(false);
+    }
   }
 }));
 
@@ -335,8 +344,8 @@ pwgServices.factory('pwgSpinner', ng(function($rootScope) {
 
 pwgServices.factory('pwgTimeout', ng(function($timeout) {
   return {
-    cancel:  function(promise) { $timeout.cancel(promise); },
-    timeout: function(timeout, callback) { $timeout(callback, timeout); }
+    cancel:  function(promise) { return $timeout.cancel(promise); },
+    timeout: function(timeout, callback) { return $timeout(callback, timeout); }
   }
 }));
 
