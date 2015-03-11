@@ -63,85 +63,76 @@
 
             <div class="panel-collapse" bs-collapse-target>
               <div class="panel-body">
-                <div class="mobile-field description" ng-show="pw.description">
-                  <span class="mobile-label">Description:</span>
-                  <span class="mobile-value"
-                        ng-bind-html="pw.description | linky:'newPage'"></span>
-                </div>
+                <table class="table">
+                  <tbody>
+                    <tr class="mobile-field">
+                      <td class="mobile-label">Description</td>
+                      <td ng-bind-html="pw.description | linky:'newPage'"
+                          class="mobile-value"></td>
+                    </tr>
+                    <tr class="mobile-field" ng-show="pw.loginID">
+                      <td class="mobile-label">Login</td>
+                      <td class="mobile-value">
+                        <input type="text" readonly="readonly" ng-model="pw.loginID"
+                               class="login-id" pwg-select-on-click/>
+                      </td>
+                    </tr>
+                    <tr class="mobile-field password" ng-show="pw.plaintextPassword">
+                      <td class="mobile-label">Password</td>
+                      <td class="mobile-value">
+                        <input type="text" readonly="readonly"
+                               class="password shown-password"
+                               ng-model="pw.plaintextPassword"
+                               pwg-select-on-click/>
+                      </td>
+                    </tr>
+                    <tr class="mobile-field url"ng-show="pw.url">
+                      <td class="mobile-label">URL</td>
+                      <td ng-bind-html="pw.url | linky:'newPage'" class="mobile-value"></td>
+                    </tr>
 
-                <div class="mobile-field login" ng-show="pw.loginID">
-                  <span class="mobile-label">Login:</span>
-                  <span class="mobile-value">
-                    <input type="text" readonly="readonly"
-                           ng-model="pw.loginID"
-                           class="login-id"
-                           pwg-select-on-click/>
-                  </span>
-                </div>
+                    <!-- Extras -->
 
-                <div class="mobile-field password" ng-show="pw.plaintextPassword">
-                  <span class="mobile-label">Password:</span>
-                  <span class="mobile-value">
-                    <input type="text" readonly="readonly"
-                           class="password shown-password"
-                           ng-model="pw.plaintextPassword"
-                           pwg-select-on-click/>
-                  </span>
-                </div>
+                    <tr ng-repeat="e in pw.extras | orderBy:'fieldName'"
+                        class="mobile-field">
+                      <td class="mobile-label">{{e.fieldName}}</td>
+                      <td class="mobile-value">
+                        <input ng-if="e.isPassword"
+                               type="text" readonly="readonly"
+                               class="password shown-password"
+                               ng-model="e.fieldValue"
+                               pwg-select-on-click/>
+                        <span ng-if="!e.isPassword">{{e.fieldValue}}</span>
+                      </td>
+                    </tr>
 
-                <div class="mobile-field url" ng-show="pw.url">
-                  <span class="mobile-label">URL</span>
-                  <!--
-                    ng-bind-html sanitizes any HTML in the field. The
-                    linky filter then converts any links embedded in the
-                    text.
-                  -->
-                  <div class="mobile-value"
-                       ng-bind-html="pw.url | linky:'newPage'"/>
-                </div>
+                    <!-- Security Questions -->
 
-                <div class="extras">
-                  <div ng-repeat="e in pw.extras | orderBy:'fieldName'"
-                       class="mobile-field">
-                    <span class="mobile-label">{{e.fieldName}}</span>
-                    <span class="mobile-value">
-                      <input ng-if="e.isPassword"
-                             type="text" readonly="readonly"
-                             class="password shown-password"
-                             ng-model="e.fieldValue"
-                             pwg-select-on-click/>
-                      <span ng-if="!e.isPassword">{{e.fieldValue}}</span>
-                    </span>
-                  </div>
-                  <div ng-repeat="q in pw.securityQuestions | orderBy:'question'">
-                    <div class="mobile-field">
-                      <span class="mobile-label">Security question {{$index + 1}}</span>
-                      <span class="mobile-value">{{q.question}}</span>
-                    </div>
-                    <div class="mobile-field">
-                      <span class="mobile-label"></span>
-                      <span class="mobile-value">
+                    <tr>
+                      <td colspan="2" class="heading">Security Questions</td>
+                    </tr>
+                    <tr ng-repeat="q in pw.securityQuestions | orderBy:'question'"
+                        class="mobile-field">
+                      <td class="mobile-label security-question">
+                        {{q.question}}
+                      </td>
+                      <td class="mobile-value">
                         <input type="text" readonly="readonly"
                                class="password shown-password"
                                ng-model="q.answer"
                                pwg-select-on-click/>
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                      </td>
+                    </tr>
 
-                <div class="mobile-field notes" ng-show="pw.notes">
-                  <span class="mobile-label">Notes</span>
-                  <!--
-                    ng-bind-html sanitizes any HTML in the field. The
-                    linky filter then converts any links embedded in the
-                    text.
-                  -->
-                  <div class="mobile-value">
-                    <span ng-bind-html="pw.notes | linky:'newPage' | pwgNewlinesToBRs">
-                    </span>
-                  </div>
-                </div>
+                    <tr class="mobile-field" ng-show="pw.notes">
+                      <td class="mobile-label">Notes</td>
+                      <td>
+                        <span ng-bind-html="pw.notes | linky:'newPage' | pwgNewlinesToBRs">
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
