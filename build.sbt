@@ -33,12 +33,20 @@ libraryDependencies ++= Seq(
   "org.apache.poi"        % "poi-ooxml"                  % "3.11",
   "com.github.mumoshu"   %% "play2-memcached"            % "0.6.0",
   "org.scalatestplus"    %% "play"                       % "1.1.0" % "test",
-  "org.webjars"           % "bootstrap"                  % "3.2.0",
+  // -------------------------------------------------------------------------
+  // Web Jars
+  "org.webjars"           % "bootstrap"                  % "3.3.2-2",
   "org.webjars"           % "modernizr"                  % "2.8.3",
   "org.webjars"           % "excanvas"                   % "3",
   "org.webjars"           % "html5shiv"                  % "3.7.2",
   "org.webjars"           % "traceur"                    % "0.0.79-1",
-  // -------------------------------------------------------------------------
+  "org.webjars"           % "font-awesome"               % "4.3.0",
+  "org.webjars"           % "jquery"                     % "1.11.2",
+  "org.webjars"           % "log4javascript"             % "1.4.10",
+  "org.webjars"           % "lodash"                     % "3.1.0",
+  "org.webjars"           % "momentjs"                   % "2.9.0",
+  // Angular-specific.
+  //
   // AngularJS consistency irritations:
   //
   // - angular-strap (at least through webjars) depends on AngularJS 1.3.0
@@ -48,13 +56,8 @@ libraryDependencies ++= Seq(
   // don't support it yet.
   "org.webjars"           % "angularjs"                  % "1.2.26",
   "org.webjars"           % "angular-strap"              % "2.1.2",
-  // -------------------------------------------------------------------------
-  "org.webjars"           % "font-awesome"               % "4.3.0",
-  "org.webjars"           % "jquery"                     % "1.11.2",
-  "org.webjars"           % "log4javascript"             % "1.4.10",
-  "org.webjars"           % "lodash"                     % "3.1.0",
   "org.webjars"           % "ng-tags-input"              % "2.1.1",
-  "org.webjars"           % "momentjs"                   % "2.9.0",
+  // -------------------------------------------------------------------------
   "org.webjars"           % "jasmine"                    % "2.1.3" % "test"
 )
 
