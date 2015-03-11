@@ -15,6 +15,8 @@ Version 1.0.2 (Mar ..., 2014)
   - They can be handled and displayed slightly differently (and more
     appropriately) than the more free-form custom fields.
 * The "loading" spinner is now a full-page, blocking modal.
+* Updated Twitter Bootstrap to 3.3.2-2.
+
 
 Version 1.0.1 (Mar 4, 2014)
 
