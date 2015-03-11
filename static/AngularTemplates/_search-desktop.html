@@ -138,7 +138,7 @@
                          ng-show="pw.showExtras">
                     <tr ng-repeat="e in pw.extras | orderBy:'fieldName'">
                       <td class="field-name">{{e.fieldName}}</td>
-                      <td colspan="2" class="field-value">
+                      <td class="field-value">
                         <div ng-if="e.isPassword">
                           <pwg-password-display plaintext-password="{{e.fieldValue}}">
                           </pwg-password-display>
@@ -148,10 +148,12 @@
                         </span>
                       </td>
                     </tr>
-                    <tr ng-repeat="q in pw.securityQuestions | orderBy:'question'">
-                      <td class="field-name">
-                        Security question {{$index + 1}}
+                    <tr>
+                      <td colspan="2" class="heading">
+                        Security Questions
                       </td>
+                    </tr>
+                    <tr ng-repeat="q in pw.securityQuestions | orderBy:'question'">
                       <td class="field-value">
                         {{q.question}}
                       </td>
