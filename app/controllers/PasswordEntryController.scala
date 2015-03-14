@@ -223,7 +223,7 @@ object PasswordEntryController extends BaseController {
     }
   }
 
-  def getAll = SecuredAction { authReq =>
+  def getAllForUser = SecuredAction { authReq =>
 
     implicit val request = authReq.request
     val user = authReq.user
@@ -265,7 +265,6 @@ object PasswordEntryController extends BaseController {
 
     def objFromJSON(json: JsValue): Future[FullPasswordEntry] = {
       Future {
-logger.error(json.toString)
         json.validate[FullPasswordEntry] match {
           case pwe: JsSuccess[FullPasswordEntry] => pwe.get
           case e: JsError => throw new Exception(JsonHelpers.jsErrorToString(e))

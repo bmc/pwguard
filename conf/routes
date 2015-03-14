@@ -14,7 +14,7 @@ POST          /pwguard/login                             controllers.SessionCont
 POST          /pwguard/logout                            controllers.SessionController.logout
 
 POST          /pwguard/pw/search                         controllers.PasswordEntryController.searchPasswordEntries
-GET           /pwguard/pw/all                            controllers.PasswordEntryController.getAll
+GET           /pwguard/pw/all                            controllers.PasswordEntryController.getAllForUser
 GET           /pwguard/pw/total                          controllers.PasswordEntryController.getTotal
 GET           /pwguard/pw/total/:userID                  controllers.PasswordEntryController.getTotalForUser(userID: Int)
 POST          /pwguard/pw                                controllers.PasswordEntryController.create

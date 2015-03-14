@@ -449,6 +449,7 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
   var pwgFormHelper = $injector.get('pwgFormHelper');
   var pwgFlash      = $injector.get('pwgFlash');
   var pwgRoutes     = $injector.get('pwgRoutes');
+  var pwgForm       = $injector.get('pwgForm');
   var name          = 'pwg-edit-password-entry-form';
   var log           = pwgLogging.logger('pwgEditPasswordEntryForm');
 
@@ -471,18 +472,6 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
       if (! attrs.saveUrl)
         throw new Error(`${name}: save-url attribute is required.`);
 
-      function setFormValidity(valid) {
-        $scope.entryForm.$valid   = valid;  // hack
-        $scope.entryForm.$invalid = !valid; // hack
-      }
-
-      function setFormDirtyFlag(dirty) {
-        if (dirty)
-          $scope.entryForm.$setDirty();
-        else
-          $scope.entryForm.$setPristine();
-      }
-
       function augmentExtra(index, extra) {
         _.assign(extra, {
           deleted:        false,
@@ -495,7 +484,7 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
           },
           delete:         () => {
             extra.deleted = true;
-            setFormDirtyFlag(true);
+            pwgForm.setDirty($scope.entryForm, true);
           }
         });
 
@@ -514,7 +503,7 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
           },
           delete:           () => {
             q.deleted = true;
-            setFormDirtyFlag(true);
+            pwgForm.setDirty($scope.entryForm, true);
           }
         });
 
@@ -598,7 +587,7 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
           id:             null
         });
         $scope.ngModel.extras.push(extra);
-        setFormDirtyFlag(true);
+        pwgForm.setDirty($scope.entryForm, true);
         $scope.checkExtraField(extra);
       }
 
@@ -610,7 +599,7 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
           id:       null
         });
         $scope.ngModel.securityQuestions.push(q);
-        setFormDirtyFlag(true);
+        pwgForm.setDirty($scope.entryForm, true);
         $scope.checkSecurityQuestion(q);
       }
 
@@ -633,7 +622,9 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
         // It'd be nice if (a) Angular handled dynamically-added form fields
         // properly (it doesn't), or (b) it provided a better mechanism for
         // marking a form valid/invalid.
-        setFormValidity(formValid);
+console.log("checkField, $scope", $scope);
+        pwgForm.setValid($scope.entryForm, formValid);
+console.log("checkField: form.$valid=", formIsValid());
         return formValid;
       }
 
@@ -642,7 +633,7 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
 
         if ((extra.fieldName !== extra.originalName) ||
             (extra.fieldValue !== extra.originalValue)) {
-          setFormDirtyFlag(true);
+          pwgForm.setDirty($scope.entryForm, true);
         }
       }
 
@@ -650,7 +641,7 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
         checkField(q);
         if ((q.question !== q.originalQuestion) ||
             (q.answer   !== q.originalAnswer)) {
-          setFormDirtyFlag(true);
+          pwgForm.setDirty($scope.entryForm, true);
         }
       }
 

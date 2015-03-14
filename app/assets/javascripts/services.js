@@ -513,6 +513,36 @@ pwgServices.factory('pwgFormHelper', ng(function($injector) {
 }));
 
 // ----------------------------------------------------------------------------
+// Form help service
+// ----------------------------------------------------------------------------
+
+pwgServices.factory('pwgForm', ng(function() {
+  return {
+    setValid: (form, flag) => {
+      if (! form) return;
+
+      form.$valid   = flag;  // hack
+      form.$invalid = !flag; // hack
+    },
+
+    setDirty: (form, flag) => {
+      console.log('pwgForm.setDirty: form=', form);
+      if (! form) return;
+
+      if (flag) {
+        console.log("Calling $setDirty");
+        form.$setDirty();
+      }
+      else {
+        console.log("Calling $setPristine");
+        form.$setPristine();
+      }
+      console.log(`setDirty: form.$dirty=${form.$dirty}, form.$pristine=${form.$pristine}`);
+    }
+  }
+}));
+
+// ----------------------------------------------------------------------------
 // Service to manage saving last search term
 // ----------------------------------------------------------------------------
 

@@ -250,8 +250,12 @@
                         ng-click="pw.edit()">
                   <i class="fa fa-pencil"></i>
                 </button>
+                <a ng-href="{{pw.copyURL}}" class="btn btn-borderless"
+                   role="button">
+                  <i class="fa fa-copy"></i>
+                </a>
                 <button type="button"
-                        class="btn btn-borderless"
+                        class="btn btn-borderless delete"
                         ng-click="pw.delete()">
                   <i class="fa fa-trash-o"></i>
                 </button>

@@ -123,7 +123,7 @@ pwGuardApp.config(ng(function($routeProvider, $provide) {
         }
       }
     }).
-    when("/new-entry", {
+    when("/new-entry/:fromID?", {
       templateUrl: templateURL("new-password-entry.html"),
       controller:  'NewPasswordEntryCtrl',
       name:        'new-entry',
@@ -408,14 +408,16 @@ pwGuardApp.controller('LoginCtrl',
 // Edit Entry Controller
 // --------------------------------------------------------------------------
 
-pwGuardApp.controller('EditPasswordEntryCtrl',
-  ng(function($scope, $injector, currentUser, pwgCheckRoute) {
+pwGuardApp.controller('EditPasswordEntryCtrl', ng(
+  function($scope, $injector, currentUser) {
+
+    var pwgCheckRoute = $injector.get('pwgCheckRoute');
 
     pwgCheckRoute('edit-entry', currentUser);
 
-    var pwgLogging   = $injector.get('pwgLogging');
-    var $routeParams = $injector.get('$routeParams');
-    var pwgAjax      = $injector.get('pwgAjax');
+    var pwgLogging    = $injector.get('pwgLogging');
+    var $routeParams  = $injector.get('$routeParams');
+    var pwgAjax       = $injector.get('pwgAjax');
 
     var log = pwgLogging.logger("EditPasswordEntryCtrl");
 
@@ -441,28 +443,60 @@ pwGuardApp.controller('EditPasswordEntryCtrl',
 // New Entry Controller
 // --------------------------------------------------------------------------
 
-pwGuardApp.controller('NewPasswordEntryCtrl',
-  ng(function($scope, $injector, currentUser, pwgCheckRoute) {
+pwGuardApp.controller('NewPasswordEntryCtrl', ng(
+  function($scope, $injector, currentUser) {
+
+$injector.get('pwgFlash').warn('test');
+
+    var pwgCheckRoute = $injector.get('pwgCheckRoute');
 
     pwgCheckRoute('new-entry', currentUser)
 
-    var pwgAjax    = $injector.get('pwgAjax');
-    var pwgLogging = $injector.get('pwgLogging');
+    var pwgAjax       = $injector.get('pwgAjax');
+    var pwgLogging    = $injector.get('pwgLogging');
+    var $routeParams  = $injector.get('$routeParams');
+    var pwgRoutes     = $injector.get('pwgRoutes');
+    var pwgForm       = $injector.get('pwgForm');
 
     var log = pwgLogging.logger('NewPasswordEntryCtrl');
 
-    $scope.passwordEntry = {
-      id:                null,
-      name:              "",
-      loginID:           "",
-      password:          "",
-      encryptedPassword: "",
-      keywords:          [],
-      description:       "",
-      url:               "",
-      notes:             "",
-      extras:            [],
-      securityQuestions: []
+    // If an ID came in on the URL, then this new entry is supposed to be
+    // a copy of an existing entry. In that case, we add "Copy of" to the
+    // name and mark it immediately dirty. Otherwise, we just present a new,
+    // empty screen.
+    var copyFrom = $routeParams.fromID;
+    if (copyFrom) {
+      let url = routes.controllers.PasswordEntryController.getEntry(copyFrom).url;
+      pwgAjax.get(url,
+        function(data) {
+          data.passwordEntry.name = `Copy of ${data.passwordEntry.name}`;
+          $scope.passwordEntry = data.passwordEntry;
+          $scope.$watch('entryForm', (newValue, oldValue) => {
+            if (!newValue && oldValue) console.log("Form is now not null");
+          });
+          console.log("setting dirty");
+          pwgForm.setDirty($scope.entryForm);
+        },
+        function(error) {
+          pwgRoutes.redirectToDefaultRoute();
+        }
+      );
+    }
+    else {
+
+      $scope.passwordEntry = {
+        id:                null,
+        name:              "",
+        loginID:           "",
+        password:          "",
+        encryptedPassword: "",
+        keywords:          [],
+        description:       "",
+        url:               "",
+        notes:             "",
+        extras:            [],
+        securityQuestions: []
+      }
     }
 
     $scope.saveURL = routes.controllers.PasswordEntryController.create().url;
@@ -606,7 +640,7 @@ pwGuardApp.controller('InnerSearchCtrl', ng(function($scope, $injector) {
         $scope.searchTerm = "";
     }
 
-    var saveEntry = (pw) => {
+    function saveEntry(pw) {
       let url = routes.controllers.PasswordEntryController.save(pw.id).url;
       pw.password = pw.plaintextPassword;
       pwgAjax.post(url, pw, function(response) {
@@ -615,7 +649,7 @@ pwGuardApp.controller('InnerSearchCtrl', ng(function($scope, $injector) {
       });
     }
 
-    var deleteEntry = (pw) => {
+    function deleteEntry(pw) {
       pwgModal.confirm(`Really delete ${pw.name}?`, "Confirm deletion").then(
         function() {
           let url = routes.controllers.PasswordEntryController.delete(pw.id).url;
@@ -703,6 +737,8 @@ pwGuardApp.controller('InnerSearchCtrl', ng(function($scope, $injector) {
         pw.passwordVisible       = false;
         pw.selected              = false;
         pw.showExtras            = false;
+        pw.copyURL               = pwgRoutes.hrefForRouteName('new-entry').
+                                             replace(/:\w+\?/, pw.id);
 
         if (pw.url) {
           pw.urlPreview     = makeUrlPreview(pw.url, 20);
@@ -721,18 +757,22 @@ pwGuardApp.controller('InnerSearchCtrl', ng(function($scope, $injector) {
           pw.showNotesPreview = !pw.showNotesPreview;
         }
 
-        pw.toggleUrlPreview = () => {
+        pw.toggleUrlPreview = () => {
           pw.showUrlPreview = !pw.showUrlPreview;
         }
 
-        originalEntries[pw.id] = pw;
+        pw.copy = () => { copyEntry(pw); }
 
-        pw.edit   = function() {
+        pw.edit = () => {
           pwgRoutes.redirectToNamedRoute("edit-entry", {id: pw.id});
         }
-        pw.cancel = function(form) { cancelEdit(form, this); }
-        pw.save   = function() { saveEntry(this); }
-        pw.delete = function() { deleteEntry(this); }
+
+        pw.cancel = (form) => { cancelEdit(form, this); }
+        pw.save   = () => { saveEntry(this); }
+        pw.delete = () => { deleteEntry(this); }
+
+        originalEntries[pw.id] = pw;
+
         return pw;
       });
       return r;
