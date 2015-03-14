@@ -84,7 +84,7 @@ pwgDirectives.directive('pwgFlashWidget', ng(function(pwgFlash) {
           throw new Error(`Unknown flash type: ${type}`)
       }
 
-      var show = (msg) => { console.log('pwgFlashWidget.show: msg', msg); $scope.message = msg; }
+      var show = (msg) => { $scope.message = msg; }
       var hide = () => { $scope.message = null; }
 
       $scope.hide = hide;
@@ -561,6 +561,11 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
       if (! attrs.saveUrl)
         throw new Error(`${name}: save-url attribute is required.`);
 
+      var dirtyOnLoad = false;
+      if (attrs.dirtyOnLoad) dirtyOnLoad = eval(attrs.dirtyOnLoad);
+
+      pwgForm.setDirty($scope.entryForm, dirtyOnLoad);
+
       function augmentExtra(index, extra) {
         _.assign(extra, {
           deleted:        false,
@@ -711,9 +716,7 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
         // It'd be nice if (a) Angular handled dynamically-added form fields
         // properly (it doesn't), or (b) it provided a better mechanism for
         // marking a form valid/invalid.
-console.log("checkField, $scope", $scope);
         pwgForm.setValid($scope.entryForm, formValid);
-console.log("checkField: form.$valid=", formIsValid());
         return formValid;
       }
 
@@ -735,32 +738,34 @@ console.log("checkField: form.$valid=", formIsValid());
       }
 
       function formIsValid() {
-       // Check the validity of non-extra (i.e., non-dynamic) form
-       // elements. This is a hack, but it's necessary because Angular
-       // doesn't properly handle dynamically-added form fields.
-       var valid = true;
-       for (let key in $scope.entryForm) {
-         if ($scope.entryForm.hasOwnProperty(key) &&
-             $scope.entryForm.$addControl) {
-           let field = $scope.entryForm[key];
-           if (field.$dirty && field.$invalid) {
-             valid = false;
-             break;
-           }
-         }
-       }
+        // Check the validity of non-extra (i.e., non-dynamic) form
+        // elements. This is a hack, but it's necessary because Angular
+        // doesn't properly handle dynamically-added form fields.
+        var valid    = true;
+        var formKeys = _.keys($scope.entryForm.length)
+        var form     = $scope.entryForm;
+        for (let i = 0; i < formKeys.length; i++) {
+          let key = formKeys[i];
+          if (form.hasOwnProperty(key) && form.$addControl) {
+            let field = form[key];
+            if (field.$dirty && field.$invalid) {
+              valid = false;
+              break;
+            }
+          }
+        }
 
-       if (valid) {
-         // check the dynamic fields.
-         for (let extra of $scope.ngModel.extras) {
-           if (! extra.isValid()) {
-             valid = false;
-             break;
-           }
-         }
-       }
+        if (valid) {
+          // check the dynamic fields.
+          for (let extra of $scope.ngModel.extras) {
+            if (! extra.isValid()) {
+              valid = false;
+              break;
+            }
+          }
+        }
 
-       return valid;
+        return valid;
       }
 
       // Take the keyword strings, possibly modified in the DOM, and map

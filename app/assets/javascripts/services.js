@@ -492,7 +492,7 @@ pwgServices.factory('pwgFormHelper', ng(function($injector) {
       }
 
       if (form.$dirty) {
-        pwgModal.confirm("You've modified the form. Really cancel?",
+        pwgModal.confirm("The form has unsaved changes. Really cancel?",
                          "Confirm cancellation.").then(doCancel);
       }
       else {
@@ -516,18 +516,12 @@ pwgServices.factory('pwgForm', ng(function() {
     },
 
     setDirty: (form, flag) => {
-      console.log('pwgForm.setDirty: form=', form);
       if (! form) return;
 
-      if (flag) {
-        console.log("Calling $setDirty");
+      if (flag)
         form.$setDirty();
-      }
-      else {
-        console.log("Calling $setPristine");
+      else
         form.$setPristine();
-      }
-      console.log(`setDirty: form.$dirty=${form.$dirty}, form.$pristine=${form.$pristine}`);
     }
   }
 }));
@@ -603,9 +597,20 @@ pwgServices.factory('pwgRoutes', ng(function($injector) {
   }
 
   var substituteParams = (url, params) => {
-    for (let k in params) {
-      url = url.replace(":" + k, params[k]);
+    let keys = _.keys(params)
+
+    // Replace any :param, :param? and :param* keys in the URL pattern with
+    // parameters from the supplied object.
+    for (let i = 0; i < keys.length; i++) {
+      var k = keys[i];
+      var re = new RegExp(":" + k + "[?*]")
+      url = url.replace(re, params[k]);
     }
+
+    // If there are any remaining ":" parameters, puke.
+    if (/:[a-zA-Z0-9_]+/.test(url))
+      throw new Error(`Substituted URL ${url} still has parameter patterns.`);
+
     return url;
   }
 
@@ -676,7 +681,9 @@ pwgServices.factory('pwgRoutes', ng(function($injector) {
       return hrefForRouteName(name, params);
     },
 
-    pathForRouteName: (name) => { return pathForRouteName(name); },
+    pathForRouteName: (name, params = {}) => {
+      return pathForRouteName(name, params);
+    },
 
     routeForRouteName: (name) => { return routeForName(name); },
 

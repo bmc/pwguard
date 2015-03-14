@@ -445,8 +445,6 @@ pwGuardApp.controller('EditPasswordEntryCtrl', ng(
 pwGuardApp.controller('NewPasswordEntryCtrl', ng(
   function($scope, $injector, currentUser) {
 
-$injector.get('pwgFlash').warn('test');
-
     var pwgCheckRoute = $injector.get('pwgCheckRoute');
 
     pwgCheckRoute('new-entry', currentUser)
@@ -465,6 +463,9 @@ $injector.get('pwgFlash').warn('test');
     // empty screen.
     var copyFrom = $routeParams.fromID;
     if (copyFrom) {
+      // Mark the form dirty when it comes up, since we're generating content
+      // automatically.
+      $scope.dirtyOnLoad = true;
       let url = routes.controllers.PasswordEntryController.getEntry(copyFrom).url;
       pwgAjax.get(url,
         function(data) {
@@ -473,8 +474,7 @@ $injector.get('pwgFlash').warn('test');
           $scope.$watch('entryForm', (newValue, oldValue) => {
             if (!newValue && oldValue) console.log("Form is now not null");
           });
-          console.log("setting dirty");
-          pwgForm.setDirty($scope.entryForm);
+          console.log("setting dirty and valid");
         },
         function(error) {
           pwgRoutes.redirectToDefaultRoute();
@@ -482,7 +482,7 @@ $injector.get('pwgFlash').warn('test');
       );
     }
     else {
-
+      $scope.dirtyOnLoad = false;
       $scope.passwordEntry = {
         id:                null,
         name:              "",
@@ -534,7 +534,7 @@ pwGuardApp.controller('SearchCtrl', ng(function($scope, $injector, currentUser) 
 
   var pwgRoutes = $injector.get('pwgRoutes');
 
-  $scope.newEntryURL   =  pwgRoutes.hrefForRouteName('new-entry');
+  $scope.newEntryURL   =  pwgRoutes.hrefForRouteName('new-entry', {'fromID': ""});
   $scope.searchTerm    = "";
   $scope.searchResults = null;
   $scope.activePanel   = -1; // mobile only
@@ -654,7 +654,7 @@ pwGuardApp.controller('SearchCtrl', ng(function($scope, $injector, currentUser) 
   }
 
   $scope.newEntry = function() {
-    pwgRoutes.redirectToNamedRoute('new-entry');
+    pwgRoutes.redirectToNamedRoute('new-entry', {'fromID': ""});
   }
 
   $scope.toggleSelectForAll = () => {
@@ -735,6 +735,8 @@ pwGuardApp.controller('SearchCtrl', ng(function($scope, $injector, currentUser) 
       pw.passwordVisible       = false;
       pw.selected              = false;
       pw.showExtras            = false;
+      pw.copyURL               = pwgRoutes.hrefForRouteName('new-entry',
+                                                            {'fromID': pw.id});
 
       if (pw.url) {
         pw.urlPreview     = makeUrlPreview(pw.url, 20);
@@ -756,8 +758,6 @@ pwGuardApp.controller('SearchCtrl', ng(function($scope, $injector, currentUser) 
       pw.toggleUrlPreview = () => {
         pw.showUrlPreview = !pw.showUrlPreview;
       }
-
-      pw.copy = () => { copyEntry(pw); }
 
       originalEntries[pw.id] = pw;
 
