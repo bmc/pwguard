@@ -16,7 +16,6 @@ util.init()
 var pwGuardApp = angular.module("PWGuardApp", ['ngRoute',
                                                'ngCookies',
                                                'ngSanitize',
-                                               'mgcrea.ngStrap',
                                                'pwguard-services',
                                                'pwguard-filters',
                                                'pwguard-directives']);
@@ -510,279 +509,277 @@ $injector.get('pwgFlash').warn('test');
 // Outer controller. Multiple copies of the inner controller can be
 // instantiated. Only one outer controller will be.
 
-pwGuardApp.controller('SearchCtrl',
-  ng(function($scope, $injector, pwgCheckRoute, currentUser, pwgAjax) {
+pwGuardApp.controller('SearchCtrl', ng(function($scope, $injector, currentUser) {
 
-    pwgCheckRoute('search', currentUser);
+  var pwgAjax        = $injector.get('pwgAjax');
+  var pwgCheckRoute  = $injector.get('pwgCheckRoute');
+  var pwgFlash       = $injector.get('pwgFlash');
+  var pwgTimeout     = $injector.get('pwgTimeout');
+  var pwgModal       = $injector.get('pwgModal');
+  var pwgLogging     = $injector.get('pwgLogging');
+  var pwgRoutes      = $injector.get('pwgRoutes');
+  var pwgSearchTerm  = $injector.get('pwgSearchTerm');
+  var $filter        = $injector.get('$filter');
+  var $location      = $injector.get('$location');
+  var inflector      = $filter('pwgInflector');
+  var ellipsize      = $filter('pwgEllipsize');
+  var makeUrlPreview = $filter('pwgUrlPreview');
 
-    let url =  routes.controllers.PasswordEntryController.getTotal().url;
-    pwgAjax.get(url, (response) => {
-      $scope.totalPasswords = response.total
-    });
+  pwgCheckRoute('search', currentUser);
 
-    var pwgRoutes = $injector.get('pwgRoutes');
+  let url =  routes.controllers.PasswordEntryController.getTotal().url;
+  pwgAjax.get(url, (response) => {
+    $scope.totalPasswords = response.total
+  });
 
-    $scope.newEntryURL =  pwgRoutes.hrefForRouteName('new-entry');
+  var pwgRoutes = $injector.get('pwgRoutes');
+
+  $scope.newEntryURL   =  pwgRoutes.hrefForRouteName('new-entry');
+  $scope.searchTerm    = "";
+  $scope.searchResults = null;
+  $scope.activePanel   = -1; // mobile only
+  $scope.sortColumn    = 'name';
+  $scope.reverse       = false;
+
+  var SEARCH_ALL_MARKER = '-*-all-*-';
+  var originalEntries = {};
+
+  var log = pwgLogging.logger('InnerSearchCtrl');
+
+  var pluralizeCount = (count) => {
+    return inflector(count, "entry", "entries");
   }
-));
 
-pwGuardApp.controller('InnerSearchCtrl', ng(function($scope, $injector) {
+  var validSearchTerm = () => {
+    var trimmed = "";
+    if ($scope.searchTerm)
+      trimmed = $scope.searchTerm.trim();
+    return trimmed.length >= 2;
+  }
 
-    $scope.searchTerm    = "";
+  $scope.pluralizeResults = (n) => { return pluralizeCount(n); }
+
+  var clearResults = () => {
+    originalEntries = {};
     $scope.searchResults = null;
-    $scope.activePanel   = -1; // mobile only
-    $scope.sortColumn    = 'name';
-    $scope.reverse       = false;
+  }
 
-    var pwgAjax        = $injector.get('pwgAjax');
-    var pwgFlash       = $injector.get('pwgFlash');
-    var pwgTimeout     = $injector.get('pwgTimeout');
-    var pwgModal       = $injector.get('pwgModal');
-    var pwgLogging     = $injector.get('pwgLogging');
-    var pwgRoutes      = $injector.get('pwgRoutes');
-    var pwgSearchTerm  = $injector.get('pwgSearchTerm');
-    var $filter        = $injector.get('$filter');
-    var $location      = $injector.get('$location');
-    var inflector      = $filter('pwgInflector');
-    var ellipsize      = $filter('pwgEllipsize');
-    var makeUrlPreview = $filter('pwgUrlPreview');
+  $scope.issueSearch = () => { doSearch(); }
 
-    var SEARCH_ALL_MARKER = '-*-all-*-';
-    var originalEntries = {};
+  $scope.mobileSelect = (i) => {
+    $(`#results-${i}`).select();
+  }
 
-    var log = pwgLogging.logger('InnerSearchCtrl');
-
-    var pluralizeCount = (count) => {
-      return inflector(count, "entry", "entries");
-    }
-
-    var validSearchTerm = () => {
-      var trimmed = "";
-      if ($scope.searchTerm)
-        trimmed = $scope.searchTerm.trim();
-      return trimmed.length >= 2;
-    }
-
-    $scope.pluralizeResults = (n) => { return pluralizeCount(n); }
-
-    var clearResults = () => {
-      originalEntries = {};
-      $scope.searchResults = null;
-    }
-
-    $scope.issueSearch = () => { doSearch(); }
-
-    $scope.mobileSelect = (i) => {
-      $(`#results-${i}`).select();
-    }
-
-    function saveSearchTerm(term) {
-      pwgSearchTerm.saveSearchTerm(term);
-      $location.search('q', term);
+  function saveSearchTerm(term) {
+    pwgSearchTerm.saveSearchTerm(term);
+    $location.search('q', term);
      }
 
-    function getTermFromURL() {
-      return $location.search()['q'];
+  function getTermFromURL() {
+    return $location.search()['q'];
+  }
+
+  var doSearch = () => {
+    originalEntries = {};
+    $scope.newPasswordEntry = null;
+    let url = routes.controllers.PasswordEntryController.searchPasswordEntries().url;
+    log.debug(`Issuing search: ${$scope.searchTerm}`);
+    pwgAjax.post(url, {searchTerm: $scope.searchTerm}, function(response) {
+      // Save the search term, and put it in the URL for bookmarking.
+      saveSearchTerm($scope.searchTerm);
+      $scope.searchResults = processResults($scope.searchTerm,
+                                            response.results);
+    });
+  }
+
+
+  $scope.showAll = () => {
+    $scope.newPasswordEntry = null;
+    $scope.searchTerm       = null;
+    var url = routes.controllers.PasswordEntryController.getAll().url;
+    pwgAjax.get(url,
+      function(response) {
+        saveSearchTerm(SEARCH_ALL_MARKER);
+        $scope.searchResults = processResults(SEARCH_ALL_MARKER,
+                                              response.results);
+      }
+    );
+  }
+
+  $scope.sortBy = (column) => {
+    if (column === $scope.sortColumn) {
+      $scope.reverse = !$scope.reverse;
     }
-
-    var doSearch = () => {
-      originalEntries = {};
-      $scope.newPasswordEntry = null;
-      let url = routes.controllers.PasswordEntryController.searchPasswordEntries().url;
-      log.debug(`Issuing search: ${$scope.searchTerm}`);
-      pwgAjax.post(url, {searchTerm: $scope.searchTerm}, function(response) {
-        // Save the search term, and put it in the URL for bookmarking.
-        saveSearchTerm($scope.searchTerm);
-
-        $scope.searchResults = adjustResults(response.results);
-      });
+    else {
+      $scope.sortColumn = column;
+      $scope.reverse    = false;
     }
+  }
 
+  var reissueLastSearch = () => {
+    let lastSearch = getTermFromURL();
+    if (! lastSearch)
+      lastSearch = pwgSearchTerm.getSavedTerm();
 
-    $scope.showAll = () => {
-      $scope.newPasswordEntry = null;
-      $scope.searchTerm       = null;
-      var url = routes.controllers.PasswordEntryController.getAll().url;
-      pwgAjax.get(url,
-        function(response) {
-          saveSearchTerm(SEARCH_ALL_MARKER);
-          $scope.searchResults = adjustResults(response.results);
-        }
-      );
-    }
-
-    $scope.sortBy = (column) => {
-      if (column === $scope.sortColumn) {
-        $scope.reverse = !$scope.reverse;
+    if (lastSearch) {
+      if (lastSearch === SEARCH_ALL_MARKER) {
+        $scope.showAll();
       }
       else {
-        $scope.sortColumn = column;
-        $scope.reverse    = false;
+        $scope.searchTerm = lastSearch;
+        doSearch();
       }
     }
 
-    var reissueLastSearch = () => {
-      let lastSearch = getTermFromURL();
-      if (! lastSearch)
-        lastSearch = pwgSearchTerm.getSavedTerm();
+    if (! lastSearch)
+      $scope.searchTerm = "";
+  }
 
-      if (lastSearch) {
-        if (lastSearch === SEARCH_ALL_MARKER) {
-          $scope.showAll();
-        }
-        else {
-          $scope.searchTerm = lastSearch;
-          doSearch();
-        }
+  var saveEntry = (pw) => {
+    let url = routes.controllers.PasswordEntryController.save(pw.id).url;
+    pw.password = pw.plaintextPassword;
+    pwgAjax.post(url, pw, function(response) {
+      pw.editing = false;
+      reissueLastSearch();
+    });
+  }
+
+  var deleteEntry = (pw) => {
+    pwgModal.confirm(`Really delete ${pw.name}?`, "Confirm deletion").then(
+      function() {
+        let url = routes.controllers.PasswordEntryController.delete(pw.id).url;
+        pwgAjax.delete(url, {}, reissueLastSearch);
       }
+    )
+  }
 
-      if (! lastSearch)
-        $scope.searchTerm = "";
+  $scope.newEntry = function() {
+    pwgRoutes.redirectToNamedRoute('new-entry');
+  }
+
+  $scope.toggleSelectForAll = () => {
+    for (var pw of $scope.searchResults.entries) {
+      pw.selected = !pw.selected;
+    }
+  }
+
+  $scope.selectedAny = () => {
+    let result = false;
+    if ($scope.searchResults) {
+      var first = _.find($scope.searchResults.entries,
+                         (p) => { return p.selected });
+      if (first) result = true;
+    }
+    return result;
+  }
+
+  $scope.editingAny = () => {
+    let result = false;
+    if ($scope.searchResults) {
+      var first = _.find($scope.searchResults.entries,
+                         (p) => { return p.editing });
+      if (first) result = true;
+    }
+    return result;
+  }
+
+  $scope.deleteSelected = () => {
+    if ($scope.searchResults) {
+      let toDel = _.filter($scope.searchResults.entries,
+                           (p) => { return p.selected });
+      let count = toDel.length;
+      if (count > 0) {
+        let pl = pluralizeCount(count);
+        pwgModal.confirm(`You are about to delete ${pl}. Are you sure?`,
+                         "Confirm deletion").then(function() {
+          let ids = _.map(toDel, (pw) => { return pw.id });
+          let url = routes.controllers.PasswordEntryController.deleteMany().url;
+          pwgAjax.delete(url, {ids: ids}, function(response) {
+            pl = pluralizeCount(response.total);
+            pwgFlash.info(`Deleted ${pl}.`);
+            reissueLastSearch();
+          });
+        });
+      }
+    }
+  }
+
+  var cancelEdit = function(form, pw) {
+    let doCancel = function() {
+      _.assign(pw, originalEntries[pw.id]);
+      pw.editing = false;
+      reissueLastSearch();
     }
 
-    function saveEntry(pw) {
-      let url = routes.controllers.PasswordEntryController.save(pw.id).url;
-      pw.password = pw.plaintextPassword;
-      pwgAjax.post(url, pw, function(response) {
-        pw.editing = false;
-        reissueLastSearch();
-      });
-    }
-
-    function deleteEntry(pw) {
-      pwgModal.confirm(`Really delete ${pw.name}?`, "Confirm deletion").then(
+    if (form.$dirty) {
+      pwgModal.confirm("You've changed this entry. Really cancel?",
+                       "Confirm cancel").then(
         function() {
-          let url = routes.controllers.PasswordEntryController.delete(pw.id).url;
-          pwgAjax.delete(url, {}, reissueLastSearch);
+          doCancel();
         }
       )
     }
-
-    $scope.newEntry = function() {
-      pwgRoutes.redirectToNamedRoute('new-entry');
+    else {
+      doCancel();
     }
+  }
 
-    $scope.toggleSelectForAll = () => {
-      for (var pw of $scope.searchResults) {
-        pw.selected = !pw.selected;
-      }
-    }
+  var processResults = (term, results) => {
+    originalEntries = {};
+    let r = _.map(results, (pw) => {
+      pw.showPassword          = false;
+      pw.editing               = false;
+      pw.notesPreview          = ellipsize(pw.notes);
+      pw.notesPreviewAvailable = ! (pw.notes === pw.notesPreview);
+      pw.showNotesPreview      = pw.notesPreviewAvailable;
+      pw.passwordVisible       = false;
+      pw.selected              = false;
+      pw.showExtras            = false;
 
-    $scope.selectedAny = () => {
-      let result = false;
-      if ($scope.searchResults) {
-        var first = _.find($scope.searchResults, (p) => { return p.selected });
-        if (first) result = true;
-      }
-      return result;
-    }
-
-    $scope.editingAny = () => {
-      let result = false;
-      if ($scope.searchResults) {
-        var first = _.find($scope.searchResults, (p) => { return p.editing });
-        if (first) result = true;
-      }
-      return result;
-    }
-
-    $scope.deleteSelected = () => {
-      if ($scope.searchResults) {
-        let toDel = _.filter($scope.searchResults, (p) => { return p.selected });
-        let count = toDel.length;
-        if (count > 0) {
-          let pl = pluralizeCount(count);
-          pwgModal.confirm(`You are about to delete ${pl}. Are you sure?`,
-                           "Confirm deletion").then(function() {
-            let ids = _.map(toDel, (pw) => { return pw.id });
-            let url = routes.controllers.PasswordEntryController.deleteMany().url;
-            pwgAjax.delete(url, {ids: ids}, function(response) {
-              pl = pluralizeCount(response.total);
-              pwgFlash.info(`Deleted ${pl}.`);
-              reissueLastSearch();
-            });
-          });
-        }
-      }
-    }
-
-    var cancelEdit = function(form, pw) {
-      let doCancel = function() {
-        _.assign(pw, originalEntries[pw.id]);
-        pw.editing = false;
-        reissueLastSearch();
-      }
-
-      if (form.$dirty) {
-        pwgModal.confirm("You've changed this entry. Really cancel?",
-                         "Confirm cancel").then(
-          function() {
-            doCancel();
-          }
-        )
+      if (pw.url) {
+        pw.urlPreview     = makeUrlPreview(pw.url, 20);
+        pw.showUrlPreview = true;
       }
       else {
-        doCancel();
+        pw.urlPreview     = null;
+        pw.showUrlPreview = false;
       }
+
+      pw.togglePasswordVisibility = () => {
+        pw.passwordVisible = !pw.passwordVisible;
+      }
+
+      pw.toggleNotesPreview = () => {
+        pw.showNotesPreview = !pw.showNotesPreview;
+      }
+
+      pw.toggleUrlPreview = () => {
+        pw.showUrlPreview = !pw.showUrlPreview;
+      }
+
+      pw.copy = () => { copyEntry(pw); }
+
+      originalEntries[pw.id] = pw;
+
+      pw.edit   = function() {
+        pwgRoutes.redirectToNamedRoute("edit-entry", {id: pw.id});
+      }
+      pw.cancel = function(form) { cancelEdit(form, this); }
+      pw.save   = function() { saveEntry(this); }
+      pw.delete = function() { deleteEntry(this); }
+      return pw;
+    });
+
+    return {
+      entries:    r,
+      searchTerm: term
     }
-
-    var adjustResults = (results) => {
-      originalEntries = {};
-      let r = _.map(results, (pw) => {
-        pw.showPassword          = false;
-        pw.editing               = false;
-        pw.notesPreview          = ellipsize(pw.notes);
-        pw.notesPreviewAvailable = ! (pw.notes === pw.notesPreview);
-        pw.showNotesPreview      = pw.notesPreviewAvailable;
-        pw.passwordVisible       = false;
-        pw.selected              = false;
-        pw.showExtras            = false;
-        pw.copyURL               = pwgRoutes.hrefForRouteName('new-entry').
-                                             replace(/:\w+\?/, pw.id);
-
-        if (pw.url) {
-          pw.urlPreview     = makeUrlPreview(pw.url, 20);
-          pw.showUrlPreview = true;
-        }
-        else {
-          pw.urlPreview     = null;
-          pw.showUrlPreview = false;
-        }
-
-        pw.togglePasswordVisibility = () => {
-          pw.passwordVisible = !pw.passwordVisible;
-        }
-
-        pw.toggleNotesPreview = () => {
-          pw.showNotesPreview = !pw.showNotesPreview;
-        }
-
-        pw.toggleUrlPreview = () => {
-          pw.showUrlPreview = !pw.showUrlPreview;
-        }
-
-        pw.copy = () => { copyEntry(pw); }
-
-        pw.edit = () => {
-          pwgRoutes.redirectToNamedRoute("edit-entry", {id: pw.id});
-        }
-
-        pw.cancel = (form) => { cancelEdit(form, this); }
-        pw.save   = () => { saveEntry(this); }
-        pw.delete = () => { deleteEntry(this); }
-
-        originalEntries[pw.id] = pw;
-
-        return pw;
-      });
-      return r;
-    }
-
-    // Initialization.
-
-    reissueLastSearch();
   }
-));
+
+  // Initialization.
+
+  reissueLastSearch();
+}));
 
 // --------------------------------------------------------------------------
 // Profile Controllers

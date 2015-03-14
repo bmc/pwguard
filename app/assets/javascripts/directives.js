@@ -54,8 +54,97 @@ pwgDirectives.directive('pwgSortIndicator', function() {
 });
 
 // -----------------------------------------------------------------------------
-// Fake checkbox, useful when you want to support clicking outside the checkbox
-// itself
+// Flash widget. Works in conjunction with the pwgFlash service.
+// -----------------------------------------------------------------------------
+
+pwgDirectives.directive('pwgFlashWidget', ng(function(pwgFlash) {
+  return {
+    restrict:    'E',
+    transclude:  false,
+    replace:     false,
+    templateUrl: templateURL('directives/pwgFlashWidget.html'),
+    scope: {
+      type: '@'
+    },
+    link: ($scope, element, attrs) => {
+
+      $scope.message = null;
+
+      switch ($scope.type) {
+        case 'error':
+          $scope.alertType = 'danger';
+          break;
+        case 'info':
+          $scope.alertType = 'info';
+          break;
+        case 'warning':
+          $scope.alertType = 'warning';
+          break;
+        default:
+          throw new Error(`Unknown flash type: ${type}`)
+      }
+
+      var show = (msg) => { console.log('pwgFlashWidget.show: msg', msg); $scope.message = msg; }
+      var hide = () => { $scope.message = null; }
+
+      $scope.hide = hide;
+
+      pwgFlash._registerFlashBox($scope.type, show, hide)
+    }
+  }
+}));
+
+// -----------------------------------------------------------------------------
+// Modal widget
+// -----------------------------------------------------------------------------
+
+pwgDirectives.directive('pwgModalConfirmation', ng(function(pwgModal) {
+
+  return {
+    restrict:   'E',
+    transclude: false,
+    replace:    false,
+    templateUrl: templateURL('directives/pwgModalConfirmation.html'),
+    scope: {
+    },
+    link: ($scope, element, attrs) => {
+
+      $scope.message = null;
+      $scope.title   = null;
+
+      var modalElement = element.children(".pwg-modal");
+
+      var show = (message, title=null) => {
+        $scope.message = message;
+        $scope.title   = title;
+        modalElement.modal('show');
+      }
+
+      $scope.keyPressed = (event) => {
+        if (event.keyCode === 13) // ENTER
+          $scope.cancel();
+      }
+
+      // The register function returns an object with an onOK() and onCancel()
+      // function.
+      var callbacks = pwgModal._registerModal(show);
+
+      $scope.ok = () => {
+        if (callbacks.onOK) callbacks.onOK();
+        modalElement.modal('hide');
+      }
+
+      $scope.cancel = () => {
+        if (callbacks.onCancel) callbacks.onCancel();
+        modalElement.modal('hide');
+      }
+    }
+  }
+
+}));
+
+// -----------------------------------------------------------------------------
+// Password display widget.
 // -----------------------------------------------------------------------------
 
 pwgDirectives.directive('pwgPasswordDisplay', function() {
@@ -399,7 +488,7 @@ pwgDirectives.directive('pwgSpinner', ng(function($injector) {
       var log        = pwgLogging.logger('pwgSpinner');
 
       $scope.showSpinner = false;
-      pwgSpinner.register($scope);
+      pwgSpinner._registerDirective($scope);
 
       var modal = element.find(".modal");
       modal.modal({

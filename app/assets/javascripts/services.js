@@ -119,70 +119,57 @@ pwgServices.factory('pwgError', function() {
 // clearAll()         - convenience
 // ----------------------------------------------------------------------------
 
-pwgServices.factory('pwgFlash', ng(function($alert) {
+pwgServices.factory('pwgFlash', ng(function($timeout) {
 
-  var infoAlert     = null
-  var errorAlert    = null
-  var warningAlert  = null
+  var alerts = {};
 
-  function clearError() {
-    if (errorAlert) {
-      errorAlert.hide();
-      errorAlert = null;
-    }
-  }
-
-  function clearWarning() {
-    if (warningAlert) {
-      warningAlert.hide();
-      warningAlert = null;
-    }
-  }
-
-  function clearInfo() {
-    if (infoAlert) {
-      infoAlert.hide();
-      infoAlert = null;
-    }
+  function clearAlert(type) {
+    let alert = alerts[type];
+    if (alert)
+      alert.hide();
   }
 
   function doAlert(content, type, timeout=0) {
-    return $alert({
-      title:     "",
-      content:   content,
-      placement: 'top-right',
-      type:      type,
-      show:      true,
-      template:  routes.staticAsset("AngularTemplates/alert.html"),
-      container: '.navbar',
-      duration:  timeout
-    });
+     let alert = alerts[type];
+    if (alert) {
+      alert.show(content);
+      if (timeout > 0) {
+        $timeout(function() { clearAlert(type) }, timeout * 1000);
+      }
+    }
   }
 
   return {
-    warn: function(msg, timeout=0) {
-      clearWarning();
-      warningAlert = doAlert(msg, 'warning', timeout);
+    warn: (msg, timeout=0) => {
+      clearAlert('warning');
+      doAlert(msg, 'warning', timeout);
     },
 
-    error: function(msg, timeout=0) {
-      clearError();
-      errorAlert = doAlert(msg, 'danger', timeout);
+    error: (msg, timeout=0) => {
+      clearAlert('error');
+      doAlert(msg, 'error', timeout);
     },
 
-    info: function(msg, timeout=0) {
-      clearInfo();
-      infoAlert = doAlert(msg, 'info', timeout);
+    info: (msg, timeout=0) => {
+      clearAlert('info');
+      doAlert(msg, 'info', timeout);
     },
 
-    clearError: clearError,
-    clearWarning: clearWarning,
-    clearInfo: clearInfo,
+    clearError:   () => { clearAlert('error'); },
+    clearWarning: () => { clearAlert('warning'); },
+    clearInfo:    () => { clearAlert('info'); },
 
-    clearAll: function() {
-      clearError();
-      clearWarning();
-      clearInfo();
+    clearAll: () => {
+      for (let type in alerts) {
+        if (type && alerts.hasOwnProperty(type)) {
+          clearAlert(type)
+        }
+      }
+    },
+
+    // This function is INTERNAL ONLY. Do not call it.
+    _registerFlashBox: (type, show, hide) => {
+      alerts[type] = {show: show, hide: hide}
     }
   }
 
@@ -257,7 +244,6 @@ pwgServices.factory('pwgAjax', ng(function($injector) {
       handleSuccess(data, status, onSuccess, onFailure);
     }
 
-    pwgFlash.clearAll();
     pwgSpinner.start();
     $http(config).success(succeeded).error(failed);
   }
@@ -329,9 +315,9 @@ pwgServices.factory('pwgSpinner', ng(function($rootScope) {
     start: function() { setSpinner(true); },
     stop:  function() { setSpinner(false); },
 
-    // register() is only used by the companion pwgSpinner directive.
+    // _registerDirective() is only used by the companion pwgSpinner directive.
     // DO NOT CALL THIS FUNCTION.
-    register: function(scope) {
+    _registerDirective: function(scope) {
       $scope = scope;
       setSpinner(false);
     }
@@ -416,9 +402,7 @@ pwgServices.factory('pwgUser', ng(function($injector) {
 
 pwgServices.factory('pwgModal', ng(function($injector) {
 
-  var $q         = $injector.get('$q');
-  var $modal     = $injector.get('$modal');
-  var $rootScope = $injector.get('$rootScope');
+  var $q = $injector.get('$q');
 
   var mobile = window.browserIsMobile;
 
@@ -432,9 +416,12 @@ pwgServices.factory('pwgModal', ng(function($injector) {
   //
   // NOTE: Only one of these can be active at one time!
 
+  var directiveShowFunc = null;
+  var deferred          = null;
+
   return {
-    confirm: function(message, title) {
-      var deferred = $q.defer();
+    confirm: function(message, title = null) {
+      deferred = $q.defer();
 
       if (mobile) {
 
@@ -450,34 +437,37 @@ pwgServices.factory('pwgModal', ng(function($injector) {
 
         // Use in-browser one.
 
-        let modal = $modal({
-          title:    title,
-          template: routes.staticAsset("AngularTemplates/confirmModal.html"),
-          backdrop: 'static',
-          content:  message,
-          show:     false
-        });
-
-        // Bound to values in the template.
-        $rootScope.modalConfirmOK = function() {
-          deferred.resolve();
-          modal.hide();
-        }
-
-        $rootScope.modalConfirmCancel = function() {
-          deferred.reject();
-          modal.hide();
-        }
-
-        $rootScope.modalConfirmKeyPressed = function($event) {
-          if ($event.keyCode === 13) // ENTER
-            $scope.modalConfirmCancel();
-        }
-
-        modal.$promise.then(modal.show)
+        if (directiveShowFunc)
+          directiveShowFunc(message, title);
+        else
+          throw new Error("No directive show function to invoke.");
       }
 
       return deferred.promise;
+    },
+
+    // Internal use only. DO NOT CALL. Called by the associated directive.
+    //
+    // Parameters:
+    //   show - A function taking a message to display and an optional title
+    //
+    // Returns: { onOK: [function], onCancel: [function] }
+    _registerModal: (show) => {
+      directiveShowFunc = show;
+      return {
+        onOK: () => {
+          if (deferred) {
+            deferred.resolve();
+            deferred = null;
+          }
+        },
+        onCancel: () => {
+          if (deferred) {
+            deferred.reject();
+            deferred = null;
+          }
+        }
+      }
     }
   }
 
@@ -636,7 +626,6 @@ pwgServices.factory('pwgRoutes', ng(function($injector) {
   var redirectToNamedRoute = (name, params = {}) => {
     let url = pathForRouteName(name, params);
     log.debug(`Redirecting to ${url}`)
-    pwgFlash.clearAll();
     $location.path(url);
   }
 

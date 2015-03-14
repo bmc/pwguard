@@ -1,6 +1,5 @@
 
-<div id="mobile-search-box" ng-controller="InnerSearchCtrl">
-
+<div id="mobile-search-box">
   <!-- mobile -->
 
   <div class="row">
@@ -46,15 +45,15 @@
     <div class="row" ng-show="searchResults !== null">
       <div class="col-md-12">
         <div id="search-results-header">
-          <span>Found {{pluralizeResults(searchResults.length)}}.</span>
+          <span>Found {{pluralizeResults(searchResults.entries.length)}}.</span>
         </div>
       </div>
     </div>
-    <div class="row" ng-show="searchResults.length > 0">
+    <div class="row" ng-show="searchResults.entries.length > 0">
       <div id="mobile-results-list" class="row">
         <div class="panel-group" ng-model="activePanel" bs-collapse>
           <div class="panel panel-default"
-               ng-repeat="pw in searchResults | orderBy:'name'">
+               ng-repeat="pw in searchResults.entries | orderBy:'name'">
             <a class="panel-toggle" bs-collapse-toggle href="">
               <div class="panel-heading">
                 <h4 class="panel-title">{{pw.name}}</h4>

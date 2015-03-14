@@ -51,12 +51,6 @@
     @scriptWebJar("bootstrap/js/bootstrap.min.js")
     @stylesheetWebJar("bootstrap/css/bootstrap.min.css")
 
-    @*
-      This version of Angular-Strap doesn't have a map file, so we're loading
-      the non-minified version to avoid spurious 404s in the console.
-    *@
-    @scriptWebJar("angular-strap/angular-strap.js")
-
     @stylesheetWebJar("font-awesome/css/font-awesome.min.css")
 
     @scriptWebJar("log4javascript/js/log4javascript.js")
@@ -145,10 +139,10 @@
       <div id="content" class="container-fluid">
 
         @flash()
-
         <div ng-view></div>
 
         <pwg-spinner></pwg-spinner>
+        <pwg-modal-confirmation></pwg-modal-confirmation>
       </div>
 
       <div id="debug" ng-show="debugMessages.length > 0">
