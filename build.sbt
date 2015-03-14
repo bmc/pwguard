@@ -47,15 +47,9 @@ libraryDependencies ++= Seq(
   "org.webjars"           % "momentjs"                   % "2.9.0",
   // Angular-specific.
   //
-  // AngularJS consistency irritations:
-  //
-  // - angular-strap (at least through webjars) depends on AngularJS 1.3.0
-  //   after version 2.1.3, so we have to wire it to 2.1.2.
-  //
-  // We can't upgrade to Angular 1.3.8 or better, because some of the plugins
-  // don't support it yet.
-  "org.webjars"           % "angularjs"                  % "1.2.26",
-  "org.webjars"           % "angular-strap"              % "2.1.2",
+  // NOTE: Even though ng-tags-input claims not to support AngularJS 1.3 yet,
+  // it seems to work fine.
+  "org.webjars"           % "angularjs"                  % "1.3.14",
   "org.webjars"           % "ng-tags-input"              % "2.1.1",
   // -------------------------------------------------------------------------
   "org.webjars"           % "jasmine"                    % "2.1.3" % "test"

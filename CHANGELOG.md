@@ -16,7 +16,8 @@ Version 1.0.2 (Mar ..., 2014)
     appropriately) than the more free-form custom fields.
 * The "loading" spinner is now a full-page, blocking modal.
 * Updated Twitter Bootstrap to 3.3.2-2.
-
+* Upgraded to AngularJS 1.3.
+* Removed dependence on AngularStrap.
 
 Version 1.0.1 (Mar 4, 2014)
 
