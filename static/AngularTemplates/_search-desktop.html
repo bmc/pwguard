@@ -1,4 +1,4 @@
-<div ng-controller="InnerSearchCtrl">
+<div>
 
   <div id="desktop-search-box">
 
@@ -33,15 +33,15 @@
   </div>
 
   <div id="desktop-results">
-    <div class="row" ng-show="searchResults && (searchResults.length === 0)">
+    <div class="row" ng-show="searchResults && (searchResults.entries.length === 0)">
       <div class="col-md-3"></div>
       <div class="col-md-6">No results.</div>
     </div>
-    <div class="row" ng-show="searchResults && (searchResults.length > 0)">
+    <div class="row" ng-show="searchResults && (searchResults.entries.length > 0)">
       <div class="col-md-12">
         <div class="desktop-results-header">
-          <div>Found {{pluralizeResults(searchResults.length)}}.</div>
-          <div ng-show="(searchResults.length > 0)">
+          <div>Found {{pluralizeResults(searchResults.entries.length)}}.</div>
+          <div ng-show="(searchResults.entries.length > 0)">
             <span class="hint" ng-hide="newPasswordEntry">
               You can click the switch next to a password to show or hide the.
               password. You can click any
@@ -55,7 +55,7 @@
       </div>
     </div>
 
-    <div ng-show="searchResults.length > 0">
+    <div ng-show="searchResults.entries.length > 0">
       <div class="results-table">
 
         <table>
@@ -118,7 +118,7 @@
           </thead>
 
           <tbody>
-            <tr ng-repeat="pw in searchResults | orderBy:sortColumn:reverse"
+            <tr ng-repeat="pw in searchResults.entries | orderBy:sortColumn:reverse"
                 ng-class="{even: $even, odd: $odd}">
               <td class="name">
                 <span>{{pw.name}}</span>

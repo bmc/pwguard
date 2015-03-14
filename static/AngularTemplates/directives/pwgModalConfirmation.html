@@ -1,18 +1,18 @@
-<div class="modal pwg-modal" tabindex="-1" role="dialog"
-     ng-keypress="modalConfirmKeyPressed($event)">
+<div class="modal pwg-modal fade" tabindex="-1" role="dialog"
+     ng-keypress="keyPressed($event)">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header" ng-show="title">
         <h4 class="modal-title">{{title}}</h4>
       </div>
-      <div class="modal-body">{{content}}</div>
+      <div class="modal-body">{{message}}</div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default"
-                ng-click="modalConfirmOK()">
+                ng-click="ok()">
             Yes
         </button>
         <button type="button" class="btn btn-primary"
-                ng-click="modalConfirmCancel()">
+                ng-click="cancel()">
             No
         </button>
       </div>

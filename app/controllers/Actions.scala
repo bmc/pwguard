@@ -27,9 +27,9 @@ object LoggedAction extends ActionBuilder[Request] with Logging {
     }
 
     // Chained futures ensure that the logging occurs in the right order.
-    for { f1 <- futureLog { s"Received request ${request}" }
+    for { f1 <- futureLog { s"START request ${request}" }
           res <- block(request)
-          f2  <- futureLog { s"Finished processing request ${request}" } }
+          f2  <- futureLog { s"FINISH request ${request}" } }
     yield res
   }
 }
