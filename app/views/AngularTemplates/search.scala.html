@@ -1,11 +1,13 @@
+@()
+
 <div id="search-screen">
 
   <div class="visible-xs-block visible-sm-block">
-    <ng-include src="templateURL('_search-mobile.html')"></ng-include>
+    @_searchMobile()
   </div>
 
   <div class="visible-md-block visible-lg-block">
-    <ng-include src="templateURL('_search-desktop.html')"></ng-include>
+    @_searchDesktop()
   </div>
 
 </div>

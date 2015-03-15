@@ -537,8 +537,6 @@ pwGuardApp.controller('SearchCtrl', ng(function($scope, $injector, currentUser) 
     $scope.totalPasswords = response.total
   });
 
-  var pwgRoutes = $injector.get('pwgRoutes');
-
   $scope.newEntryURL   =  pwgRoutes.hrefForRouteName('new-entry', {'fromID': ""});
   $scope.searchTerm    = "";
   $scope.searchResults = null;
@@ -546,20 +544,22 @@ pwGuardApp.controller('SearchCtrl', ng(function($scope, $injector, currentUser) 
   $scope.sortColumn    = 'name';
   $scope.reverse       = false;
 
+$scope.$watch('searchTerm', (n) => { console.log(`search term is now ${n}`) });
+
   var SEARCH_ALL_MARKER = '-*-all-*-';
   var originalEntries = {};
 
-  var log = pwgLogging.logger('InnerSearchCtrl');
+  var log = pwgLogging.logger('SearchCtrl');
 
   var pluralizeCount = (count) => {
     return inflector(count, "entry", "entries");
   }
 
   var validSearchTerm = () => {
-    var trimmed = "";
     if ($scope.searchTerm)
-      trimmed = $scope.searchTerm.trim();
-    return trimmed.length >= 2;
+      return $scope.searchTerm.length >= 2;
+    else
+      return false;
   }
 
   $scope.pluralizeResults = (n) => { return pluralizeCount(n); }
@@ -594,14 +594,14 @@ pwGuardApp.controller('SearchCtrl', ng(function($scope, $injector, currentUser) 
       saveSearchTerm($scope.searchTerm);
       $scope.searchResults = processResults($scope.searchTerm,
                                             response.results);
+      log.debug("search results:", JSON.stringify($scope.searchResults));
     });
   }
-
 
   $scope.showAll = () => {
     $scope.newPasswordEntry = null;
     $scope.searchTerm       = null;
-    var url = routes.controllers.PasswordEntryController.getAll().url;
+    var url = routes.controllers.PasswordEntryController.getAllForUser().url;
     pwgAjax.get(url,
       function(response) {
         saveSearchTerm(SEARCH_ALL_MARKER);
