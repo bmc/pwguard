@@ -9,6 +9,8 @@ import * as util from './util';
 import * as filters from './filters';
 import * as services from './services';
 import * as directives from './directives';
+import * as pwgModal from './modal';
+import * as pwgFlash from './flash';
 
 util.init()
 
@@ -16,6 +18,9 @@ util.init()
 var pwGuardApp = angular.module("PWGuardApp", ['ngRoute',
                                                'ngCookies',
                                                'ngSanitize',
+                                               'pwguard-flash',
+                                               'pwguard-modal',
+                                               'pwguard-spinner',
                                                'pwguard-services',
                                                'pwguard-filters',
                                                'pwguard-directives']);
@@ -852,7 +857,7 @@ pwGuardApp.controller('ImportExportCtrl',
 
     pwgCheckRoute('import-export', currentUser);
 
-    var $timeout   = $injector.get('$timeout');
+    var pwgTimeout = $injector.get('pwgTimeout');
     var pwgAjax    = $injector.get('pwgAjax');
     var pwgFlash   = $injector.get('pwgFlash');
     var pwgLogging = $injector.get('pwgLogging');
@@ -873,7 +878,7 @@ pwGuardApp.controller('ImportExportCtrl',
 
     $scope.startDownload = function() {
       $scope.downloading = true;
-      $timeout(function() { $scope.downloading = false; }, 3000);
+      pwgTimeout(3000, function() { $scope.downloading = false; });
     }
 
     // ****** //

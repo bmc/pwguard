@@ -1,11 +1,13 @@
 /*
-  Angular directives.
+ ******************************************************************************
+  Miscellaneous Angular directives not otherwise grouped.
 
   This code is ES6-based and must be transpiled with traceur. JSHint doesn't
   grok ES6, either, so it must be disabled for this file.
 
-  WARNING: Do NOT include this file in the HTML. sbt-traceur automatically
+  WARNING: Do NOT include this file in the HTML. traceur automatically
   mixes it into the main Javascript file.
+ ******************************************************************************
 */
 
 /* jshint ignore:start */
@@ -53,95 +55,6 @@ pwgDirectives.directive('pwgSortIndicator', function() {
   }
 });
 
-// -----------------------------------------------------------------------------
-// Flash widget. Works in conjunction with the pwgFlash service.
-// -----------------------------------------------------------------------------
-
-pwgDirectives.directive('pwgFlashWidget', ng(function(pwgFlash) {
-  return {
-    restrict:    'E',
-    transclude:  false,
-    replace:     false,
-    templateUrl: templateURL('directives/pwgFlashWidget.html'),
-    scope: {
-      type: '@'
-    },
-    link: ($scope, element, attrs) => {
-
-      $scope.message = null;
-
-      switch ($scope.type) {
-        case 'error':
-          $scope.alertType = 'danger';
-          break;
-        case 'info':
-          $scope.alertType = 'info';
-          break;
-        case 'warning':
-          $scope.alertType = 'warning';
-          break;
-        default:
-          throw new Error(`Unknown flash type: ${type}`)
-      }
-
-      var show = (msg) => { $scope.message = msg; }
-      var hide = () => { $scope.message = null; }
-
-      $scope.hide = hide;
-
-      pwgFlash._registerFlashBox($scope.type, show, hide)
-    }
-  }
-}));
-
-// -----------------------------------------------------------------------------
-// Modal widget
-// -----------------------------------------------------------------------------
-
-pwgDirectives.directive('pwgModalConfirmation', ng(function(pwgModal) {
-
-  return {
-    restrict:   'E',
-    transclude: false,
-    replace:    false,
-    templateUrl: templateURL('directives/pwgModalConfirmation.html'),
-    scope: {
-    },
-    link: ($scope, element, attrs) => {
-
-      $scope.message = null;
-      $scope.title   = null;
-
-      var modalElement = element.children(".pwg-modal");
-
-      var show = (message, title=null) => {
-        $scope.message = message;
-        $scope.title   = title;
-        modalElement.modal('show');
-      }
-
-      $scope.keyPressed = (event) => {
-        if (event.keyCode === 13) // ENTER
-          $scope.cancel();
-      }
-
-      // The register function returns an object with an onOK() and onCancel()
-      // function.
-      var callbacks = pwgModal._registerModal(show);
-
-      $scope.ok = () => {
-        if (callbacks.onOK) callbacks.onOK();
-        modalElement.modal('hide');
-      }
-
-      $scope.cancel = () => {
-        if (callbacks.onCancel) callbacks.onCancel();
-        modalElement.modal('hide');
-      }
-    }
-  }
-
-}));
 
 // -----------------------------------------------------------------------------
 // Password display widget.
@@ -465,64 +378,6 @@ pwgDirectives.directive('pwgName', ng(function($injector) {
         if (!n) n = "";
         element.attr("name", n);
       });
-    }
-  }
-}));
-
-// ----------------------------------------------------------------------------
-// Spinner directive, used to create the spinner HTML. Used in conjunction
-// with the pwgSpinner service.
-// ----------------------------------------------------------------------------
-
-pwgDirectives.directive('pwgSpinner', ng(function($injector) {
-  return {
-    restrict: 'E',
-    scope: {
-    },
-    templateUrl: templateURL('directives/pwgSpinner.html'),
-
-    link: function($scope, element, attrs) {
-      var pwgSpinner = $injector.get('pwgSpinner');
-      var pwgLogging = $injector.get('pwgLogging');
-      var pwgTimeout = $injector.get('pwgTimeout');
-      var log        = pwgLogging.logger('pwgSpinner');
-
-      $scope.showSpinner = false;
-      pwgSpinner._registerDirective($scope);
-
-      var modal = element.find(".modal");
-      modal.modal({
-        backdrop: 'static',
-        keyboard: false,
-        show:     false
-      });
-
-      var timerPromise = null;
-
-      var show = () => { modal.modal('show'); }
-      var hide = () => { modal.modal('hide'); }
-
-      $scope.$watch("showSpinner", function() {
-        // To prevent the spinner from flashing without actually being seen,
-        // use $timeout to ensure that it's up at least 300 milliseconds
-        // before we clear it.
-        if ($scope.showSpinner) {
-          show();
-          // The $timeout promise will contain the value of the function.
-          log.debug("Starting timer...");
-          timerPromise = pwgTimeout.timeout(500, function() {
-            log.debug("Timeout promise fired.");
-            return true;
-          });
-        }
-
-        else {
-          if (timerPromise)
-            timerPromise.then(hide);
-          else
-            hide();
-        }
-      })
     }
   }
 }));

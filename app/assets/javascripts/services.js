@@ -94,88 +94,6 @@ pwgServices.factory('pwgError', function() {
 });
 
 // ----------------------------------------------------------------------------
-// Simple flash service. Use in conjunction with the pwg-flash directive.
-//
-// This service sets or clears the following variables in the root scope:
-//
-// flash.message.info    - info alert message
-// flash.message.error   - error messages
-// flash.message.warning - warning alert messages
-//
-// The service provides the following functions. These functions are also
-// available on the $rootScope.flash object, for use in HTML.
-//
-// init()             - CALL THIS FIRST at application startup.
-// warn(msg)          - issue a warning message
-// info(msg)          - issue an info message
-// error(msg)         - issue an error message
-// message(type, msg) - issue a message of the specified type. The types can
-//                      be 'warn', 'info', 'error', 'all'
-// clear(type)        - clear message(s) of the specified type. The types can
-//                      be 'warn', 'info', 'error', 'all'
-// clearInfo()        - convenience
-// clearWarning()     - convenience
-// clearError()       - convenience
-// clearAll()         - convenience
-// ----------------------------------------------------------------------------
-
-pwgServices.factory('pwgFlash', ng(function($timeout) {
-
-  var alerts = {};
-
-  function clearAlert(type) {
-    let alert = alerts[type];
-    if (alert)
-      alert.hide();
-  }
-
-  function doAlert(content, type, timeout=0) {
-     let alert = alerts[type];
-    if (alert) {
-      alert.show(content);
-      if (timeout > 0) {
-        $timeout(function() { clearAlert(type) }, timeout * 1000);
-      }
-    }
-  }
-
-  return {
-    warn: (msg, timeout=0) => {
-      clearAlert('warning');
-      doAlert(msg, 'warning', timeout);
-    },
-
-    error: (msg, timeout=0) => {
-      clearAlert('error');
-      doAlert(msg, 'error', timeout);
-    },
-
-    info: (msg, timeout=0) => {
-      clearAlert('info');
-      doAlert(msg, 'info', timeout);
-    },
-
-    clearError:   () => { clearAlert('error'); },
-    clearWarning: () => { clearAlert('warning'); },
-    clearInfo:    () => { clearAlert('info'); },
-
-    clearAll: () => {
-      for (let type in alerts) {
-        if (type && alerts.hasOwnProperty(type)) {
-          clearAlert(type)
-        }
-      }
-    },
-
-    // This function is INTERNAL ONLY. Do not call it.
-    _registerFlashBox: (type, show, hide) => {
-      alerts[type] = {show: show, hide: hide}
-    }
-  }
-
-}));
-
-// ----------------------------------------------------------------------------
 // Front-end service for AJAX calls. Handles errors in a consistent way, and
 // fires up a spinner.
 // ----------------------------------------------------------------------------
@@ -299,32 +217,6 @@ pwgServices.factory('pwgAjax', ng(function($injector) {
 }));
 
 // ----------------------------------------------------------------------------
-// Simple spinner service. Assumes the existence of an element that's monitoring
-// the root scope's "showSpinner" variable.
-// ----------------------------------------------------------------------------
-
-pwgServices.factory('pwgSpinner', ng(function($rootScope) {
-  // This scope is registered pwgSpinner directives scope.
-  var $scope = null;
-  function setSpinner(onOff) {
-    if ($scope)
-      $scope.showSpinner = onOff;
-  }
-
-  return {
-    start: function() { setSpinner(true); },
-    stop:  function() { setSpinner(false); },
-
-    // _registerDirective() is only used by the companion pwgSpinner directive.
-    // DO NOT CALL THIS FUNCTION.
-    _registerDirective: function(scope) {
-      $scope = scope;
-      setSpinner(false);
-    }
-  }
-}));
-
-// ----------------------------------------------------------------------------
 // A timeout service with arguments in a more sane order.
 // ----------------------------------------------------------------------------
 
@@ -395,84 +287,6 @@ pwgServices.factory('pwgUser', ng(function($injector) {
   }
 
 }));
-
-// ----------------------------------------------------------------------------
-// Modal service. Hides underlying implementation(s).
-// ----------------------------------------------------------------------------
-
-pwgServices.factory('pwgModal', ng(function($injector) {
-
-  var $q = $injector.get('$q');
-
-  var mobile = window.browserIsMobile;
-
-  // Shows an appropriate confirmation dialog, depending on whether the user
-  // is mobile or not. Returns a promise (via $q) that resolves on confirmation
-  // and rejects on cancel.
-  //
-  // Parameters:
-  //   message - the confirmation message
-  //   title   - optional title for the dialog, if supported
-  //
-  // NOTE: Only one of these can be active at one time!
-
-  var directiveShowFunc = null;
-  var deferred          = null;
-
-  return {
-    confirm: function(message, title = null) {
-      deferred = $q.defer();
-
-      if (mobile) {
-
-        // Use standard confirmation dialog, rather than in-browser one.
-
-        if (confirm(message))
-          deferred.resolve();
-        else
-          deferred.reject();
-      }
-
-      else {
-
-        // Use in-browser one.
-
-        if (directiveShowFunc)
-          directiveShowFunc(message, title);
-        else
-          throw new Error("No directive show function to invoke.");
-      }
-
-      return deferred.promise;
-    },
-
-    // Internal use only. DO NOT CALL. Called by the associated directive.
-    //
-    // Parameters:
-    //   show - A function taking a message to display and an optional title
-    //
-    // Returns: { onOK: [function], onCancel: [function] }
-    _registerModal: (show) => {
-      directiveShowFunc = show;
-      return {
-        onOK: () => {
-          if (deferred) {
-            deferred.resolve();
-            deferred = null;
-          }
-        },
-        onCancel: () => {
-          if (deferred) {
-            deferred.reject();
-            deferred = null;
-          }
-        }
-      }
-    }
-  }
-
-}));
-
 
 // ----------------------------------------------------------------------------
 // Check a form. If it's been edited, prompt the user for cancellation.
