@@ -1,6 +1,6 @@
 # PWGuard Change Log
 
-Version 1.0.2 (Mar 14, 2014)
+Version 1.0.2 (Mar 15, 2014)
 
 * Added ability to save session for 10 days, on login. If not specified,
   assumes 15-minute default.
@@ -18,7 +18,8 @@ Version 1.0.2 (Mar 14, 2014)
 * The "loading" spinner is now a full-page, blocking modal.
 * Updated Twitter Bootstrap to 3.3.2-2.
 * Upgraded to AngularJS 1.3.
-* Removed dependence on AngularStrap.
+* Removed dependence on AngularStrap, replacing it with local implementations
+  of necessary Bootstrap controls.
 * Added tooltips to various buttons.
 * Clicking on unexpanded URL in search results now opens the same new tab
   as other URLs.

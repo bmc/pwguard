@@ -11,6 +11,7 @@ import * as services from './services';
 import * as directives from './directives';
 import * as pwgModal from './modal';
 import * as pwgFlash from './flash';
+import * as pwgAccordion from './accordion';
 
 util.init()
 
@@ -18,6 +19,7 @@ util.init()
 var pwGuardApp = angular.module("PWGuardApp", ['ngRoute',
                                                'ngCookies',
                                                'ngSanitize',
+                                               'pwguard-accordion',
                                                'pwguard-flash',
                                                'pwguard-modal',
                                                'pwguard-spinner',

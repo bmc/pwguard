@@ -9,7 +9,7 @@
         <form id="search-form" name="searchForm" ng-submit="issueSearch()"
               novalidate class="mobile">
           <div class="form-group">
-            <input type="text" name="searchTerm" id="searchTerm" ng-trim="true"
+            <input type="search" name="searchTerm" id="searchTerm" ng-trim="true"
                    ng-model="searchTerm" class="form-control search-term"
                    ng-minlength="2"
                    placeholder="Enter at least two letters to search."/>
@@ -52,91 +52,81 @@
     </div>
     <div class="row" ng-show="searchResults.entries.length > 0">
       <div id="mobile-results-list" class="row">
-        <div class="panel-group" ng-model="activePanel" bs-collapse>
-          <div class="panel panel-default"
-               ng-repeat="pw in searchResults.entries | orderBy:'name'">
-            <a class="panel-toggle" bs-collapse-toggle href="">
-              <div class="panel-heading">
-                <h4 class="panel-title">{{pw.name}}</h4>
-              </div>
-            </a>
+        <pwg-accordion allow-multiselect="true" id="results">
+          <pwg-accordion-item title="{{pw.name}}"
+                              ng-repeat="pw in searchResults.entries | orderBy:'name'">
+            <table class="table">
+              <tbody>
+                <tr class="mobile-field">
+                  <td class="mobile-label">Description</td>
+                  <td ng-bind-html="pw.description | linky:'newPage'"
+                      class="mobile-value"></td>
+                </tr>
+                <tr class="mobile-field" ng-show="pw.loginID">
+                  <td class="mobile-label">Login</td>
+                  <td class="mobile-value">
+                    <input type="text" readonly="readonly" ng-model="pw.loginID"
+                           class="login-id" pwg-select-on-click/>
+                  </td>
+                </tr>
+                <tr class="mobile-field password" ng-show="pw.plaintextPassword">
+                  <td class="mobile-label">Password</td>
+                  <td class="mobile-value">
+                    <input type="text" readonly="readonly"
+                           class="password shown-password"
+                           ng-model="pw.plaintextPassword"
+                           pwg-select-on-click/>
+                  </td>
+                </tr>
+                <tr class="mobile-field url"ng-show="pw.url">
+                  <td class="mobile-label">URL</td>
+                  <td ng-bind-html="pw.url | linky:'newPage'" class="mobile-value"></td>
+                </tr>
 
-            <div class="panel-collapse" bs-collapse-target>
-              <div class="panel-body">
-                <table class="table">
-                  <tbody>
-                    <tr class="mobile-field">
-                      <td class="mobile-label">Description</td>
-                      <td ng-bind-html="pw.description | linky:'newPage'"
-                          class="mobile-value"></td>
-                    </tr>
-                    <tr class="mobile-field" ng-show="pw.loginID">
-                      <td class="mobile-label">Login</td>
-                      <td class="mobile-value">
-                        <input type="text" readonly="readonly" ng-model="pw.loginID"
-                               class="login-id" pwg-select-on-click/>
-                      </td>
-                    </tr>
-                    <tr class="mobile-field password" ng-show="pw.plaintextPassword">
-                      <td class="mobile-label">Password</td>
-                      <td class="mobile-value">
-                        <input type="text" readonly="readonly"
-                               class="password shown-password"
-                               ng-model="pw.plaintextPassword"
-                               pwg-select-on-click/>
-                      </td>
-                    </tr>
-                    <tr class="mobile-field url"ng-show="pw.url">
-                      <td class="mobile-label">URL</td>
-                      <td ng-bind-html="pw.url | linky:'newPage'" class="mobile-value"></td>
-                    </tr>
+                <!-- Extras -->
 
-                    <!-- Extras -->
+                <tr ng-repeat="e in pw.extras | orderBy:'fieldName'"
+                    class="mobile-field">
+                  <td class="mobile-label">{{e.fieldName}}</td>
+                  <td class="mobile-value">
+                    <input ng-if="e.isPassword"
+                           type="text" readonly="readonly"
+                           class="password shown-password"
+                           ng-model="e.fieldValue"
+                           pwg-select-on-click/>
+                    <span ng-if="!e.isPassword">{{e.fieldValue}}</span>
+                  </td>
+                </tr>
 
-                    <tr ng-repeat="e in pw.extras | orderBy:'fieldName'"
-                        class="mobile-field">
-                      <td class="mobile-label">{{e.fieldName}}</td>
-                      <td class="mobile-value">
-                        <input ng-if="e.isPassword"
-                               type="text" readonly="readonly"
-                               class="password shown-password"
-                               ng-model="e.fieldValue"
-                               pwg-select-on-click/>
-                        <span ng-if="!e.isPassword">{{e.fieldValue}}</span>
-                      </td>
-                    </tr>
+                <!-- Security Questions -->
 
-                    <!-- Security Questions -->
+                <tr>
+                  <td colspan="2" class="heading">Security Questions</td>
+                </tr>
+                <tr ng-repeat="q in pw.securityQuestions | orderBy:'question'"
+                    class="mobile-field">
+                  <td class="mobile-label security-question">
+                    {{q.question}}
+                  </td>
+                  <td class="mobile-value">
+                    <input type="text" readonly="readonly"
+                           class="password shown-password"
+                           ng-model="q.answer"
+                           pwg-select-on-click/>
+                  </td>
+                </tr>
 
-                    <tr>
-                      <td colspan="2" class="heading">Security Questions</td>
-                    </tr>
-                    <tr ng-repeat="q in pw.securityQuestions | orderBy:'question'"
-                        class="mobile-field">
-                      <td class="mobile-label security-question">
-                        {{q.question}}
-                      </td>
-                      <td class="mobile-value">
-                        <input type="text" readonly="readonly"
-                               class="password shown-password"
-                               ng-model="q.answer"
-                               pwg-select-on-click/>
-                      </td>
-                    </tr>
-
-                    <tr class="mobile-field" ng-show="pw.notes">
-                      <td class="mobile-label">Notes</td>
-                      <td>
-                        <span ng-bind-html="pw.notes | linky:'newPage' | pwgNewlinesToBRs">
-                        </span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
+                <tr class="mobile-field" ng-show="pw.notes">
+                  <td class="mobile-label">Notes</td>
+                  <td>
+                    <span ng-bind-html="pw.notes | linky:'newPage' | pwgNewlinesToBRs">
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </pwg-accordion-item>
+        </pwg-accordion>
       </div>
     </div>
   </div>
