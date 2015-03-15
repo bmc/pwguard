@@ -96,104 +96,134 @@ pwgServices.factory('pwgError', function() {
 // ----------------------------------------------------------------------------
 // Front-end service for AJAX calls. Handles errors in a consistent way, and
 // fires up a spinner.
+//
+// The service provides the following functions. All functions return an
+// Angular $q promise. On success, the promise is resolved with the response
+// data, the status, and the headers. On failure, the promise is rejected with
+// the error data, the status, and the headers. That way, callers can decide
+// how and whether they want to handle success and failure.
+//
+// post(url, data)   - Post (JavaScript) data to the specified URL.
+// get(url)          - Issue an HTTP GET to the specified URL.
+// delete(url, data) - Issue an HTTP DELETE to the specified URL, passing the
+//                     specified (JavaScript) data.
+//
+// Example:
+//
+// var promise = pwgAjax.get(url);
+// promise.then(function(response) {
+//   var data = response.data
+//   var status = response.status
+//   var headers = response.headers
+//   ...
+// });
 // ----------------------------------------------------------------------------
 
 pwgServices.factory('pwgAjax', ng(function($injector) {
   var $http      = $injector.get('$http');
+  var $q         = $injector.get('$q');
   var pwgSpinner = $injector.get('pwgSpinner');
   var pwgFlash   = $injector.get('pwgFlash');
-  var pwgError   = $injector.get('pwgError');
 
   var callOn401 = null;
 
-  function handleFailure(data, status, onFailure) {
-    var message = null;
-    if (data.error && data.error.message)
-      message = data.error.message;
-    else
-      message = "Server error. We're looking into it.";
-
-    if (status === 401) {
-      data = {
-        error: {
-          status:  401,
-          message: "Login required"
-        }
-      }
-
-      if (callOn401) callOn401();
-    }
-    else {
-      pwgFlash.error(`(${status}) ${message}`, status);
-      if (onFailure)
-        onFailure(data);
-    }
-  }
-
-  function handleSuccess(response, status, onSuccess, onFailure) {
-
-    // Angular doesn't seem to handle 401 responses properly, so we're
-    // mimicking them with JSON.
-    //
-    // NOTE: This happens when an HTTP interceptor is injected. Without
-    // the interceptor, Angular behaves correctly.
-
-    if (response.error) {
-      console.log(response);
-      if (response.error.message)
-        pwgFlash.error(response.error.message);
-      if (onFailure)
-        onFailure(response);
-    }
-    else {
-      if (onSuccess)
-        onSuccess(response);
-    }
-  }
-
   function http(config, onSuccess, onFailure) {
+    var deferred = $q.defer();
+    var promise  = deferred.promise;
+
     function failed(data, status, headers, config) {
       pwgSpinner.stop();
-      handleFailure(data, status, onFailure);
+
+      var message = null;
+      if (data.error && data.error.message)
+        message = data.error.message;
+      else
+        message = "Server error. We're looking into it.";
+
+      if (status === 401) {
+        data = {
+          error: {
+            status:  401,
+            message: "Login required"
+          }
+        }
+
+        if (callOn401) callOn401();
+      }
+      else {
+        pwgFlash.error(`(${status}) ${message}`, status);
+        deferred.reject({
+          data:    data,
+          status:  status,
+          headers: headers
+        });
+      }
     }
 
     function succeeded(data, status, headers, config) {
       pwgSpinner.stop();
-      handleSuccess(data, status, onSuccess, onFailure);
+
+      // Angular doesn't seem to handle 401 responses properly, so we're
+      // mimicking them with JSON.
+      //
+      // NOTE: This happens when an HTTP interceptor is injected. Without
+      // the interceptor, Angular behaves correctly.
+
+      if (data.error) {
+        console.log(response);
+        if (data.error.message)
+          pwgFlash.error(response.error.message);
+
+        deferred.reject({
+          data:    data,
+          status:  status,
+          headers: headers
+        });
+      }
+
+      else {
+        deferred.resolve({
+          data:    data,
+          status:  status,
+          headers: headers
+        });
+      }
     }
 
     pwgSpinner.start();
+
     $http(config).success(succeeded).error(failed);
+    return promise;
   }
 
   return {
 
-    post: function(url, data, onSuccess, onFailure) {
+    post: function(url, data) {
       var params = {
         method: 'POST',
         url:    url,
         data:   data
       }
 
-      if (url)
-        http(params, onSuccess, onFailure);
-      else
-        pwgError.showStackTrace("No URL for pwgAjax.post()");
+      if (! url)
+        throw new Error("No URL for pwgAjax.post()");
+
+      return http(params);
     },
 
-    get: function(url, onSuccess, onFailure = null) {
+    get: function(url) {
       var params = {
         method: 'GET',
         url:    url
       }
 
-      if (url)
-        http(params, onSuccess, onFailure);
-      else
-        pwgError.showStackTrace("No URL for pwgAjax.get()");
+      if (! url)
+        throw new Error("No URL for pwgAjax.get()");
+
+      return http(params);
     },
 
-    delete: function(url, data, onSuccess, onFailure = null) {
+    delete: function(url, data) {
       var params = {
         method:  'DELETE',
         url:     url,
@@ -207,7 +237,10 @@ pwgServices.factory('pwgAjax', ng(function($injector) {
         }
       }
 
-      http(params, onSuccess, onFailure)
+      if (! url)
+        throw new Error("No URL for pwgAjax.delete()");
+
+      return http(params);
     },
 
     on401: function(callback) {
@@ -247,22 +280,23 @@ pwgServices.factory('pwgUser', ng(function($injector) {
       var deferred = $q.defer();
       var url = routes.controllers.SessionController.getLoggedInUser().url;
 
-      pwgAjax.post(url, {},
+      pwgAjax.post(url, {}).then(
         function(response) { // on success
-          if (response.loggedIn)
-            currentUser = response.user;
+          var data = response.data;
+          if (data.loggedIn)
+            currentUser = data.user;
           else
             currentUser = null;
 
           if (deferred)
-            deferred.resolve(response);
+            deferred.resolve(data);
 
           deferred = null;
         },
 
         function(response) { // on failure
           if (deferred)
-            deferred.reject(response);
+            deferred.reject(response.data);
 
           deferred = null;
         }

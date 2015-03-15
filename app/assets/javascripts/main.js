@@ -326,7 +326,7 @@ pwGuardApp.controller('NavbarCtrl', ng(function($scope, $injector) {
             pwgRoutes.redirectToNamedRoute('login');
           }
 
-          pwgAjax.post(url, {},
+          pwgAjax.post(url, {}).then(
             function(response) {
               // Success
               always();
@@ -389,11 +389,12 @@ pwGuardApp.controller('LoginCtrl',
         password:     $scope.password,
         rememberTime: rememberTime
       }
-      pwgAjax.post(url, data,
+
+      pwgAjax.post(url, data).then(
 
         // Success.
         function(response) {
-          pwgUser.setLoggedInUser(response.user);
+          pwgUser.setLoggedInUser(response.data.user);
           log.debug("Login successful");
           pwgSearchTerm.clearSavedTerm();
           pwgRoutes.redirectToDefaultRoute();
@@ -401,7 +402,7 @@ pwGuardApp.controller('LoginCtrl',
 
         // Failure
         function(response) {
-          log.error(data);
+          log.error(response.data);
           // Nothing to do. Error was handled by pwgAjax
         }
       );
@@ -433,13 +434,13 @@ pwGuardApp.controller('EditPasswordEntryCtrl', ng(
     $scope.saveURL = routes.controllers.PasswordEntryController.save(id).url;
 
     var url = routes.controllers.PasswordEntryController.getEntry($routeParams.id).url;
-    pwgAjax.get(url,
-      function(data) {
-        $scope.passwordEntry = data.passwordEntry;
+    pwgAjax.get(url).then(
+      function(response) {
+        $scope.passwordEntry = response.data.passwordEntry;
         log.debug(`Editing: ${JSON.stringify($scope.passwordEntry)}`);
       },
-      function(error) {
-        log.error(JSON.stringify(error));
+      function(errorResponse) {
+        log.error(JSON.stringify(errorResponse.data));
       }
     );
   }
@@ -474,8 +475,9 @@ pwGuardApp.controller('NewPasswordEntryCtrl', ng(
       // automatically.
       $scope.dirtyOnLoad = true;
       let url = routes.controllers.PasswordEntryController.getEntry(copyFrom).url;
-      pwgAjax.get(url,
-        function(data) {
+      pwgAjax.get(url).then(
+        function(response) {
+          var data = response.data;
           data.passwordEntry.name = `Copy of ${data.passwordEntry.name}`;
           $scope.passwordEntry    = data.passwordEntry;
         },
@@ -484,6 +486,7 @@ pwGuardApp.controller('NewPasswordEntryCtrl', ng(
         }
       );
     }
+
     else {
       $scope.dirtyOnLoad = false;
       $scope.passwordEntry = {
@@ -531,8 +534,8 @@ pwGuardApp.controller('SearchCtrl', ng(function($scope, $injector, currentUser) 
   pwgCheckRoute('search', currentUser);
 
   let url =  routes.controllers.PasswordEntryController.getTotal().url;
-  pwgAjax.get(url, (response) => {
-    $scope.totalPasswords = response.total
+  pwgAjax.get(url).then((response) => {
+    $scope.totalPasswords = response.data.total;
   });
 
   $scope.newEntryURL   =  pwgRoutes.hrefForRouteName('new-entry', {'fromID': ""});
@@ -585,11 +588,11 @@ pwGuardApp.controller('SearchCtrl', ng(function($scope, $injector, currentUser) 
     $scope.newPasswordEntry = null;
     let url = routes.controllers.PasswordEntryController.searchPasswordEntries().url;
     log.debug(`Issuing search: ${$scope.searchTerm}`);
-    pwgAjax.post(url, {searchTerm: $scope.searchTerm}, function(response) {
+    pwgAjax.post(url, {searchTerm: $scope.searchTerm}).then(function(response) {
       // Save the search term, and put it in the URL for bookmarking.
       saveSearchTerm($scope.searchTerm);
       $scope.searchResults = processResults($scope.searchTerm,
-                                            response.results);
+                                            response.data.results);
       log.debug("search results:", JSON.stringify($scope.searchResults));
     });
   }
@@ -598,13 +601,11 @@ pwGuardApp.controller('SearchCtrl', ng(function($scope, $injector, currentUser) 
     $scope.newPasswordEntry = null;
     $scope.searchTerm       = null;
     var url = routes.controllers.PasswordEntryController.getAllForUser().url;
-    pwgAjax.get(url,
-      function(response) {
-        saveSearchTerm(SEARCH_ALL_MARKER);
-        $scope.searchResults = processResults(SEARCH_ALL_MARKER,
-                                              response.results);
-      }
-    );
+    pwgAjax.get(url).then(function(response) {
+      saveSearchTerm(SEARCH_ALL_MARKER);
+      $scope.searchResults = processResults(SEARCH_ALL_MARKER,
+                                            response.data.results);
+    });
   }
 
   $scope.sortBy = (column) => {
@@ -639,7 +640,7 @@ pwGuardApp.controller('SearchCtrl', ng(function($scope, $injector, currentUser) 
   var saveEntry = (pw) => {
     let url = routes.controllers.PasswordEntryController.save(pw.id).url;
     pw.password = pw.plaintextPassword;
-    pwgAjax.post(url, pw, function(response) {
+    pwgAjax.post(url, pw).then(function(response) {
       pw.editing = false;
       reissueLastSearch();
     });
@@ -649,7 +650,9 @@ pwGuardApp.controller('SearchCtrl', ng(function($scope, $injector, currentUser) 
     pwgModal.confirm(`Really delete ${pw.name}?`, "Confirm deletion").then(
       function() {
         let url = routes.controllers.PasswordEntryController.delete(pw.id).url;
-        pwgAjax.delete(url, {}, reissueLastSearch);
+        pwgAjax.delete(url, {}).then(function(response) {
+          reissueLastSearch()
+        });
       }
     )
   }
@@ -695,8 +698,8 @@ pwGuardApp.controller('SearchCtrl', ng(function($scope, $injector, currentUser) 
                          "Confirm deletion").then(function() {
           let ids = _.map(toDel, (pw) => { return pw.id });
           let url = routes.controllers.PasswordEntryController.deleteMany().url;
-          pwgAjax.delete(url, {ids: ids}, function(response) {
-            pl = pluralizeCount(response.total);
+          pwgAjax.delete(url, {ids: ids}).then(function(response) {
+            pl = pluralizeCount(response.data.total);
             pwgFlash.info(`Deleted ${pl}.`);
             reissueLastSearch();
           });
@@ -835,9 +838,9 @@ pwGuardApp.controller('ProfileCtrl',
 
       let url = routes.controllers.UserController.save(currentUser.id).url
 
-      pwgAjax.post(url, data, (response) => {
+      pwgAjax.post(url, data).then(function(response) {
         log.debug("Save complete.");
-        pwgUser.setLoggedInUser(response);
+        pwgUser.setLoggedInUser(response.data);
         pwgFlash.info("Saved.");
         form.$setPristine();
       });
@@ -909,9 +912,9 @@ pwGuardApp.controller('ImportExportCtrl',
         mimeType: $scope.mimeType
       }
 
-      pwgAjax.post(url, data, (response) => {
+      pwgAjax.post(url, data).then(function(response) {
         $scope.importState = 'mapping';
-        prepareMappingData(response);
+        prepareMappingData(response.data);
       });
     }
 
@@ -1033,12 +1036,12 @@ pwGuardApp.controller('ImportExportCtrl',
       }
 
       let url = routes.controllers.ImportExportController.completeImport().url;
-      pwgAjax.post(url, data,
+      pwgAjax.post(url, data).then(
         (response) => {
           $scope.importState = 'complete';
-          handleCompletion(response.total);
+          handleCompletion(response.data.total);
         },
-        (errorData) => {
+        (errorResponse) => {
           // Error already handled.
           $scope.importState = 'new';
         }
@@ -1111,7 +1114,7 @@ pwGuardApp.controller('AdminUsersCtrl',
     var saveUser = (u) => {
       let url = routes.controllers.UserController.save(u.id).url;
 
-      pwgAjax.post(url, u, (response) => {
+      pwgAjax.post(url, u).then((response) => {
         originalUsers[u.email] = _.omit(u, 'save', 'cancel', 'edit', 'editing');
         u.editing = false;
         loadUsers();
@@ -1130,7 +1133,7 @@ pwGuardApp.controller('AdminUsersCtrl',
         pwgModal.confirm(`Really delete ${u.email}?`, "Confirm deletion").then(
           function() {
             var url = routes.controllers.UserController.delete(u.id).url
-            pwgAjax.delete(url, {}, (response) => { loadUsers() });
+            pwgAjax.delete(url, {}).then((response) => { loadUsers() });
           }
         )
       }
@@ -1147,7 +1150,7 @@ pwGuardApp.controller('AdminUsersCtrl',
     var createUser = (u) => {
       let url = routes.controllers.UserController.create().url;
 
-      pwgAjax.post(url, $scope.addingUser, (response) => {
+      pwgAjax.post(url, $scope.addingUser).then((response) => {
         loadUsers();
         $scope.addingUser = null;
       });
@@ -1196,8 +1199,8 @@ pwGuardApp.controller('AdminUsersCtrl',
       originalUsers = {};
       $scope.users = null;
       let url = routes.controllers.UserController.getAllWithTotalPasswords().url;
-      pwgAjax.get(url, (response) => {
-        $scope.users = _.map(response.users, (u) => {
+      pwgAjax.get(url).then((response) => {
+        $scope.users = _.map(response.data.users, (u) => {
           if (currentUser && (u.id === currentUser.id)) {
             pwgUser.setLoggedInUser(u); // Update info for current user
           }

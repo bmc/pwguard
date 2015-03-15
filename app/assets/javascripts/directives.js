@@ -538,8 +538,8 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
           filterAndResolve(allUniqueKeywords);
         }
         else {
-          pwgAjax.get(url, function(data) {
-            allUniqueKeywords = data.keywords;
+          pwgAjax.get(url).then(function(response) {
+            allUniqueKeywords = response.data.keywords;
             filterAndResolve(allUniqueKeywords);
           });
         }
@@ -727,7 +727,7 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
         data.securityQuestions = _.filter(data.securityQuestions,
                                           (q) => { return q.question !== null });
         log.debug(JSON.stringify(data));
-        pwgAjax.post($scope.saveUrl, data, function() {
+        pwgAjax.post($scope.saveUrl, data).then(function() {
           pwgFlash.info("Saved.", 5 /* second timeout */);
           if ($scope.onSave)
             $scope.onSave($scope.ngModel);
