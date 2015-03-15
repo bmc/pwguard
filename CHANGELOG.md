@@ -23,7 +23,7 @@ Version 1.0.2 (Mar 15, 2014)
 * Added tooltips to various buttons.
 * Clicking on unexpanded URL in search results now opens the same new tab
   as other URLs.
-* `pwgAjax` service functions now returns a promise, for better composition.
+* `pwgAjax` service functions now return a promise, for better composition.
 
 Version 1.0.1 (Mar 4, 2014)
 
