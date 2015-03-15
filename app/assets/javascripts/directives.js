@@ -163,6 +163,22 @@ pwgDirectives.directive('pwgBootstrapFormError', function() {
 // ----------------------------------------------------------------------------
 // A popover directive, hiding the actual implementation. Using this directive
 // isolates the views from the actual implementation.
+//
+// Usage:
+//    <pwg-popover title="[title]"
+//                 icon="[icon]"
+//                 placement="[placement]"
+//                 content="[content]"
+//                 trigger="[click]">
+//    </pwg-popover>
+//
+//    [title]     - title for the popover. OPTIONAL.
+//    [icon]      - FontAwesome icon (e.g., "fa-question-circle"). REQUIRED.
+//    [placement] - Popover placement, one of "top", "bottom", "right", or
+//                  "left". REQUIRED.
+//    [trigger]   - Trigger action, one of "click", "hover" or "focus".
+//                  REQUIRED.
+//    [content]   - Text to display in the popup. REQUIRED.
 // ----------------------------------------------------------------------------
 
 pwgDirectives.directive('pwgPopover', function() {
@@ -199,6 +215,50 @@ pwgDirectives.directive('pwgPopover', function() {
     }
   }
 });
+
+// ----------------------------------------------------------------------------
+// Put a tooltip on a clickable item, such as a button.
+//
+// This directive is an attribute, and it looks for other attributes.
+//
+// pwg-tooltip           - marks a item as having a tooltip
+// pwg-tooltip-title     - the tooltip title (text). REQUIRED.
+// pwg-tooltip-placement - placement, one of "top", "button", "left",
+//                         "right" or "auto". OPTIONAL. Default: "top".
+// pwg-tooltip-trigger   - tooltip trigger, one of "hover", "click", or "focus".
+//                         OPTIONAL. Default: "hover".
+// pwg-tooltip-delay     - delay before showing, in milliseconds. OPTIONAL.
+//                         Default: 0.
+// pwg-tooltip-animation - whether or not to animate the tooltip. OPTIONAL.
+//                         True if present, else false.
+// ----------------------------------------------------------------------------
+
+pwgDirectives.directive('pwgTooltip', ng(function() {
+  return {
+    restrict: 'A',
+    replace:  false,
+    scope: {
+      pwgTooltipTitle:     '@',
+      pwgTooltipPlacement: '@',
+      pwgTooltipTrigger:   '@',
+      pwgTooltipDelay:     '@'
+    },
+    link: ($scope, element, attrs) => {
+      if (! attrs.pwgTooltipTitle)
+        throw new Error("pwg-tooltip must have a pwg-tooltip-title");
+
+      var options = {
+        title:     attrs.pwgTooltipTitle,
+        placement: attrs.pwgTooltipPlacement || 'top',
+        trigger:   attrs.pwgTooltipTrigger || 'hover',
+        delay:     parseInt(attrs.pwgTooltipDelay) || 0,
+        animation: attrs.pwgTooltipAnimation ? true : false
+      }
+
+      element.tooltip(options);
+    }
+  }
+}));
 
 // ----------------------------------------------------------------------------
 // Allow a drag-and-drop of a file, posting the results to a callback as

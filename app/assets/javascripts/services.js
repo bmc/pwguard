@@ -417,7 +417,7 @@ pwgServices.factory('pwgRoutes', ng(function($injector) {
     // parameters from the supplied object.
     for (let i = 0; i < keys.length; i++) {
       var k = keys[i];
-      var re = new RegExp(":" + k + "[?*]")
+      var re = new RegExp(":" + k + "[?*]?")
       url = url.replace(re, params[k]);
     }
 

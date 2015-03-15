@@ -50,7 +50,7 @@ pwgFlashModule.factory('pwgFlash', ng(function(pwgTimeout) {
     if (alert) {
       alert.show(content);
       if (timeout > 0) {
-        pwgTimeout(timeout * 1000, function() { clearAlert(type) });
+        pwgTimeout.timeout(timeout * 1000, function() { clearAlert(type) });
       }
     }
   }

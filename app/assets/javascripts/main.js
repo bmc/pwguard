@@ -740,6 +740,8 @@ pwGuardApp.controller('SearchCtrl', ng(function($scope, $injector, currentUser) 
       pw.passwordVisible       = false;
       pw.selected              = false;
       pw.showExtras            = false;
+      pw.editURL               = pwgRoutes.hrefForRouteName('edit-entry',
+                                                            {'id': pw.id});
       pw.copyURL               = pwgRoutes.hrefForRouteName('new-entry',
                                                             {'fromID': pw.id});
 
@@ -766,9 +768,6 @@ pwGuardApp.controller('SearchCtrl', ng(function($scope, $injector, currentUser) 
 
       originalEntries[pw.id] = pw;
 
-      pw.edit   = function() {
-        pwgRoutes.redirectToNamedRoute("edit-entry", {id: pw.id});
-      }
       pw.cancel = function(form) { cancelEdit(form, this); }
       pw.save   = function() { saveEntry(this); }
       pw.delete = function() { deleteEntry(this); }

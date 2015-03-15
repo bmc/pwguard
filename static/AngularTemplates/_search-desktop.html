@@ -245,18 +245,31 @@
               </td>
 
               <td class="pw-buttons">
-                <button type="button"
-                        class="btn btn-borderless"
-                        ng-click="pw.edit()">
+                <a ng-href="{{pw.editURL}}"
+                   type="button"
+                   class="btn btn-borderless"
+                   pwg-tooltip
+                   pwg-tooltip-title="Edit this entry"
+                   pwg-tooltip-delay="500"
+                   pwg-tooltip-placement="top">
                   <i class="fa fa-pencil"></i>
-                </button>
-                <a ng-href="{{pw.copyURL}}" class="btn btn-borderless"
-                   role="button">
+                </a>
+                <a ng-href="{{pw.copyURL}}"
+                   class="btn btn-borderless"
+                   role="button"
+                   pwg-tooltip
+                   pwg-tooltip-title="Make a copy of this entry"
+                   pwg-tooltip-delay="500"
+                   pwg-tooltip-placement="top">
                   <i class="fa fa-copy"></i>
                 </a>
                 <button type="button"
                         class="btn btn-borderless delete"
-                        ng-click="pw.delete()">
+                        ng-click="pw.delete()"
+                        pwg-tooltip
+                        pwg-tooltip-title="Delete this entry"
+                        pwg-tooltip-delay="500"
+                        pwg-tooltip-placement="top">
                   <i class="fa fa-trash-o"></i>
                 </button>
               </td>
