@@ -200,7 +200,7 @@
                       <i ng-hide="pw.showUrlPreview" class="fa fa-minus"></i>
                     </button>
                     <span ng-show="pw.showUrlPreview">
-                      <a ng-href="{{pw.url}}">{{pw.urlPreview}}</a>
+                      <a ng-href="{{pw.url}}" target="newPage">{{pw.urlPreview}}</a>
                     </span>
                     <span ng-hide="pw.showUrlPreview"
                           ng-bind-html="pw.url | linky:'newPage'">

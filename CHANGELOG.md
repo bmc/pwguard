@@ -20,6 +20,8 @@ Version 1.0.2 (Mar 14, 2014)
 * Upgraded to AngularJS 1.3.
 * Removed dependence on AngularStrap.
 * Added tooltips to various buttons.
+* Clicking on unexpanded URL in search results now opens the same new tab
+  as other URLs.
 
 Version 1.0.1 (Mar 4, 2014)
 
