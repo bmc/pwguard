@@ -877,7 +877,7 @@ pwGuardApp.controller('ImportExportCtrl',
 
     $scope.startDownload = function() {
       $scope.downloading = true;
-      pwgTimeout(3000, function() { $scope.downloading = false; });
+      pwgTimeout.timeout(3000, function() { $scope.downloading = false; });
     }
 
     // ****** //
