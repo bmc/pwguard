@@ -1,6 +1,6 @@
 # PWGuard Change Log
 
-Version 1.0.2 (Mar ..., 2014)
+Version 1.0.2 (Mar 14, 2014)
 
 * Added ability to save session for 10 days, on login. If not specified,
   assumes 15-minute default.
