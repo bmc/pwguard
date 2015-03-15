@@ -475,11 +475,7 @@ pwGuardApp.controller('NewPasswordEntryCtrl', ng(
       pwgAjax.get(url,
         function(data) {
           data.passwordEntry.name = `Copy of ${data.passwordEntry.name}`;
-          $scope.passwordEntry = data.passwordEntry;
-          $scope.$watch('entryForm', (newValue, oldValue) => {
-            if (!newValue && oldValue) console.log("Form is now not null");
-          });
-          console.log("setting dirty and valid");
+          $scope.passwordEntry    = data.passwordEntry;
         },
         function(error) {
           pwgRoutes.redirectToDefaultRoute();
@@ -543,8 +539,6 @@ pwGuardApp.controller('SearchCtrl', ng(function($scope, $injector, currentUser) 
   $scope.activePanel   = -1; // mobile only
   $scope.sortColumn    = 'name';
   $scope.reverse       = false;
-
-$scope.$watch('searchTerm', (n) => { console.log(`search term is now ${n}`) });
 
   var SEARCH_ALL_MARKER = '-*-all-*-';
   var originalEntries = {};
