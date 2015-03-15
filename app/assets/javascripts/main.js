@@ -740,6 +740,8 @@ pwGuardApp.controller('SearchCtrl', ng(function($scope, $injector, currentUser) 
                                                             {'id': pw.id});
       pw.copyURL               = pwgRoutes.hrefForRouteName('new-entry',
                                                             {'fromID': pw.id});
+      pw.hasExtraFields        = (pw.extras.length > 0) ||
+                                 (pw.securityQuestions.length > 0);
 
       if (pw.url) {
         pw.urlPreview     = makeUrlPreview(pw.url, 20);

@@ -100,8 +100,10 @@
 
                 <!-- Security Questions -->
 
-                <tr>
-                  <td colspan="2" class="heading">Security Questions</td>
+                <tr ng-show="pw.securityQuestions.length > 0">
+                  <td colspan="2" class="heading">
+                    Security Questions
+                  </td>
                 </tr>
                 <tr ng-repeat="q in pw.securityQuestions | orderBy:'question'"
                     class="mobile-field">

@@ -130,7 +130,7 @@
                 <div>
                   <span ng-bind-html="pw.description | linky:'newPage'"></span>
                 </div>
-                <div ng-show="pw.extras" class="extras">
+                <div ng-show="pw.hasExtraFields" class="extras">
                   <a href="" ng-click="pw.showExtras=!pw.showExtras"
                      role="button" class="btn btn-default btn-xs toggle-button">
                     <span ng-show="pw.showExtras">Hide Extra Fields</span>
@@ -150,7 +150,7 @@
                         </span>
                       </td>
                     </tr>
-                    <tr>
+                    <tr ng-show="pw.securityQuestions.length > 0">
                       <td colspan="2" class="heading">
                         Security Questions
                       </td>
