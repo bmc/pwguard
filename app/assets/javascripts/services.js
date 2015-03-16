@@ -103,10 +103,21 @@ pwgServices.factory('pwgError', function() {
 // the error data, the status, and the headers. That way, callers can decide
 // how and whether they want to handle success and failure.
 //
-// post(url, data)   - Post (JavaScript) data to the specified URL.
-// get(url)          - Issue an HTTP GET to the specified URL.
-// delete(url, data) - Issue an HTTP DELETE to the specified URL, passing the
-//                     specified (JavaScript) data.
+// post(url, data)
+//   Post (JavaScript) data to the specified URL.
+//
+// postWithProgress(url, data, showSpinner = false)
+//   Post data to the specified URL, posting progress notifications to the
+//   returned promise. By default, the spinner is not used during this request,
+//   because the caller is (probably) displaying a progress bar. If the spinner
+//   is desired, specify a third argument of true.
+//
+// get(url)
+//   Issue an HTTP GET to the specified URL.
+//
+// delete(url, data)
+//   Issue an HTTP DELETE to the specified URL, passing the specified
+//   (JavaScript) data.
 //
 // Example:
 //
@@ -127,67 +138,73 @@ pwgServices.factory('pwgAjax', ng(function($injector) {
 
   var callOn401 = null;
 
+  function handleSuccess(deferred, data, status, headers) {
+    // Angular doesn't seem to handle 401 responses properly, so we're
+    // mimicking them with JSON.
+    //
+    // NOTE: This happens when an HTTP interceptor is injected. Without
+    // the interceptor, Angular behaves correctly.
+
+    if (data.error) {
+      console.log(response);
+      if (data.error.message)
+        pwgFlash.error(response.error.message);
+
+      deferred.reject({
+        data:    data,
+        status:  status,
+        headers: headers
+      });
+    }
+
+    else {
+      deferred.resolve({
+        data:    data,
+        status:  status,
+        headers: headers
+      });
+    }
+  }
+
+  function handleFailure(deferred, data, status, headers) {
+    var message = null;
+    if (data && data.error && data.error.message)
+      message = data.error.message;
+    else
+      message = "Server error. We're looking into it.";
+
+    if (status === 401) {
+      data = {
+        error: {
+          status:  401,
+          message: "Login required"
+        }
+      }
+
+      if (callOn401) callOn401();
+    }
+    else {
+      pwgFlash.error(`(${status}) ${message}`, status);
+      deferred.reject({
+        data:    data,
+        status:  status,
+        headers: headers
+      });
+    }
+  }
+
   function http(config, onSuccess, onFailure) {
     var deferred = $q.defer();
     var promise  = deferred.promise;
 
     function failed(data, status, headers, config) {
       pwgSpinner.stop();
-
-      var message = null;
-      if (data.error && data.error.message)
-        message = data.error.message;
-      else
-        message = "Server error. We're looking into it.";
-
-      if (status === 401) {
-        data = {
-          error: {
-            status:  401,
-            message: "Login required"
-          }
-        }
-
-        if (callOn401) callOn401();
-      }
-      else {
-        pwgFlash.error(`(${status}) ${message}`, status);
-        deferred.reject({
-          data:    data,
-          status:  status,
-          headers: headers
-        });
-      }
+      handleFailure(deferred, data, status, headers);
     }
 
     function succeeded(data, status, headers, config) {
       pwgSpinner.stop();
-
-      // Angular doesn't seem to handle 401 responses properly, so we're
-      // mimicking them with JSON.
-      //
-      // NOTE: This happens when an HTTP interceptor is injected. Without
-      // the interceptor, Angular behaves correctly.
-
-      if (data.error) {
-        console.log(response);
-        if (data.error.message)
-          pwgFlash.error(response.error.message);
-
-        deferred.reject({
-          data:    data,
-          status:  status,
-          headers: headers
-        });
-      }
-
-      else {
-        deferred.resolve({
-          data:    data,
-          status:  status,
-          headers: headers
-        });
-      }
+      handleSuccess(deferred, data, status, headers);
     }
 
     pwgSpinner.start();
@@ -196,53 +213,117 @@ pwgServices.factory('pwgAjax', ng(function($injector) {
     return promise;
   }
 
+  function doPost(url, data) {
+    var params = {
+      method: 'POST',
+      url:    url,
+      data:   data
+    }
+
+    if (! url)
+      throw new Error("No URL for pwgAjax.post()");
+
+    return http(params);
+  }
+
+  function doPostWithProgress(url, data, showSpinner = false) {
+    // $http doesn't support progress callback, so we're dropping down
+    // to the jQuery interface. See
+    // http://www.dave-bond.com/blog/2010/01/JQuery-ajax-progress-HMTL5/
+    let deferred = $q.defer();
+    let promise  = deferred.promise;
+
+    if (showSpinner)
+      pwgSpinner.start();
+
+    $.ajax({
+      type:       'POST',
+      method:     'POST',
+      url:         url,
+      data:        JSON.stringify(data),
+      dataType:    'json',
+      contentType: 'application/json; charset=UTF-8',
+
+      dataFilter:  function(data, type) {
+        // Have to handle the AngularJS JSONP protection manually, since
+        // we've bypassed Angular completely.
+        return data.replace(/^\)]}',\n/, "");
+      },
+
+      xhr: function() {
+        // Handle upload progress.
+        var req = new window.XMLHttpRequest();
+
+        req.addEventListener("progress", function(e) {
+          if (e.lengthComputable) {
+            let percentComplete = Math.round((e.loaded * 100) / e.total);
+            deferred.notify(percentComplete);
+          }
+          else {
+            deferred.notify(0);
+          }
+        }, false);
+
+        req.addEventListener("loadend", function(e) {
+          deferred.notify(100);
+        }, false);
+
+        return req;
+      },
+
+      success: function(data, status) {
+        if (showSpinner)
+          pwgSpinner.stop();
+        handleSuccess(deferred, data, status, {});
+      },
+
+      error: function(jqXHR, status, errorThrown) {
+        if (showSpinner)
+          pwgSpinner.stop();
+        handleFailure(deferred, null, `${status}: ${errorThrown}`, {});
+      }
+    });
+
+    return promise;
+  }
+
+  function doGet(url) {
+    var params = {
+      method: 'GET',
+      url:    url
+    }
+
+    if (! url)
+      throw new Error("No URL for pwgAjax.get()");
+
+    return http(params);
+  }
+
+  function doDelete(url, data) {
+    var params = {
+      method:  'DELETE',
+      url:     url,
+      data:    data,
+      headers: null
+    }
+
+    if (data) {
+      params.headers = {
+        'Content-Type': 'application/json'
+      }
+    }
+
+    if (! url)
+      throw new Error("No URL for pwgAjax.delete()");
+
+    return http(params);
+  }
+
   return {
-
-    post: function(url, data) {
-      var params = {
-        method: 'POST',
-        url:    url,
-        data:   data
-      }
-
-      if (! url)
-        throw new Error("No URL for pwgAjax.post()");
-
-      return http(params);
-    },
-
-    get: function(url) {
-      var params = {
-        method: 'GET',
-        url:    url
-      }
-
-      if (! url)
-        throw new Error("No URL for pwgAjax.get()");
-
-      return http(params);
-    },
-
-    delete: function(url, data) {
-      var params = {
-        method:  'DELETE',
-        url:     url,
-        data:    data,
-        headers: null
-      }
-
-      if (data) {
-        params.headers = {
-          'Content-Type': 'application/json'
-        }
-      }
-
-      if (! url)
-        throw new Error("No URL for pwgAjax.delete()");
-
-      return http(params);
-    },
-
+    post:             doPost,
+    postWithProgress: doPostWithProgress,
+    get:              doGet,
+    delete:           doDelete,
     on401: function(callback) {
       callOn401 = callback;
     }

@@ -24,6 +24,7 @@ object ImportExportController extends BaseController {
   override val logger = Logger("pwguard.controllers.ImportExportController")
 
   import ImportExportService._
+  import play.api.mvc.BodyParsers.parse
 
   val XSLXContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   val CSVContentType  = "text/csv"
@@ -31,6 +32,8 @@ object ImportExportController extends BaseController {
   private val FileCacheKey = "uploaded-file"
 
   private val BaseExportFilename = "passwords"
+
+  private val MaxFileUploadSize = 200000 * 1024; // 20,000K, or 20M
 
   // -------------------------------------------------------------------------
   // Public methods
@@ -54,7 +57,9 @@ object ImportExportController extends BaseController {
     }
   }
 
-  def importDataUpload = SecuredJSONAction { authReq =>
+  def importDataUpload = SecuredAction(
+    parse.json(maxLength = MaxFileUploadSize)) { authReq =>
+
     implicit val request = authReq.request
 
     val json = request.body

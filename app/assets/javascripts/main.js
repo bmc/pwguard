@@ -904,6 +904,8 @@ pwGuardApp.controller('ImportExportCtrl',
       log.debug(`Dropped: filename=${name}, MIME type=${mimeType}`)
     }
 
+    $scope.uploadPercent = 0;
+
     $scope.upload = () => {
       let url = routes.controllers.ImportExportController.importDataUpload().url;
       let data = {
@@ -912,10 +914,27 @@ pwGuardApp.controller('ImportExportCtrl',
         mimeType: $scope.mimeType
       }
 
-      pwgAjax.post(url, data).then(function(response) {
-        $scope.importState = 'mapping';
-        prepareMappingData(response.data);
-      });
+      $scope.uploading = true;
+
+      pwgAjax.postWithProgress(url, data).then(
+        function(response) {
+          // Use a timeout, to give the progress bar a chance to register.
+          $scope.uploadPercent = 100;
+          pwgTimeout.timeout(1000 /* 2 seconds */, function() {
+            $scope.importState = 'mapping';
+            prepareMappingData(response.data);
+            $scope.uploading = false;
+          });
+        },
+        function(error) {
+          $scope.uploading = false;
+          $scope.uploadPercent = 0;
+        },
+        function(percentCompleted) {
+          log.debug(`Progress notification: ${percentCompleted}%`);
+          $scope.uploadPercent = percentCompleted;
+        }
+      );
     }
 
     // ------------------------------

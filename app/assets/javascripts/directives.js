@@ -99,6 +99,32 @@ pwgDirectives.directive('pwgFakeCheckbox', function() {
   }
 });
 
+// -----------------------------------------------------------------------------
+// Progress bar.
+//
+// Usage:
+//   <pwg-progress-bar ng-model="[percent]" show="[show]"></pwg-progress-bar>
+//
+// [percent] is a model containing the percentage, as an integer (e.g., 9, 95)
+// [show] is an expression which, if truthy, shows the progress bar
+// -----------------------------------------------------------------------------
+
+pwgDirectives.directive('pwgProgressBar', function() {
+  return {
+    restrict:    'E',
+    transclud:   false,
+    replace:     false,
+    templateUrl: templateURL('directives/pwgProgressBar.html'),
+    scope: {
+      ngModel: '=',
+      show:    '&'
+    },
+
+    link: function($scope, element, attrs) {
+    }
+  }
+});
+
 // ----------------------------------------------------------------------------
 // Mark an input element as selected when clicked. Must be used as an
 // attribute.

@@ -1,12 +1,9 @@
 package controllers
 
-import dbservice.DAO
 import models.User
-import play.api._
 import play.api.mvc._
 import play.api.mvc.BodyParsers._
 import play.api.mvc.Results._
-import play.api.Play.current
 import play.api.libs.json.{ JsString, Json, JsValue }
 
 import services.Logging
