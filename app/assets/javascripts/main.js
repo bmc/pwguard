@@ -897,11 +897,11 @@ pwGuardApp.controller('ImportExportCtrl',
     $scope.mimeType       = null;
     $scope.importFile     = null;
 
-    $scope.fileDropped = (contents, name, mimeType) => {
-      $scope.importFilename = name;
-      $scope.importFile     = contents;
-      $scope.mimeType       = mimeType;
-      log.debug(`Dropped: filename=${name}, MIME type=${mimeType}`)
+    $scope.fileDropped = (file) => {
+      $scope.importFilename = file.name;
+      $scope.importFile     = file;
+      $scope.mimeType       = file.type;
+      log.debug(`Dropped: filename=${file.name}, MIME type=${file.type}`)
     }
 
     $scope.uploadPercent = 0;
@@ -916,7 +916,7 @@ pwGuardApp.controller('ImportExportCtrl',
 
       $scope.uploading = true;
 
-      pwgAjax.postWithProgress(url, data).then(
+      pwgAjax.postFile(url, $scope.importFile).then(
         function(response) {
           // Use a timeout, to give the progress bar a chance to register.
           $scope.uploadPercent = 100;
@@ -931,7 +931,6 @@ pwGuardApp.controller('ImportExportCtrl',
           $scope.uploadPercent = 0;
         },
         function(percentCompleted) {
-          log.debug(`Progress notification: ${percentCompleted}%`);
           $scope.uploadPercent = percentCompleted;
         }
       );

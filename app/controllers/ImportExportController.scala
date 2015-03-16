@@ -10,8 +10,11 @@ import play.api.mvc.Results._
 import play.api.cache.Cache
 import play.api.Play.current
 
+import grizzled.file.{util => fileutil}
+
 import pwguard.global.Globals.ExecutionContexts.Default._
 import exceptions._
+import util.FileHelpers
 import util.FutureHelpers._
 import util.JsonHelpers.angularJson
 import services.ImportFieldMapping
@@ -32,8 +35,6 @@ object ImportExportController extends BaseController {
   private val FileCacheKey = "uploaded-file"
 
   private val BaseExportFilename = "passwords"
-
-  private val MaxFileUploadSize = 200000 * 1024; // 20,000K, or 20M
 
   // -------------------------------------------------------------------------
   // Public methods
@@ -57,46 +58,44 @@ object ImportExportController extends BaseController {
     }
   }
 
-  def importDataUpload = SecuredAction(
-    parse.json(maxLength = MaxFileUploadSize)) { authReq =>
+  def importDataUpload = SecuredAction(parse.temporaryFile) { authReq =>
 
     implicit val request = authReq.request
 
-    val json = request.body
+    FileHelpers.createPseudoTempFile("import", ".dat") flatMap { file =>
+      fileutil.copyFile(request.body.file, file)
+      val optData = for { name <- request.headers.get("X-File-Name")
+                          mime <- request.headers.get("Content-Type") }
+                    yield UploadedFile(name, file, mime)
+      optData map { uploaded =>
 
-    val optData = for { name <- (json \ "filename").asOpt[String]
-                        data <- (json \ "contents").asOpt[String]
-                        mime <- (json \ "mimeType").asOpt[String] }
-                  yield UploadedFile(name, data, mime)
+        for { (f, headers)  <- mapUploadedImportFile(uploaded) }
+        yield {
+          val opt = headers map { h =>
+            Cache.set(FileCacheKey, f.getPath)
+            val js = Json.obj(
+              "headers" -> h,
+              "fields"  -> ImportFieldMapping.values.map { field =>
+                Json.obj("name"     -> field.toString,
+                         "required" -> ImportFieldMapping.isRequired(field))
+              }
+            )
+            angularJson(Ok, js)
+          }
 
-    optData map { uploaded =>
-
-      for { (f, headers)  <- mapUploadedImportFile(uploaded) }
-      yield {
-        val opt = headers map { h =>
-          Cache.set(FileCacheKey, f.getPath)
-          val js = Json.obj(
-            "headers" -> h,
-            "fields"  -> ImportFieldMapping.values.map { field =>
-              Json.obj("name"     -> field.toString,
-                       "required" -> ImportFieldMapping.isRequired(field))
-            }
-          )
-          angularJson(Ok, js)
+          opt.getOrElse {
+            throw new UploadFailed("Empty file.")
+          }
         }
 
-        opt.getOrElse {
-          throw new UploadFailed("Empty file.")
+      } getOrElse {
+        Future.failed(new UploadFailed("Incomplete file upload."))
+
+      } recover {
+        case NonFatal(e) => {
+          logger.error("Error preparing import", e)
+          angularJson(BadRequest, jsonError(e))
         }
-      }
-
-    } getOrElse {
-      Future.failed(new UploadFailed("Incomplete file upload."))
-
-    } recover {
-      case NonFatal(e) => {
-        logger.error("Error preparing import", e)
-        angularJson(BadRequest, jsonError(e))
       }
     }
   }

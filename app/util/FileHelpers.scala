@@ -26,8 +26,7 @@ object FileHelpers {
     *
     * @return a `Future[File]`
     */
-  def createPseudoTempFile(prefix: String, suffix: String):
-  Future[File] = {
+  def createPseudoTempFile(prefix: String, suffix: String): Future[File] = {
 
     import scala.collection.JavaConversions.propertiesAsScalaMap
     import scala.collection.mutable.{Map => MutableMap}

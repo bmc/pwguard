@@ -300,11 +300,18 @@ pwgDirectives.directive('pwgTooltip', ng(function() {
 //   pwg-drop-file: List of MIME types of allowed files, or "" for anything.
 //   max-file-size: Maximum file size, in megabytes. Empty or 0 means unlimited.
 //   fileDropped:   Name of function on scope to call when a file is dropped
-//                  onto the control. The function is called with the file
-//                  contents as a Base64 string, the file name, and the MIME
-//                  type.
+//                  onto the control. How this function is called depends on
+//                  the "raw" attribute. If "raw" is:
+//
+//                  truthy - the function is called with the file object (one
+//                           argument)
+//                  falsy  - the function is called with the file contents as
+//                           a Base64 string, the file name, and the MIME type
+//                           (three arguments).
+//
 //   onError:       Optional name of function to be called when an error occurs.
 //                  Called with an error message.
+//   raw:           Optional. If true, file is not converted to Base64.
 
 pwgDirectives.directive('pwgDropFile', ng(function(pwgLogging) {
   var logger = pwgLogging.logger('pwgDropFile');
@@ -314,7 +321,8 @@ pwgDirectives.directive('pwgDropFile', ng(function(pwgLogging) {
     scope: {
       maxFileSize: '@',
       fileDropped: '=',
-      onError:     '='
+      onError:     '=',
+      raw:         '&'
     },
 
     link: function(scope, element, attrs, ngModel) {
@@ -421,23 +429,31 @@ pwgDirectives.directive('pwgDropFile', ng(function(pwgLogging) {
           return;
         }
 
-        var reader = new FileReader();
-        var name   = file.name;
-        var type   = file.type;
-        var size   = file.size;
-
-        reader.onload = function(e) {
-          if (sizeIsOkay(size) && typeIsValid(type)) {
-            scope.$apply(function() {
-              var buf = e.target.result;
-              var base64 = arrayBufferToBase64(buf);
-              if (scope.fileDropped)
-                scope.fileDropped(base64, name, type);
-            });
+        if (scope.raw()) {
+          if (scope.fileDropped) {
+            scope.$apply(() => { scope.fileDropped(file); });
           }
         }
+        else {
+          var reader = new FileReader();
+          var name   = file.name;
+          var type   = file.type;
+          var size   = file.size;
 
-        reader.readAsArrayBuffer(file);
+          reader.onload = function(e) {
+            if (sizeIsOkay(size) && typeIsValid(type)) {
+              scope.$apply(function() {
+                var buf = e.target.result;
+                var base64 = arrayBufferToBase64(buf);
+                if (scope.fileDropped)
+                  scope.fileDropped(base64, name, type);
+              });
+            }
+          }
+
+          reader.readAsArrayBuffer(file);
+        }
+
         processDragLeave();
         return false;
       });

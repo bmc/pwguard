@@ -60,7 +60,7 @@ object ImportFieldMapping extends Enumeration {
 
 /** Represents an uploaded file.
   */
-case class UploadedFile(name: String, contents: String, mimeType: String)
+case class UploadedFile(name: String, file: File, mimeType: String)
 
 case class ImportData(csv:      File,
                       mappings: Map[String, String],
@@ -155,28 +155,10 @@ object ImportExportService {
       }
     }
 
-    def decodeFile(): Future[File] = {
-      import org.apache.commons.codec.binary.Base64
-      import grizzled.file.{util => fileutil}
-      import java.io.FileOutputStream
-
-      for { bytes      <- Future { Base64.decodeBase64(uploadedFile.contents) }
-            (_, _, ext) = fileutil.dirnameBasenameExtension(uploadedFile.name)
-            file       <- createPseudoTempFile("pwguard", ext) }
-      yield {
-        withCloseable(new FileOutputStream(file)) { out =>
-          out.write(bytes)
-        }
-
-        file
-      }
-    }
-
-    for { f1           <- decodeFile()
-          (f2, reader) <- getCSVReader(f1, uploadedFile.mimeType) }
+    for { (f1, reader) <- getCSVReader(uploadedFile.file, uploadedFile.mimeType) }
     yield {
       withCloseable(reader) { r =>
-        (f2, header(r))
+        (f1, header(r))
       }
     }
   }

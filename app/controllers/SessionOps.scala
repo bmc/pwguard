@@ -134,10 +134,13 @@ object SessionOps {
       failedFuture(s"Session ${sessionData.sessionID} " +
                    s"(${sessionData.userIdentifier}) has expired.")
     }
+    // This check interferes with proxying.
+    /*
     else if (request.remoteAddress != sessionData.ipAddress) {
       failedFuture(s"Session IP address ${sessionData.ipAddress} doesn't " +
                    s"match request IP address ${request.remoteAddress}")
     }
+    */
     else {
       logger.debug { s"Refreshing session ${sessionData.sessionID} for " +
                      s"${sessionData.userIdentifier}. Session now expires " +

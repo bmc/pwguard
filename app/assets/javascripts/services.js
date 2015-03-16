@@ -226,63 +226,102 @@ pwgServices.factory('pwgAjax', ng(function($injector) {
     return http(params);
   }
 
-  function doPostWithProgress(url, data, showSpinner = false) {
+  function doPostFile(url, file, showSpinner = false) {
     // $http doesn't support progress callback, so we're dropping down
-    // to the jQuery interface. See
-    // http://www.dave-bond.com/blog/2010/01/JQuery-ajax-progress-HMTL5/
+    // to the browswer interface. See
+    // http://www.sagarganatra.com/2011/04/file-upload-and-progress-events-with.html
     let deferred = $q.defer();
     let promise  = deferred.promise;
 
     if (showSpinner)
       pwgSpinner.start();
 
-    $.ajax({
-      type:       'POST',
-      method:     'POST',
-      url:         url,
-      data:        JSON.stringify(data),
-      dataType:    'json',
-      contentType: 'application/json; charset=UTF-8',
+    let req = new window.XMLHttpRequest();
 
-      dataFilter:  function(data, type) {
-        // Have to handle the AngularJS JSONP protection manually, since
-        // we've bypassed Angular completely.
-        return data.replace(/^\)]}',\n/, "");
-      },
+    // Progress handling.
 
-      xhr: function() {
-        // Handle upload progress.
-        var req = new window.XMLHttpRequest();
-
-        req.addEventListener("progress", function(e) {
-          if (e.lengthComputable) {
-            let percentComplete = Math.round((e.loaded * 100) / e.total);
-            deferred.notify(percentComplete);
-          }
-          else {
-            deferred.notify(0);
-          }
-        }, false);
-
-        req.addEventListener("loadend", function(e) {
-          deferred.notify(100);
-        }, false);
-
-        return req;
-      },
-
-      success: function(data, status) {
-        if (showSpinner)
-          pwgSpinner.stop();
-        handleSuccess(deferred, data, status, {});
-      },
-
-      error: function(jqXHR, status, errorThrown) {
-        if (showSpinner)
-          pwgSpinner.stop();
-        handleFailure(deferred, null, `${status}: ${errorThrown}`, {});
+    req.upload.addEventListener("loadstart", (e) => {}, false);
+    req.upload.addEventListener("progress", function(e) {
+      if (e.lengthComputable) {
+        let percentComplete = Math.round((e.loaded * 100) / e.total);
+        deferred.notify(percentComplete);
       }
-    });
+      else {
+        deferred.notify(0);
+      }
+    }, false);
+    req.upload.addEventListener("loadend", function(e) {
+      deferred.notify(100);
+    }, false);
+
+    // Error handling.
+
+    function handleUploadError(e) {
+      console.log("error", e);
+    }
+
+    req.upload.addEventListener("error", handleUploadError, false);
+    req.upload.addEventListener("abort", handleUploadError, false);
+
+    // Completion handling.
+
+    req.upload.addEventListener("load", function(e) {
+      // Have to handle the AngularJS JSONP protection manually, since
+      // we've bypassed Angular completely.
+      //
+    }, false);
+
+    function failed(data, status) {
+      if (showSpinner)
+        pwgSpinner.stop();
+
+      handleFailure(deferred, data, status, {});
+    }
+
+    function succeeded(data, status) {
+      if (showSpinner)
+        pwgSpinner.stop();
+
+      handleSuccess(deferred, data, status, {});
+    }
+
+    req.onreadystatechange = function() {
+      // 4 === complete. See
+      // https://developer.mozilla.org/en-US/docs/AJAX/Getting_Started
+      if (req.readyState != 4) return;
+
+      if (req.status === 200) {
+        let response = req.responseText
+
+        if (response) {
+          response = response.replace(/^\)]}',\n/, "");
+          try {
+            succeeded(JSON.parse(response), req.status);
+          }
+          catch(e) {
+            failure(null, req.status);
+          }
+        }
+
+        else {
+          succeeded(null, req.status);
+        }
+      }
+
+      else {
+        failed(null, req.status);
+      }
+    }
+
+    req.open("POST", url, true);
+    req.setRequestHeader("Content-type", file.type);
+    req.setRequestHeader("X-File-Name", file.name);
+
+    // Response type MUST be "text", not "json", because it could contain
+    // AngularJS-compatible JSONP vulnerability protection, which means it
+    // cannot be parsed as JSON without some work.
+    req.responseType = "text";
+    req.send(file);
 
     return promise;
   }
@@ -320,10 +359,10 @@ pwgServices.factory('pwgAjax', ng(function($injector) {
   }
 
   return {
-    post:             doPost,
-    postWithProgress: doPostWithProgress,
-    get:              doGet,
-    delete:           doDelete,
+    post:       doPost,
+    postFile:   doPostFile,
+    get:        doGet,
+    delete:     doDelete,
     on401: function(callback) {
       callOn401 = callback;
     }
