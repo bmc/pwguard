@@ -193,7 +193,7 @@ pwgServices.factory('pwgAjax', ng(function($injector) {
     }
   }
 
-  function http(config, onSuccess, onFailure) {
+  function http(config) {
     var deferred = $q.defer();
     var promise  = deferred.promise;
 
@@ -228,7 +228,7 @@ pwgServices.factory('pwgAjax', ng(function($injector) {
 
   function doPostFile(url, file, showSpinner = false) {
     // $http doesn't support progress callback, so we're dropping down
-    // to the browswer interface. See
+    // to the browser interface. See
     // http://www.sagarganatra.com/2011/04/file-upload-and-progress-events-with.html
     let deferred = $q.defer();
     let promise  = deferred.promise;
