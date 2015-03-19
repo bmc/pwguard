@@ -1,6 +1,8 @@
 package controllers
 
-import services.{UploadedFile, ImportExportService}
+import models.User
+import play.api.mvc.Result
+import services.{ImportExportFormat, UploadedFile, ImportExportService, ImportFieldMapping}
 
 import java.io._
 
@@ -17,7 +19,6 @@ import exceptions._
 import util.FileHelpers
 import util.FutureHelpers._
 import util.JsonHelpers.angularJson
-import services.ImportFieldMapping
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -54,7 +55,8 @@ object ImportExportController extends BaseController {
 
     r recover {
       case NonFatal(e) =>
-        BadRequest(jsonError(e))
+        logger.error("Export failed", e);
+        BadRequest(jsonError("Export failed"))
     }
   }
 
@@ -62,40 +64,30 @@ object ImportExportController extends BaseController {
 
     implicit val request = authReq.request
 
-    FileHelpers.createPseudoTempFile("import", ".dat") flatMap { file =>
+    // If the upload is a spreadsheet, then we have to allow the user to map
+    // the columns. If it's an XML file, then we can import it right away,
+    // provided it's one of our XML files.
+
+    FileHelpers.createPseudoTempFile("import", ".dat") map { file =>
       fileutil.copyFile(request.body.file, file)
-      val optData = for { name <- request.headers.get("X-File-Name")
-                          mime <- request.headers.get("Content-Type") }
-                    yield UploadedFile(name, file, mime)
+      for { name <- request.headers.get("X-File-Name")
+            mime <- request.headers.get("Content-Type") }
+      yield UploadedFile(name, file, mime)
+
+    } flatMap { optData =>
       optData map { uploaded =>
-
-        for { (f, headers)  <- mapUploadedImportFile(uploaded) }
-        yield {
-          val opt = headers map { h =>
-            Cache.set(FileCacheKey, f.getPath)
-            val js = Json.obj(
-              "headers" -> h,
-              "fields"  -> ImportFieldMapping.values.map { field =>
-                Json.obj("name"     -> field.toString,
-                         "required" -> ImportFieldMapping.isRequired(field))
-              }
-            )
-            angularJson(Ok, js)
-          }
-
-          opt.getOrElse {
-            throw new UploadFailed("Empty file.")
-          }
-        }
-
+        if (uploaded.fileFormat == ImportExportFormat.XML)
+          importXML(uploaded, authReq.user)
+        else
+          handleUploadedSpreadsheet(uploaded)
       } getOrElse {
         Future.failed(new UploadFailed("Incomplete file upload."))
+      }
 
-      } recover {
-        case NonFatal(e) => {
-          logger.error("Error preparing import", e)
-          angularJson(BadRequest, jsonError(e))
-        }
+    } recover {
+      case NonFatal(e) => {
+        logger.error("Error preparing import", e)
+        angularJson(BadRequest, jsonError(e))
       }
     }
   }
@@ -127,9 +119,7 @@ object ImportExportController extends BaseController {
 
 
     f map  { total =>
-      // Get rid of the entries that weren't saved because they weren't
-      // new.
-      Ok(Json.obj("total" -> total))
+      successJson(total)
 
     } recover {
       case NonFatal(e) => {
@@ -149,4 +139,37 @@ object ImportExportController extends BaseController {
   // -------------------------------------------------------------------------
   // Private Methods
   // -------------------------------------------------------------------------
+
+  private def successJson(totalImported: Int): Result = {
+    angularJson(Ok, Json.obj("total" -> totalImported))
+  }
+
+  private def handleUploadedSpreadsheet(uploaded: UploadedFile): Future[Result] = {
+
+    for { (f, headers)  <- mapUploadedImportFile(uploaded) }
+    yield {
+      val opt = headers map { h =>
+        Cache.set(FileCacheKey, f.getPath)
+        val js = Json.obj(
+          "headers" -> h,
+          "fields"  -> ImportFieldMapping.values.map { field =>
+            Json.obj("name"     -> field.toString,
+              "required" -> ImportFieldMapping.isRequired(field))
+          }
+        )
+        angularJson(Ok, js)
+      }
+
+      opt.getOrElse {
+        throw new UploadFailed("Empty file.")
+      }
+    }
+  }
+
+  private def importXML(uploaded: UploadedFile, user: User): Future[Result] = {
+    ImportExportService.importXML(uploaded.file, user) map { n =>
+      successJson(n)
+    }
+  }
+
 }

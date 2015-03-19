@@ -16,6 +16,9 @@
           <input type="radio" name="format" id="xlsx-format"
                  ng-model="exportFormat" value="xlsx"/>
           <label for="xlsx-format">Excel</label>
+          <input type="radio" name="format" id="xml-format"
+                 ng-model="exportFormat" value="xml"/>
+          <label for="xml-format">XML</label>
 
         </div>
         <div class="col-md-7">
@@ -43,10 +46,11 @@
     <div class="well">
       <h2>Import your Data</h2>
 
-      <p>Drag and drop a CSV file or an Excel spreadsheet containing your data.</p>
+      <p>Drag and drop a CSV file, an Excel spreadsheet, or a
+        PWGuard XML file containing your data.</p>
 
       <div id="drop-area"
-           pwg-drop-file="text/csv, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+           pwg-drop-file="text/csv, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/xml"
            file-dropped="fileDropped" on-error="importError" raw="true">
         <span class="drop-label">Drag file here.</span>
       </div>

@@ -176,7 +176,9 @@ trait BaseController extends Logging {
                                  getOrElse(emptyJsonObject)
 
     val json = Json.obj("error" -> (fieldErrorJson ++ errorMessageJson))
-    status.map { i => json ++ Json.obj("status" -> i) }.getOrElse(json)
+    val res = status.map { i => json ++ Json.obj("status" -> i) }.getOrElse(json)
+logger.error(s"*** JSON $res")
+    res
   }
 
   /** Alternate version of `jsonError` without a status code.

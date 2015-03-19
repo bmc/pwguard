@@ -23,6 +23,13 @@ import scala.annotation.tailrec
 import scala.concurrent.{Promise, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
+import scala.xml
+
+object ImportMimeTypes {
+  val XSLXContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  val CSVContentType  = "text/csv"
+  val XMLContentType  = "text/xml"
+}
 
 /** Supported import/export formats.
   */
@@ -31,6 +38,7 @@ object ImportExportFormat extends Enumeration {
 
   val CSV   = Value("csv")
   val Excel = Value("xlsx")
+  val XML   = Value("xml")
 }
 
 /** The names of the headers common to all entries, with some useful
@@ -60,13 +68,22 @@ object ImportFieldMapping extends Enumeration {
 
 /** Represents an uploaded file.
   */
-case class UploadedFile(name: String, file: File, mimeType: String)
+case class UploadedFile(name: String, file: File, mimeType: String) {
+  val fileFormat = {
+    mimeType match {
+      case ImportMimeTypes.XMLContentType  => ImportExportFormat.XML
+      case ImportMimeTypes.XSLXContentType => ImportExportFormat.Excel
+      case ImportMimeTypes.CSVContentType  => ImportExportFormat.CSV
+    }
+  }
+}
 
-case class ImportData(csv:      File,
-                      mappings: Map[String, String],
-                      user:     User,
-                      promise:  Promise[Int])
+case class ImportCSVData(csv:      File,
+                         mappings: Map[String, String],
+                         user:     User,
+                         promise:  Promise[Int])
 
+case class ImportXMLData(xml: File, user: User, promise: Promise[Int])
 
 private case class MappedHeaders(nameHeader:     String,
                                  descHeader:     Option[String],
@@ -89,12 +106,10 @@ private case class MappedHeaders(nameHeader:     String,
   */
 object ImportExportService {
 
+  import ImportMimeTypes._
   import ImportExportFormat._
   import ImportFieldMapping._
   import dbservice.DAO.passwordEntryDAO
-
-  val XSLXContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-  val CSVContentType  = "text/csv"
 
   private val ExcelContentTypes = Set(
     "application/vnd.ms-excel",
@@ -163,6 +178,25 @@ object ImportExportService {
     }
   }
 
+  /** Given an XML file of password entries and a user, import the XML data
+    * into the database.
+    *
+    * @param xml      the XML file
+    * @param user     user who owns the data in the CSV
+    *
+    * @return a `Future` of the number of entries imported
+    */
+  def importXML(xml: File, user: User): Future[Int] = {
+    val p = Promise[Int]
+
+    // Using an actor allows us to single-thread updates to the database,
+    // avoiding locking issues. The actor calls back into this service
+    // to do the actual work.
+
+    importActor ! ImportXMLData(xml, user, p)
+    p.future
+  }
+
   /** Given a set of mappings and a previously mapped file, finish an export.
     *
     * @param csv      the CSV file
@@ -180,7 +214,7 @@ object ImportExportService {
     // avoiding locking issues. The actor calls back into this service
     // to do the actual work.
 
-    importActor ! ImportData(csv, mappings, user, p)
+    importActor ! ImportCSVData(csv, mappings, user, p)
     p.future
   }
 
@@ -194,15 +228,33 @@ object ImportExportService {
     ext match {
       case "xlsx" => Success(ImportExportFormat.Excel)
       case "csv"  => Success(ImportExportFormat.CSV)
+      case "xml"  => Success(ImportExportFormat.XML)
       case _      => Failure(new ExportFailed(s"bad format: $ext"))
     }
   }
 
-  /** Process a new import. This function is called from the import actor.
+  /** Process a new XML import. This function is called from the import actor.
     *
     * @param data the import data
     */
-  def processNewImport(data: ImportData): Unit = {
+  def processNewXMLImport(data: ImportXMLData): Unit = {
+    val root = xml.XML.loadFile(data.xml)
+
+    loadXML(root, data.user) map { count =>
+      data.promise.complete(Success(count))
+    } recover {
+      case NonFatal(e) => {
+        logger.error("Error processing XML import", e)
+        data.promise.failure(e)
+      }
+    }
+  }
+
+  /** Process a CSV new import. This function is called from the import actor.
+    *
+    * @param data the import data
+    */
+  def processNewCSVImport(data: ImportCSVData): Unit = {
 
     Try {
       logger.debug(s"Handling new import: $data")
@@ -226,16 +278,16 @@ object ImportExportService {
       // blow the stack. The number is in the thousands, typically, but it's
       // still not impossible to hit it.
 
-      processNextImportEntry(0,
-                             reader.allWithHeaders(),
-                             headers,
-                             data.user) map { count =>
+      processNextCSVEntry(0,
+                          reader.allWithHeaders(),
+                          headers,
+                          data.user) map { count =>
         // All done. Complete the promise.
         data.promise.complete(Success(count))
       }
     } recover {
       case NonFatal(e) => {
-        logger.error("Error processing import", e)
+        logger.error("Error processing spreadsheet import", e)
         data.promise.failure(e)
       }
     }
@@ -246,22 +298,22 @@ object ImportExportService {
   // Private methods
   // -------------------------------------------------------------------------
 
-  private def processNextImportEntry(count:   Int,
-                                     rows:    List[Map[String, String]],
-                                     headers: MappedHeaders,
-                                     user:    User): Future[Int] = {
+  private def processNextCSVEntry(count:   Int,
+                                  rows:    List[Map[String, String]],
+                                  headers: MappedHeaders,
+                                  user:    User): Future[Int] = {
     rows match {
       case Nil => Future.successful(count)
 
-      case row :: rest => loadOne(row, headers, user) flatMap { loaded =>
-        processNextImportEntry(count + loaded, rest, headers, user)
+      case row :: rest => loadOneCSVRow(row, headers, user) flatMap { loaded =>
+        processNextCSVEntry(count + loaded, rest, headers, user)
       }
     }
   }
 
-  private def loadOne(row:     Map[String, String],
-                      headers: MappedHeaders,
-                      user:    User): Future[Int] = {
+  private def loadOneCSVRow(row:     Map[String, String],
+                            headers: MappedHeaders,
+                            user:    User): Future[Int] = {
     val name = row.get(headers.nameHeader).getOrElse {
       throw new ImportFailed("Missing required name field.")
     }
@@ -396,7 +448,7 @@ object ImportExportService {
     val encryptedPasswordOpt = e.encryptedPassword
     val keywords             = e.keywords map { _.keyword } mkString (",")
 
-    def getEncryptedPassword(): Future[String] = {
+    def decryptPassword(): Future[String] = {
       UserHelpers.decryptStoredPasswordOpt(user, encryptedPasswordOpt) map {
         _.getOrElse("")
       }
@@ -416,7 +468,7 @@ object ImportExportService {
       }
     }
 
-    for { epw <- getEncryptedPassword() }
+    for { epw <- decryptPassword() }
     yield {
       val initialMap = Map(ImportFieldMapping.Name.toString        -> name,
                            ImportFieldMapping.Password.toString    -> epw,
@@ -438,16 +490,20 @@ object ImportExportService {
 
     createPseudoTempFile("pwguard", format.toString) flatMap { out =>
 
-      val entryFutures = entries.map { unpackEntry(user, _) }.toSeq
-      for { seqOfFutures <- Future.sequence(entryFutures) }
-      yield (out, seqOfFutures)
+      if (format == ImportExportFormat.XML) {
+        writeXML(out, entries, user) map { (_, XMLContentType) }
+      }
+      else {
+        val entryFutures = entries.map { unpackEntry(user, _) }.toSeq
+        for { seqOfFutures <- Future.sequence(entryFutures) }
+        yield (out, seqOfFutures)
 
-    } flatMap { case (out, entries) =>
-
-      format match {
-        case Excel => writeExcel(out, entries).map { (_, XSLXContentType) }
-        case CSV   => writeCSV(out, entries).map { (_, CSVContentType) }
-        case _     => throw new ExportFailed("Unknown format")
+      } flatMap { case (out, entries) =>
+        format match {
+          case Excel => writeExcel(out, entries).map { (_, XSLXContentType) }
+          case CSV   => writeCSV(out, entries).map { (_, CSVContentType) }
+          case _     => throw new ExportFailed("Unknown spreadsheet format")
+        }
       }
     }
   }
@@ -581,6 +637,212 @@ object ImportExportService {
 
     // Put them together, required headers first.
     ImportFieldMapping.valuesInOrder.map { _.toString } ++ extraHeaders.toSeq
+  }
+
+  private def loadXML(root: xml.Elem, user: User): Future[Int] = {
+    // Okay to throw exceptions here. The caller will trap them.
+
+    def nodeName(node: xml.Node) = node.nameToString(new StringBuilder).toString
+
+    def requiredAttribute(e: xml.Node, elemName: String, attrName: String): String = {
+      optionalAttribute(e, elemName, attrName) getOrElse {
+        throw new ImportFailed(s"${elemName}: ${attrName} attribute is required.")
+      }
+    }
+
+    def optionalAttribute(e: xml.Node, elemName: String, attrName: String):
+      Option[String] = {
+      (e \ s"@${attrName}").headOption.map { attrNode => attrNode.text }
+    }
+
+    if (nodeName(root) != "pwguard-data")
+      throw new ImportFailed("Root XML element must be <pwguard-data>.")
+
+    def parseExtras(entry: xml.Node): Set[PasswordEntryExtraField] = {
+      import grizzled.string.{util => stringutil}
+
+      (entry \ "extra-fields" \ "extra-field").map { node: xml.Node =>
+        val fieldName  = requiredAttribute(node, "extra-field", "name")
+        val fieldValue = requiredAttribute(node, "extra-field", "value")
+        val s = optionalAttribute(node, "extra-field", "isPassword")
+        val isPW = optionalAttribute(node, "extra-field", "isPassword") map { s =>
+          stringutil.strToBoolean(s) match {
+            case Left(error) => throw new ImportFailed(error)
+            case Right(b)    => b
+          }
+        } getOrElse (false)
+
+        PasswordEntryExtraField(id              = None,
+                                passwordEntryID = None,
+                                fieldName       = fieldName,
+                                fieldValue      = fieldValue,
+                                isPassword      = isPW)
+      }.
+      toSet
+    }
+
+    def parseSecurityQuestions(entry: xml.Node):
+      Set[PasswordEntrySecurityQuestion] = {
+
+      (entry \ "security-questions" \ "security-question").map { node: xml.Node =>
+        val question = requiredAttribute(node, "security-question", "question")
+        val answer   = requiredAttribute(node, "security-question", "answer")
+
+        PasswordEntrySecurityQuestion(id              = None,
+                                      passwordEntryID = None,
+                                      question        = question,
+                                      answer          = answer)
+      }.
+      toSet
+    }
+
+    def parseKeywords(entry: xml.Node): Set[PasswordEntryKeyword] = {
+      (entry \ "keywords" \ "keyword").flatMap { node: xml.Node =>
+        val s = node.text
+        if (s.isEmpty)
+          None
+        else
+          Some(PasswordEntryKeyword(id              = None,
+                                    passwordEntryID = None,
+                                    keyword         = s))
+      }.
+      toSet
+    }
+
+    def loadEntry(node: xml.Node): (FullPasswordEntry, Option[String]) = {
+      val name        = requiredAttribute(node, "password-entry", "name")
+      val description = optionalAttribute(node, "password-entry", "description")
+      val url         = optionalAttribute(node, "password-entry", "url")
+      val loginID     = optionalAttribute(node, "password-entry", "loginID")
+      val password    = optionalAttribute(node, "password-entry", "password")
+      val notes       = optionalAttribute(node, "password-entry", "notes")
+
+      val entry = FullPasswordEntry(
+        id                = None,
+        userID            = user.id.get,
+        name              = name,
+        description       = description,
+        loginID           = loginID,
+        encryptedPassword = None,
+        url               = url,
+        notes             = notes,
+        keywords          = parseKeywords(node),
+        extraFields       = parseExtras(node),
+        securityQuestions = parseSecurityQuestions(node)
+      )
+
+      (entry, password)
+    }
+
+    val entries = (root \ "password-entry").map { node => loadEntry(node) }
+
+    // Use foldLeft in combination with flatMap to serialize the saves, so
+    // the database doesn't lock. See comments to this StackOverflow answer:
+    // http://stackoverflow.com/a/20417884/53495
+
+    entries.foldLeft(Future.successful(0)) {
+      case (future, (entry, pw)) => {
+        future.flatMap { n =>
+          saveIfNew(entry, pw, user).map { epwOpt =>
+            n + epwOpt.map(_ => 1).getOrElse(0)
+          }
+        }
+      }
+    }
+  }
+
+  private def writeXML(out: File, entries: Set[FullPasswordEntry], user: User):
+    Future[File] = {
+
+    case class EntryWithPassword(entry:    FullPasswordEntry,
+                                 password: Option[String])
+
+
+
+
+    def optionalXML[T](i: Set[T])(code: => xml.NodeSeq): xml.NodeSeq = {
+      if (i.isEmpty)
+        new xml.NodeBuffer()
+      else
+        code
+    }
+
+    def convertEntry(ewp: EntryWithPassword): xml.Elem = {
+      val keywords = optionalXML(ewp.entry.keywords) {
+        <keywords>
+          { ewp.entry.keywords.map { k => <keyword>{k.keyword}</keyword> } }
+        </keywords>
+      }
+
+      val extras = optionalXML(ewp.entry.extraFields) {
+        <extra-fields>
+          {
+          ewp.entry.extraFields.map { f =>
+              <extra-field name={f.fieldName} value={f.fieldValue}
+                           is-password={f.isPassword.toString}/>
+          }
+          }
+        </extra-fields>
+      }
+
+      val securityQuestions = optionalXML(ewp.entry.securityQuestions) {
+        <security-questions>
+          {
+          ewp.entry.securityQuestions.map { q =>
+              <security-question question={q.question} answer={q.answer}/>
+          }
+          }
+        </security-questions>
+      }
+
+      <password-entry name={ewp.entry.name}
+                      url={ewp.entry.url.getOrElse("")}
+                      login-id={ewp.entry.loginID.getOrElse("")}
+                      password={ewp.password.getOrElse("")}>
+        <description>{ewp.entry.description.getOrElse("")}</description>
+        <notes>{ewp.entry.notes.getOrElse("")}</notes>
+        {keywords}
+        {extras}
+        {securityQuestions}
+      </password-entry>
+    }
+
+    def convertEntries(entries:  List[EntryWithPassword],
+                       xmlSoFar: xml.NodeBuffer): Seq[xml.Node] = {
+      entries match {
+        case Nil => xmlSoFar.toSeq
+
+        case entry :: rest => {
+          xmlSoFar += convertEntry(entry)
+          convertEntries(rest, xmlSoFar)
+        }
+      }
+    }
+
+    Future.sequence {
+      import UserHelpers._
+
+      entries.toList.map { e =>
+        decryptStoredPasswordOpt(user, e.encryptedPassword) map { pwOpt =>
+          EntryWithPassword(e, pwOpt)
+        }
+      }
+    } map { entriesWithPasswords =>
+
+      val buf = new xml.NodeBuffer()
+      val root = <pwguard-data>
+                   {convertEntries(entriesWithPasswords, buf)}
+                 </pwguard-data>
+      val pp = new xml.PrettyPrinter(width = 79, step = 2)
+
+      withCloseable(new BufferedWriter(
+        new OutputStreamWriter(
+          new FileOutputStream(out), "UTF-8"))) { fOut =>
+        fOut.write(pp.format(root))
+      }
+
+      out
+    }
   }
 
 }

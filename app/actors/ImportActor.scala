@@ -1,15 +1,9 @@
 package actors
 
-import java.io.File
-
 import akka.actor.Actor
-import models.{User, UserHelpers, PasswordEntry}
 
 import play.api.Logger
-import services.{ImportData, ImportExportService}
-
-import scala.concurrent.Promise
-
+import services.{ImportCSVData, ImportXMLData, ImportExportService}
 
 
 /** This actor handles imports, single threading them. Too many concurrent
@@ -21,9 +15,8 @@ class ImportActor extends Actor {
   private val logger = Logger("pwguard.actors.ImportActor")
 
   def receive = {
-    case n: ImportData => {
-      ImportExportService.processNewImport(n)
-    }
+    case d: ImportCSVData => ImportExportService.processNewCSVImport(d)
+    case d: ImportXMLData => ImportExportService.processNewXMLImport(d)
   }
 
 }
