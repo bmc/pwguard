@@ -168,6 +168,7 @@ pwgServices.factory('pwgAjax', ng(function($injector) {
 
   function handleFailure(deferred, data, status, headers) {
     var message = null;
+console.log(`*** `, data);
     if (data && data.error && data.error.message)
       message = data.error.message;
     else
@@ -290,26 +291,21 @@ pwgServices.factory('pwgAjax', ng(function($injector) {
       // https://developer.mozilla.org/en-US/docs/AJAX/Getting_Started
       if (req.readyState != 4) return;
 
-      if (req.status === 200) {
-        let response = req.responseText
-
-        if (response) {
-          response = response.replace(/^\)]}',\n/, "");
-          try {
-            succeeded(JSON.parse(response), req.status);
-          }
-          catch(e) {
-            failure(null, req.status);
-          }
-        }
-
-        else {
-          succeeded(null, req.status);
-        }
+      function processResponse(req) {
+        if (req.responseText)
+          return JSON.parse(req.responseText.replace(/^\)]}',\n/, ""));
+        else
+          return null;
       }
 
-      else {
-        failed(null, req.status);
+      try {
+        if (req.status === 200)
+          succeeded(processResponse(req), req.status);
+        else
+          failed(processResponse(req), req.status);
+      }
+      catch(e) {
+        failed(e.message, 500);
       }
     }
 
