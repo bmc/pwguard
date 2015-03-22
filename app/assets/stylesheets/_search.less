@@ -206,14 +206,16 @@
               table {
                 width: auto;
 
+                tr {
+                  &:nth-child(n+2) {
+                    border-top: 1px solid #999999;
+                  }
+                }
+
                 td {
                   border:         0;
                   padding-top:    5px;
                   padding-bottom: 5px;
-
-                  &:nth-child(n+1) {
-                    border-top: 1px solid #999999;
-                  }
 
                   &.heading {
                     padding-top:    10px;
