@@ -2,7 +2,7 @@ import build.helpers._
 
 name := """pwguard"""
 
-version := "1.0.2"
+version := "1.0.3-SNAPSHOT"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 
