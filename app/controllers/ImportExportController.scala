@@ -7,7 +7,7 @@ import services.{ImportExportFormat, UploadedFile, ImportExportService, ImportFi
 import java.io._
 
 import play.api._
-import play.api.libs.json.Json
+import play.api.libs.json._
 import play.api.mvc.Results._
 import play.api.cache.Cache
 import play.api.Play.current
@@ -16,9 +16,9 @@ import grizzled.file.{util => fileutil}
 
 import pwguard.global.Globals.ExecutionContexts.Default._
 import exceptions._
-import util.FileHelpers
-import util.FutureHelpers._
-import util.JsonHelpers.angularJson
+import _root_.util.FileHelpers
+import _root_.util.FutureHelpers._
+import _root_.util.JsonHelpers.angularJson
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -36,6 +36,23 @@ object ImportExportController extends BaseController {
   private val FileCacheKey = "uploaded-file"
 
   private val BaseExportFilename = "passwords"
+
+  private object ImportStatus extends Enumeration {
+    type ImportStatus = Value
+
+    val MappingsRequired = Value("mappings-required")
+    val Complete         = Value("complete")
+
+    object Implicits {
+      implicit val importStatusWrites = new Writes[ImportStatus] {
+        def writes(importStatus: ImportStatus) = {
+          JsString(importStatus.toString)
+        }
+      }
+    }
+  }
+
+  import ImportStatus.ImportStatus
 
   // -------------------------------------------------------------------------
   // Public methods
@@ -92,7 +109,7 @@ object ImportExportController extends BaseController {
     }
   }
 
-  def completeImport = SecuredJSONAction { authReq =>
+  def completeSpreadsheetImport = SecuredJSONAction { authReq =>
     def getFile(): Future[File] = {
       Future {
         val path = Cache.getAs[String](FileCacheKey).getOrElse {
@@ -119,7 +136,7 @@ object ImportExportController extends BaseController {
 
 
     f map  { total =>
-      successJson(total)
+      angularJson(Ok, importJson(ImportStatus.Complete, total = Some(total)))
 
     } recover {
       case NonFatal(e) => {
@@ -140,8 +157,23 @@ object ImportExportController extends BaseController {
   // Private Methods
   // -------------------------------------------------------------------------
 
-  private def successJson(totalImported: Int): Result = {
-    angularJson(Ok, Json.obj("total" -> totalImported))
+  private def importJson(status:    ImportStatus,
+                         total:     Option[Int] = None,
+                         extraData: Option[JsObject] = None): JsObject = {
+
+    import ImportStatus.Implicits._
+
+    val json = extraData.map { data =>
+      data + ("importStatus" -> Json.toJson(status))
+    } getOrElse {
+      Json.obj("importStatus" -> status)
+    }
+
+    total map { n =>
+      json + ("total" -> JsNumber(n))
+    } getOrElse {
+      json
+    }
   }
 
   private def handleUploadedSpreadsheet(uploaded: UploadedFile): Future[Result] = {
@@ -150,14 +182,15 @@ object ImportExportController extends BaseController {
     yield {
       val opt = headers map { h =>
         Cache.set(FileCacheKey, f.getPath)
-        val js = Json.obj(
+        val data = Json.obj(
           "headers" -> h,
           "fields"  -> ImportFieldMapping.values.map { field =>
             Json.obj("name"     -> field.toString,
               "required" -> ImportFieldMapping.isRequired(field))
           }
         )
-        angularJson(Ok, js)
+        angularJson(Ok, importJson(ImportStatus.MappingsRequired,
+                                     extraData = Some(data)))
       }
 
       opt.getOrElse {
@@ -168,8 +201,7 @@ object ImportExportController extends BaseController {
 
   private def importXML(uploaded: UploadedFile, user: User): Future[Result] = {
     ImportExportService.importXML(uploaded.file, user) map { n =>
-      successJson(n)
+      angularJson(Ok, importJson(ImportStatus.Complete, total = Some(n)))
     }
   }
-
 }

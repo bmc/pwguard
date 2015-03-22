@@ -168,7 +168,6 @@ pwgServices.factory('pwgAjax', ng(function($injector) {
 
   function handleFailure(deferred, data, status, headers) {
     var message = null;
-console.log(`*** `, data);
     if (data && data.error && data.error.message)
       message = data.error.message;
     else

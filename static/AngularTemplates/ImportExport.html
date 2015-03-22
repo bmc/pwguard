@@ -4,8 +4,8 @@
     <div class="well">
       <h2>Export your Data</h2>
 
-      <p>Click the Export button to download a CSV file with all your
-      password data.</p>
+      <p>Click the Export button to download a CSV file, an Excel
+      spreadsheet or a PWGuard XML file* with all your password data.</p>
 
       <div class="row export-format">
         <div class="col-md-5">
@@ -31,12 +31,16 @@
         </div>
       </div>
       <div class="row">
-        <div class="col-md-3"></div>
-        <div class="col-md-6">
+        <div class="col-md-6 col-md-offset-3">
           <div ng-show="downloading" class="alert alert-info"
                id="downloading-notice">
             Downloading...
           </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 footnote">
+          *The PWGuard XML format is the best format to use for backups.
         </div>
       </div>
     </div>

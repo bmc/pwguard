@@ -32,7 +32,7 @@ DELETE        /pwguard/user/:id                          controllers.UserControl
 
 GET           /pwguard/export                            controllers.ImportExportController.exportData(format: String)
 POST          /pwguard/import                            controllers.ImportExportController.importDataUpload
-POST          /pwguard/complete-import                   controllers.ImportExportController.completeImport
+POST          /pwguard/complete-import                   controllers.ImportExportController.completeSpreadsheetImport
 
 GET           /pwguard/user-agent-info                   controllers.MainController.getUserAgentInfo
 

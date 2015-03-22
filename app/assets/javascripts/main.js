@@ -861,6 +861,7 @@ pwGuardApp.controller('ImportExportCtrl',
     var pwgAjax    = $injector.get('pwgAjax');
     var pwgFlash   = $injector.get('pwgFlash');
     var pwgLogging = $injector.get('pwgLogging');
+    var pwgSpinner = $injector.get('pwgSpinner');
 
     var log = pwgLogging.logger('ImportExportCtrl');
 
@@ -917,10 +918,26 @@ pwGuardApp.controller('ImportExportCtrl',
         function(response) {
           // Use a timeout, to give the progress bar a chance to register.
           $scope.uploadPercent = 100;
-          pwgTimeout.timeout(1000 /* 2 seconds */, function() {
-            $scope.importState = 'mapping';
-            prepareMappingData(response.data);
+          pwgTimeout.timeout(1000 /* 1 seconds */, function() {
+            pwgSpinner.stop();
             $scope.uploading = false;
+
+            switch (response.data.importStatus) {
+              case 'mappings-required':
+                $scope.importState = 'mapping';
+                prepareMappingData(response.data)
+                break;
+
+              case 'complete':
+                $scope.importState = 'complete';
+                handleCompletion(response.data.total)
+                break;
+
+              default:
+                pwgFlash.error("Unexpected response from server.")
+                console.log(response)
+                break;
+            }
           });
         },
         function(error) {
@@ -929,6 +946,9 @@ pwGuardApp.controller('ImportExportCtrl',
         },
         function(percentCompleted) {
           $scope.uploadPercent = percentCompleted;
+          if (percentCompleted >= 100) {
+            pwgSpinner.start();
+          }
         }
       );
     }
@@ -1050,7 +1070,7 @@ pwGuardApp.controller('ImportExportCtrl',
           data.mappings[k.name] = k.matchedTo.name;
       }
 
-      let url = routes.controllers.ImportExportController.completeImport().url;
+      let url = routes.controllers.ImportExportController.completeSpreadsheetImport().url;
       pwgAjax.post(url, data).then(
         (response) => {
           $scope.importState = 'complete';
@@ -1068,7 +1088,7 @@ pwGuardApp.controller('ImportExportCtrl',
     // ------------------------------
 
     $scope.completionCount = 0
-    var handleCompletion = (total) => {
+    function handleCompletion(total) {
       switch(total) {
         case 0:
           $scope.completionCount = "no new entries";

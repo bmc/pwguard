@@ -152,6 +152,24 @@ header {
   }
 }
 
+.footnote {
+  @media @phone {
+    font-size: @phoneFontSize - 2px;
+  }
+
+  @media @tablet {
+    font-size: @tabletFontSize - 3px;
+  }
+
+  @media @desktop {
+    font-size: @desktopFontSize - 5px;
+  }
+
+  @media @wideDesktop {
+    font-size: @desktopFontSize - 5px;
+  }
+}
+
 @tableHeaderBackground:  white;
 @tableOddRowBackground:  #f9f9f9;
 @tableEvenRowBackground: white;
