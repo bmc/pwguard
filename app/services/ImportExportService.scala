@@ -529,13 +529,10 @@ object ImportExportService {
                              n:         Int):
       Map[String, String] = {
 
-      /** It's possible for security questions to be encoded as extra fields.
+      /* It's possible for security questions to be encoded as extra fields.
         * This function ensures that there's no inadvertent header clash.
         * It finds the next available (unused) header composed of the
         * security question prefix and a number.
-        *
-        * @param n  the number at which to start looking
-        * @return
         */
       @tailrec
       def headerAndIndex(n: Int): (String, Int) = {

@@ -1,6 +1,6 @@
 # PWGuard Change Log
 
-Version 1.0.2 (Mar __, 2014)
+Version 1.0.2 (Mar 21, 2015)
 
 * Added ability to save session for 10 days, on login. If not specified,
   assumes 15-minute default.
@@ -28,7 +28,7 @@ Version 1.0.2 (Mar __, 2014)
 * Changed import file upload to use AJAX file upload, with progress data,
   for a better user experience. Added an upload progress bar.
 
-Version 1.0.1 (Mar 4, 2014)
+Version 1.0.1 (Mar 4, 2015)
 
 * Disabled use of JsHint, because Traceur is good enough.
 * Rebuilt `traceur` SBT task as a custom task, primarily to enable easy use
