@@ -14,6 +14,7 @@ Version 1.0.2 (Mar __, 2014)
     to number them explicitly.
   - They can be handled and displayed slightly differently (and more
     appropriately) than the more free-form custom fields.
+* XML import/export format now supported, as a more reliable backup mechanism.
 * From the search results screen, you can now create a copy of an entry.
 * The "loading" spinner is now a full-page, blocking modal.
 * Updated Twitter Bootstrap to 3.3.2-2.

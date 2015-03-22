@@ -207,17 +207,17 @@
                 width: auto;
 
                 td {
-                  border: 0;
-                }
+                  border:         0;
+                  padding-top:    5px;
+                  padding-bottom: 5px;
 
-                tr {
-                  border-top:    0;
-                  border-bottom: 1px solid #999999;
-                  border-left:   0;
-                  border-right:  0;
+                  &:nth-child(n+1) {
+                    border-top: 1px solid #999999;
+                  }
 
-                  &:last-child {
-                    border: 0;
+                  &.heading {
+                    padding-top:    10px;
+                    padding-bottom: 10px;
                   }
                 }
               }

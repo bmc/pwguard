@@ -129,6 +129,10 @@ object ImportExportService {
 
   private val SplitKeywords = """[,\s]+""".r
 
+  private val SecurityQuestionHeaderPrefix = "Security Question"
+
+  private val LCSecurityQuestionHeaderPrefix = SecurityQuestionHeaderPrefix.toLowerCase
+
   // -------------------------------------------------------------------------
   // Public methods
   // -------------------------------------------------------------------------
@@ -331,11 +335,11 @@ object ImportExportService {
     // Any other cells defined for this row constitute custom fields.
 
     @tailrec
-    def handleExtraFields(fields: Set[PasswordEntryExtraField],
-                          remainingExtraHeaders: List[String]):
+    def handleExtraFields(fields:       Set[PasswordEntryExtraField],
+                          extraHeaders: List[String]):
       Set[PasswordEntryExtraField] = {
 
-      remainingExtraHeaders match {
+      extraHeaders match {
         case Nil => fields
 
         case name :: rest if row.get(name).isDefined => {
@@ -354,7 +358,7 @@ object ImportExportService {
           handleExtraFields(newFields, rest)
         }
 
-        case name :: rest => fields
+        case name :: rest => handleExtraFields(fields, rest)
       }
     }
 
@@ -364,17 +368,68 @@ object ImportExportService {
       }.toSet
     }
 
+    val REQuestionSplit = """\s*\?\s*""".r
+
+    @tailrec
+    def handleSecurityQuestions(questions: Set[PasswordEntrySecurityQuestion],
+                                headers:   List[String]):
+      Set[PasswordEntrySecurityQuestion] = {
+
+      def makeQuestion(q: String, a: String) = {
+        PasswordEntrySecurityQuestion(id              = None,
+                                      passwordEntryID = None,
+                                      question        = q,
+                                      answer          = a)
+      }
+
+      def splitQuestion(s: String): Option[(String, String)] = {
+        REQuestionSplit.split(s) match {
+          case Array("")             => None
+          case Array(q, a)           => Some((s"$q?", a))
+          case Array(q, tokens @ _*) => Some((s"$q?", tokens.mkString(" ")))
+        }
+      }
+
+      headers match {
+        case Nil => questions
+
+        case header :: rest if row.get(header).isDefined => {
+          // Split the question string on "?", so we get a question and answer.
+          // If the split fails, skip the field. Here's one valid reason to
+          // match on an Option: It allows tail recursion. Using map() doesn't.
+          splitQuestion(row(header)) match {
+            case Some((q, a)) => {
+              handleSecurityQuestions(questions + makeQuestion(q, a), rest)
+            }
+            case _ => handleSecurityQuestions(questions, rest)
+          }
+        }
+      }
+    }
+
     // The row's key set is the set of headers for this row. Remove the
     // common headers, which we just processed. Anything left is a custom
-    // field.
+    // field or security question.
     val remainingHeaders = row.keySet -- headers.All
+
+    val securityQuestionHeaders = remainingHeaders.filter {
+      _.toLowerCase.startsWith(LCSecurityQuestionHeaderPrefix)
+    }
+
+    val extraHeaders = remainingHeaders -- securityQuestionHeaders
+
     val extras = handleExtraFields(Set.empty[PasswordEntryExtraField],
-                                   remainingHeaders.toList)
+                                   extraHeaders.toList)
+    val questions = handleSecurityQuestions(Set.empty[PasswordEntrySecurityQuestion],
+                                            securityQuestionHeaders.toList)
+
     val keywordString = headers.keywordsHeader.flatMap(row.get(_)).getOrElse("")
     val keywords = handleKeywords(keywordString)
 
     // Map to a full password entry.
-    val fpw = entry.toFullEntry(extras = extras, keywords = keywords)
+    val fpw = entry.toFullEntry(extras            = extras,
+                                keywords          = keywords,
+                                securityQuestions = questions)
 
     saveIfNew(fpw, headers.pwHeader.flatMap(row.get(_)), user) map { opt =>
       // Return a count of 1 if saved, 0 if not.
@@ -437,7 +492,7 @@ object ImportExportService {
       Future.failed(new ImportFailed(s"Unknown import file type: $contentType"))
   }
 
-  private def unpackEntry(user: User, e: FullPasswordEntry):
+  private def unpackEntryToSpreadsheetMap(user: User, e: FullPasswordEntry):
     Future[Map[String, String]] = {
 
     val name                 = e.name
@@ -455,15 +510,54 @@ object ImportExportService {
     }
 
     @tailrec
-    def addCustomFields(fields: List[PasswordEntryExtraField],
-                        m:      Map[String, String]):
+    def addExtraFields(fields: List[PasswordEntryExtraField],
+                       m:      Map[String, String]):
       Map[String, String] = {
 
       fields match {
         case Nil => m
         case e :: rest => {
           val newMap = m + (e.fieldName -> e.fieldValue)
-          addCustomFields(rest, newMap)
+          addExtraFields(rest, newMap)
+        }
+      }
+    }
+
+    @tailrec
+    def addSecurityQuestions(questions: List[PasswordEntrySecurityQuestion],
+                             m:         Map[String, String],
+                             n:         Int):
+      Map[String, String] = {
+
+      /** It's possible for security questions to be encoded as extra fields.
+        * This function ensures that there's no inadvertent header clash.
+        * It finds the next available (unused) header composed of the
+        * security question prefix and a number.
+        *
+        * @param n  the number at which to start looking
+        * @return
+        */
+      @tailrec
+      def headerAndIndex(n: Int): (String, Int) = {
+        val header = s"${SecurityQuestionHeaderPrefix} $n"
+        val candidates = m.keySet map {
+          _.toLowerCase
+        } filter {
+          _.startsWith(LCSecurityQuestionHeaderPrefix)
+        }
+
+        if (candidates.contains(header.toLowerCase))
+          headerAndIndex(n + 1)
+        else
+          (header, n)
+      }
+
+      questions match {
+        case Nil => m
+        case q :: rest => {
+          val (header, index) = headerAndIndex(n)
+          val newMap = m + (header -> s"${q.question} ${q.answer}")
+          addSecurityQuestions(rest, newMap, index)
         }
       }
     }
@@ -477,9 +571,9 @@ object ImportExportService {
                            ImportFieldMapping.URL.toString         -> url,
                            ImportFieldMapping.Keywords.toString    -> keywords,
                            ImportFieldMapping.Notes.toString       -> notes)
-      val m = addCustomFields(e.extraFields.toList, initialMap)
-      logger.error(s"m: $m")
-      m
+      val m = addExtraFields(e.extraFields.toList, initialMap)
+      val m2 = addSecurityQuestions(e.securityQuestions.toList, m, 1)
+      m2
     }
   }
 
@@ -494,7 +588,7 @@ object ImportExportService {
         writeXML(out, entries, user) map { (_, XMLContentType) }
       }
       else {
-        val entryFutures = entries.map { unpackEntry(user, _) }.toSeq
+        val entryFutures = entries.map { unpackEntryToSpreadsheetMap(user, _) }.toSeq
         for { seqOfFutures <- Future.sequence(entryFutures) }
         yield (out, seqOfFutures)
 
@@ -560,7 +654,6 @@ object ImportExportService {
       csvFile
     }
   }
-
 
   private def writeExcel(out: File, entries: Seq[Map[String, String]]):
     Future[File] = {
@@ -633,10 +726,13 @@ object ImportExportService {
 
   private def collectHeaders(entries: Seq[Map[String,String]]): Seq[String] = {
     val headerSet = entries.flatMap { m => m.keySet }.toSet
+
+    // Extra headers includes security questions.
     val extraHeaders = headerSet -- ImportFieldMapping.AllCommonHeaderNames
 
     // Put them together, required headers first.
-    ImportFieldMapping.valuesInOrder.map { _.toString } ++ extraHeaders.toSeq
+    ImportFieldMapping.valuesInOrder.map { _.toString } ++
+      extraHeaders.toSeq.sorted
   }
 
   private def loadXML(root: xml.Elem, user: User): Future[Int] = {
