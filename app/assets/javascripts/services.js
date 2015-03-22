@@ -193,27 +193,30 @@ pwgServices.factory('pwgAjax', ng(function($injector) {
     }
   }
 
-  function http(config) {
+  function http(config, showSpinner) {
     var deferred = $q.defer();
     var promise  = deferred.promise;
 
     function failed(data, status, headers, config) {
-      pwgSpinner.stop();
+      if (showSpinner)
+        pwgSpinner.stop();
       handleFailure(deferred, data, status, headers);
     }
 
     function succeeded(data, status, headers, config) {
-      pwgSpinner.stop();
+      if (showSpinner)
+        pwgSpinner.stop();
       handleSuccess(deferred, data, status, headers);
     }
 
-    pwgSpinner.start();
+    if (showSpinner)
+      pwgSpinner.start();
 
     $http(config).success(succeeded).error(failed);
     return promise;
   }
 
-  function doPost(url, data) {
+  function doPost(url, data, showSpinner = true) {
     var params = {
       method: 'POST',
       url:    url,
@@ -223,7 +226,7 @@ pwgServices.factory('pwgAjax', ng(function($injector) {
     if (! url)
       throw new Error("No URL for pwgAjax.post()");
 
-    return http(params);
+    return http(params, showSpinner);
   }
 
   function doPostFile(url, file, showSpinner = false) {
@@ -321,7 +324,7 @@ pwgServices.factory('pwgAjax', ng(function($injector) {
     return promise;
   }
 
-  function doGet(url) {
+  function doGet(url, showSpinner = true) {
     var params = {
       method: 'GET',
       url:    url
@@ -330,10 +333,10 @@ pwgServices.factory('pwgAjax', ng(function($injector) {
     if (! url)
       throw new Error("No URL for pwgAjax.get()");
 
-    return http(params);
+    return http(params, showSpinner);
   }
 
-  function doDelete(url, data) {
+  function doDelete(url, data, showSpinner = true) {
     var params = {
       method:  'DELETE',
       url:     url,
@@ -350,7 +353,7 @@ pwgServices.factory('pwgAjax', ng(function($injector) {
     if (! url)
       throw new Error("No URL for pwgAjax.delete()");
 
-    return http(params);
+    return http(params, showSpinner);
   }
 
   return {

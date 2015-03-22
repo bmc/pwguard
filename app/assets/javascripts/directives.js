@@ -580,7 +580,7 @@ pwgDirectives.directive('pwgEditPasswordEntryForm', ng(function($injector) {
           filterAndResolve(allUniqueKeywords);
         }
         else {
-          pwgAjax.get(url).then(function(response) {
+          pwgAjax.get(url, false).then(function(response) {
             allUniqueKeywords = response.data.keywords;
             filterAndResolve(allUniqueKeywords);
           });

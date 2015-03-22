@@ -1,5 +1,12 @@
 # PWGuard Change Log
 
+Version 1.0.3 (...)
+
+* AJAX autoload of keywords on "new entry" screen no longer displays loading
+  spinner modal.
+* All functions in `pwgAjax` service now permit disabling spinner, if caller
+  desires.
+
 Version 1.0.2 (Mar 21, 2015)
 
 * Added ability to save session for 10 days, on login. If not specified,
