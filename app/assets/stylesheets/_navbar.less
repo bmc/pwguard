@@ -31,6 +31,13 @@
       &.desktop {
         height:      @navbarHeight;
         line-height: @navbarHeight;
+
+        a {
+          // On Firefox, in particular, sometimes clicked content causes
+          // a dotted line border to appear. This rule suppresses it.
+          // See http://stackoverflow.com/a/20626959/53495
+          outline: 0;
+        }
       }
 
       .pwg-tab-label {

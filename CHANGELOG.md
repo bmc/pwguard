@@ -6,6 +6,8 @@ Version 1.0.3 (...)
   spinner modal.
 * All functions in `pwgAjax` service now permit disabling spinner, if caller
   desires.
+* Suppress annoying dotted line that appears (in Firefox) when a navbar link
+  is clicked.
 
 Version 1.0.2 (Mar 21, 2015)
 
