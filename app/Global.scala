@@ -1,7 +1,8 @@
 package pwguard.global
 
+import play.api.db.slick.DatabaseConfigProvider
 import play.api.mvc.WithFilters
-import play.api.{Logger, GlobalSettings, Application}
+import play.api.{Play, Logger, GlobalSettings, Application}
 import play.api.libs.concurrent.Akka
 import play.api.Play.current
 import play.filters.csrf._
@@ -33,6 +34,7 @@ object Global extends WithFilters(CSRFFilter()) with GlobalSettings {
   }
 
   private def initDB(app: Application) {
+    val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
     import scala.slick.jdbc.JdbcBackend.Database
     import dbservice.DAL
 
@@ -48,6 +50,7 @@ object Global extends WithFilters(CSRFFilter()) with GlobalSettings {
       sys.error("Missing 'url' and/or 'driver' in config section $cfgPrefix")
     }
 
+    // FIXME: Use Database.forConfig
     val db = Database.forURL(url.get, driver = driver.get, user = user.get,
                              password = password.get)
     val dal = driver.get match {
@@ -60,6 +63,7 @@ object Global extends WithFilters(CSRFFilter()) with GlobalSettings {
       }
     }
 
+    val dal = new DAL(dbConfig)
     _dal = Some(dal)
     _db = Some(db)
   }

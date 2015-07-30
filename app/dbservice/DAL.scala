@@ -7,14 +7,11 @@ import scala.slick.driver.JdbcProfile
 /** Allows dynamic selection of database type.
   */
 trait Profile {
-  val profile: JdbcProfile
-
-  import profile.simple._
-
   abstract class ModelTable[M <: BaseModel](tag: Tag, name: String)
     extends Table[M](tag, name) {
 
     def id: Column[Int]
+
   }
 }
 
