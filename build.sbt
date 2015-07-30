@@ -39,7 +39,8 @@ libraryDependencies ++= Seq(
   "org.webjars"           % "modernizr"                  % "2.8.3",
   "org.webjars"           % "excanvas"                   % "3",
   "org.webjars"           % "html5shiv"                  % "3.7.2",
-  "org.webjars"           % "traceur"                    % "0.0.79-1",
+  "org.webjars.bower"     % "traceur"                    % "0.0.89",
+  "org.webjars.bower"     % "traceur-runtime"            % "0.0.89",
   "org.webjars"           % "font-awesome"               % "4.3.0",
   "org.webjars"           % "jquery"                     % "1.11.2",
   "org.webjars"           % "log4javascript"             % "1.4.10",
@@ -155,7 +156,7 @@ traceur := {
   // Invoke traceur, writing output to the first temp file.
   //
   sh("mkdir -p tmp")
-  sh(s"traceur --experimental --source-maps=inline --out $tempPath1 --modules=inline $sourcesString")
+  sh(s"traceur --experimental --symbols=false --source-maps=inline --out $tempPath1 --modules=inline $sourcesString")
   //
   // Invoke angular-injector on the result, writing the output to the second
   // temp file.

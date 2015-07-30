@@ -5,13 +5,13 @@
 
 /* jshint ignore:start */
 
-import * as util from './util';
-import * as filters from './filters';
-import * as services from './services';
-import * as directives from './directives';
-import * as pwgModal from './modal';
-import * as pwgFlash from './flash';
-import * as pwgAccordion from './accordion';
+import * as util from './util.js';
+import * as filters from './filters.js';
+import * as services from './services.js';
+import * as directives from './directives.js';
+import * as pwgModal from './modal.js';
+import * as pwgFlash from './flash.js';
+import * as pwgAccordion from './accordion.js';
 
 util.init()
 
