@@ -26,25 +26,23 @@ class WebServer(config: Config)
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = system.dispatcher
 
-  /** Run the server. Returns a `Try` of the underlying `ActorSystem`.
+  /** Start the server.
     *
-    * @return `Success(ActorSystem)` or `Failure(exception)`
+    * @return `Future` on which to wait for server shutdown.
     */
-  def run(): (ActorSystem, Future[Done]) = {
-    val f = for { bindingFuture <- startServer(config.bind.host,
-                                               config.bind.port)
-                  waitOnFuture  <- hangingFuture }
+  def start(): Future[Done] = {
+    import config.bind
+
+    for { bindingFuture <- startServer(bind.host, bind.port)
+          waitOnFuture  <- Promise[Done].future }
       yield waitOnFuture
-
-    (system, f)
   }
 
-  def hangingFuture: Future[Done] = {
-    val p = Promise[Done]
-    p.future
-  }
+  // --------------------------------------------------------------------------
+  // Private methods
+  // --------------------------------------------------------------------------
 
-  def startServer(host: String, port: Int): Future[ServerBinding] = {
+  private def startServer(host: String, port: Int): Future[ServerBinding] = {
     // Set 'er up.
     val bindingFuture = Http().bindAndHandle(routes, host, port)
     println(s"Server online at $host:$port. Ctrl-C to stop.")
@@ -57,7 +55,6 @@ class WebServer(config: Config)
     pathSingleSlash {
       logRequest("/") {
         get {
-          log.info(s"--- ${relativeToUIBase("index.html", config).toFile}")
           getFromFile(relativeToUIBase("index.html", config).toFile)
         }
       }

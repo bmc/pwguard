@@ -28,7 +28,7 @@ object Main {
     val config = Config
       .load(configPath)
       .map { config =>
-        val (system, f) = new WebServer(config).run()
+        val f = new WebServer(config).start()
         Await.ready(f, Duration.Inf)
       }
       .recover {
