@@ -1,11 +1,12 @@
 package com.ardentex.pwguard
 
 import configuration.Config
-
 import akka.Done
 import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.Http.ServerBinding
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.HttpApp
+import akka.http.scaladsl.server.{Directives, HttpApp}
 import akka.stream.ActorMaterializer
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -16,7 +17,10 @@ import scala.util.Try
   *
   * @param config the loaded configuration data
   */
-class WebServer(config: Config) extends HttpApp with LoggingSupport with Util {
+class WebServer(config: Config)
+  extends Directives
+  with LoggingSupport
+  with Util {
 
   implicit val system: ActorSystem = ActorSystem("pwguard")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
@@ -26,16 +30,30 @@ class WebServer(config: Config) extends HttpApp with LoggingSupport with Util {
     *
     * @return `Success(ActorSystem)` or `Failure(exception)`
     */
-  def run(): Try[ActorSystem] = {
-    Try {
-      startServer(config.bind.host, config.bind.port, system)
-      system
-    }
+  def run(): (ActorSystem, Future[Done]) = {
+    val f = for { bindingFuture <- startServer(config.bind.host,
+                                               config.bind.port)
+                  waitOnFuture  <- hangingFuture }
+      yield waitOnFuture
+
+    (system, f)
+  }
+
+  def hangingFuture: Future[Done] = {
+    val p = Promise[Done]
+    p.future
+  }
+
+  def startServer(host: String, port: Int): Future[ServerBinding] = {
+    // Set 'er up.
+    val bindingFuture = Http().bindAndHandle(routes, host, port)
+    println(s"Server online at $host:$port. Ctrl-C to stop.")
+    bindingFuture
   }
 
   /** The route configuration. Required by the base `HttpApp` class.
     */
-  override def routes = {
+  def routes = {
     pathSingleSlash {
       logRequest("/") {
         get {
@@ -54,19 +72,5 @@ class WebServer(config: Config) extends HttpApp with LoggingSupport with Util {
         }
       }
     }
-  }
-
-  /** Overridden `HttpApp.waitForShutdownSignal()` that returns a future
-    * that will never be fulfilled.
-    *
-    * @param system  the `ActorSystem``
-    * @param ec      the execution context
-    *
-    * @return a `Future`.
-    */
-  override protected def waitForShutdownSignal
-    (system: ActorSystem)(implicit ec: ExecutionContext): Future[Done] = {
-    val p = Promise[Done]()
-    p.future
   }
 }
