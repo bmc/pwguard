@@ -18,6 +18,7 @@ lazy val root = (project in file(".")).
       "com.typesafe.akka"     %% "akka-stream"          % akkaVersion,
       "com.typesafe.akka"     %% "akka-actor"           % akkaVersion,
       "com.iheart"            %% "ficus"                % "1.4.2",
+      "com.blueconic"          % "browscap-java"        % "1.0.4",
       "co.fs2"                %% "fs2-core"             % "0.9.7",
       "co.fs2"                %% "fs2-io"               % "0.9.7",
       "com.github.krasserm"   %% "streamz-converter"    % "0.8.1",
