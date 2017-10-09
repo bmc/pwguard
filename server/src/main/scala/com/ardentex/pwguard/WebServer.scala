@@ -28,7 +28,9 @@ class WebServer(config: Config)
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = system.dispatcher
 
+  log.info("Initializing...")
   val tBrowscap = Browscap()
+  log.info("Done initializing.")
 
   /** Start the server.
     *
