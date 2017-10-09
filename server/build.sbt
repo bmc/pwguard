@@ -29,18 +29,18 @@ lazy val root = (project in file(".")).
     )
   )
 
-val fatjar = taskKey[Unit]("fatjar")
+lazy val fatjar = taskKey[Unit]("fatjar")
 fatjar := assembly.value
 
 // Override run task, since the server doesn't listen on stdin.
-val localRun = taskKey[Unit]("run")
-run := localRun.value
+lazy val localRun = inputKey[Unit]("run")
+run := localRun.evaluated
+
+import complete.DefaultParsers._
 
 localRun := {
-  println(
-    s"""|${scala.Console.RED}
-        |To start the server: re-start /path/to/config
-        |To stop the server:  re-stop
-        |${scala.Console.RESET}""".stripMargin
-  )
+  import scala.Console.{YELLOW, RESET}
+  val log = streams.value.log
+  log.warn(s"""${YELLOW}Calling "re-start". Use "re-stop" to stop.$RESET""")
+  reStart.evaluated
 }
